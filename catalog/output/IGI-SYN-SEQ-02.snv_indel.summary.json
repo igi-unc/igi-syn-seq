@@ -67,6 +67,30 @@
   "flagposts": 12,
   "grid_cells_filled": 80,
   "grid_cells_total": 90,
+  "svs": {
+    "n": 96,
+    "by_subclass": {
+      "non_coding": 49,
+      "coding": 47
+    }
+  },
+  "viruses": {
+    "n": 3,
+    "by_subclass": {
+      "integrated": 1,
+      "episomal": 2
+    }
+  },
+  "expressed": {
+    "n": 75,
+    "by_subclass": {
+      "clone_restricted": 4,
+      "tumor_wide": 11,
+      "tumor_specific": 25,
+      "tumor_associated": 25,
+      "unexpressed_negative": 10
+    }
+  },
   "fusions": {
     "n": 18,
     "by_subclass": {
@@ -89,6 +113,6 @@
       "non": 1
     }
   },
-  "runtime_s": 1702,
+  "runtime_s": 282,
   "scale": 1.0
 }

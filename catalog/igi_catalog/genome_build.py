@@ -68,7 +68,7 @@ def germline_edits(germline, chrom, hap, start1, end1):
     return es
 
 
-def somatic_edits(events, clones, chrom, hap, clone):
+def somatic_edits(events, clones, chrom, hap, clone, start1=None, end1=None):
     """Designed somatic small-variant edits visible in `clone` on haplotype `hap`.
 
     An event is present in a clone when that clone is a descendant of the clone the event arose in.
@@ -79,6 +79,8 @@ def somatic_edits(events, clones, chrom, hap, clone):
             continue
         if not clones.is_descendant(clone, e["clone"]):
             continue
+        if start1 is not None and (e["pos"] < start1 or e["pos"] + len(e["ref"]) - 1 > end1):
+            continue          # outside the region being built, not a failure
         es.add(e["pos"], e["ref"], e["alt"], e["event_id"])
     return es
 
@@ -106,7 +108,7 @@ def haplotype_sequence(genome, germline, events, clones, chrom, hap, clone, star
     end1 = end1 or genome.lengths[chrom]
     seq = genome.seq(chrom, start1 - 1, end1)
     g = germline_edits(germline, chrom, hap, start1, end1)
-    s = somatic_edits(events, clones, chrom, hap, clone)
+    s = somatic_edits(events, clones, chrom, hap, clone, start1, end1)
     # germline and somatic edits are both in reference coordinates, so they must be applied in a single
     # pass; applying one set first would shift the coordinates the other set refers to
     merged = EditSet(chrom)

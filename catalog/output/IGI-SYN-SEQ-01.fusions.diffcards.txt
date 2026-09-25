@@ -1,64 +1,78 @@
 # IGI-SYN-SEQ-01 designed gene fusions: junction cards (design v0.1, seed 20260925)
 
-## IGI-SYN-SEQ-01-FUS-0001  EML4-ALK in_frame
-  fusion    EML4(ex1-12) :: ALK(ex16-end)  INV  in-frame
-  DNA       chr2:42295341(+) -> chr2:29229853(-)
-  5' parent  ...AGAAAACAGGGAATTTTTGGG | AAATATGAAAAGCCAAAATTT...   (EML4 continues)
-  3' parent  ...ACGGCAATTCCGGAGCCGCAG | GTGGTGGAGGTGGCTGGAATG...   (ALK continues)
-  fusion     ...AGAAAACAGGGAATTTTTGGG | GTGGTGGAGGTGGCTGGAATG...
+## IGI-SYN-SEQ-01-FUS-0001  TMPRSS2-ERG in_frame
+  fusion    TMPRSS2(ex1-11) :: ERG(ex6-end)  DEL  in-frame
+  DNA       chr21:41468373(-) -> chr21:38400666(-)
+  5' parent  ...GGGAACGTCGATTCTTGCCAG | GGTGACAGTGGAGGGCCTCTG...   (TMPRSS2 continues)
+  3' parent  ...TAATGCATGCTAGAAACACAG | GGGGTGCAGCTTTTATTTTCC...   (ERG continues)
+  fusion     ...GGGAACGTCGATTCTTGCCAG | GGGGTGCAGCTTTTATTTTCC...
                                      ^ junction
-  protein   fusion length 483 aa, junction at aa 452
-  junction  SLTRKQGIFGVVEVAGMITLP
+  protein   fusion length 503 aa, junction at aa 439
+  junction  FLQGNVDSCQGVQLLFSQILQ
                       ^
-  peptide   TRKQGIFGV HLA-B*38:01 rank 2.919
+  peptide   NVDSCQGVQL HLA-C*04:01 rank 1.112
   VAF       0.35
   clone     T (T_het)
 
-## IGI-SYN-SEQ-01-FUS-0002  PAX3-FOXO1 in_frame
-  fusion    PAX3(ex1-5) :: FOXO1(ex2-end)  TRA  in-frame
-  DNA       chr2:222227333(-) -> chr13:40605176(-)
-  5' parent  ...CTCACCGAGGCCCGAGTACAG | GTCTGGTTTAGCAACCGCCGT...   (PAX3 continues)
-  3' parent  ...AACAGCTCGGCGGGCTGGAAG | AATTCAATTCGTCATAATCTG...   (FOXO1 continues)
-  fusion     ...CTCACCGAGGCCCGAGTACAG | AATTCAATTCGTCATAATCTG...
+## IGI-SYN-SEQ-01-FUS-0002  ETV6-NTRK3 in_frame
+  fusion    ETV6(ex1-6) :: NTRK3(ex10-end)  TRA  in-frame
+  DNA       chr12:11884625(+) -> chr15:88127251(-)
+  5' parent  ...CGACTGTGGGGAAACCATAAG | AACAGAACAAACATGACCTAT...   (ETV6 continues)
+  3' parent  ...GCACGGATAACTTTATCTTGT | TTGACGAAGTGAGTCCCACAC...   (NTRK3 continues)
+  fusion     ...CGACTGTGGGGAAACCATAAG | TTGACGAAGTGAGTCCCACAC...
                                      ^ junction
-  protein   fusion length 709 aa, junction at aa 265
-  junction  RAKLTEARVQNSIRHNLSLHS
+  protein   fusion length 387 aa, junction at aa 385
+  junction  GLARLWGNHKLTK
                       ^
-  peptide   VQNSIRHNL HLA-B*38:01 rank 0.474
+  peptide   ARLWGNHKL HLA-B*38:01 rank 0.349
   VAF       0.35
   clone     T (T_het)
 
-## IGI-SYN-SEQ-01-FUS-0003  SEC16A-NOTCH1 in_frame
-  fusion    SEC16A(ex1-15) :: NOTCH1(ex19-end)  DUP  in-frame
-  DNA       chr9:136458389(-) -> chr9:136509117(-)
-  5' parent  ...TGCCCCCTGCCTAGTTTCCAG | GTGTTTAAGTTCATCTACTCC...   (SEC16A continues)
-  3' parent  ...CACGCCTGACTGCACAGAGAG | CTCCTGCTTCAACGGTGGCAC...   (NOTCH1 continues)
-  fusion     ...TGCCCCCTGCCTAGTTTCCAG | CTCCTGCTTCAACGGTGGCAC...
+## IGI-SYN-SEQ-01-FUS-0003  EWSR1-FLI1 in_frame
+  fusion    EWSR1(ex1-11) :: FLI1(ex5-end)  TRA  in-frame
+  DNA       chr22:29296036(+) -> chr11:128773502(+)
+  5' parent  ...AAGCAGTGTGGGGTTGTTAAG | ATGAACAAGAGAACTGGGCAA...   (EWSR1 continues)
+  3' parent  ...ACCTCAGTTACCTCAGGGAAA | GTTCACTGCTGGCCTATAATA...   (FLI1 continues)
+  fusion     ...AAGCAGTGTGGGGTTGTTAAG | GTTCACTGCTGGCCTATAATA...
                                      ^ junction
-  protein   fusion length 1836 aa, junction at aa 1804
-  junction  AETCPLPSFQLLLQRWHLRGR
+  protein   fusion length 405 aa, junction at aa 389
+  junction  DFFKQCGVVKVHCWPIIQPPT
                       ^
-  peptide   CPLPSFQLL HLA-B*35:08 rank 0.649
+  peptide   VHCWPIIQP HLA-B*38:01 rank 2.356
   VAF       0.35
   clone     T (T_het)
 
-## IGI-SYN-SEQ-01-FUS-0004  FGFR3-TACC3 in_frame
-  fusion    FGFR3(ex1-8) :: TACC3(ex9-end)  DUP  in-frame
-  DNA       chr4:1804671(+) -> chr4:1737449(+)
+## IGI-SYN-SEQ-01-FUS-0004  CD74-ROS1 in_frame
+  fusion    CD74(ex1-4) :: ROS1(ex24-end)  TRA  in-frame
+  DNA       chr5:150405454(-) -> chr6:117360245(-)
+  5' parent  ...CATGTGATGCACCTGCTCCAG | AATGCTGACCCCCTGAAGGTG...   (CD74 continues)
+  3' parent  ...TTGTAAAGTCTACAACATCAG | AAATCAACCCATTTCCTCACC...   (ROS1 continues)
+  fusion     ...CATGTGATGCACCTGCTCCAG | AAATCAACCCATTTCCTCACC...
+                                     ^ junction
+  protein   fusion length 155 aa, junction at aa 148
+  junction  TEDHVMHLLQKSTHFLTS
+                      ^
+  peptide   MHLLQKSTHFL HLA-B*38:01 rank 0.18
+  VAF       0.5385
+  clone     T (T_LOH)
+
+## IGI-SYN-SEQ-01-FUS-0005  FGFR3-TACC3 in_frame
+  fusion    FGFR3(ex1-8) :: TACC3(ex8-end)  DUP  in-frame
+  DNA       chr4:1804698(+) -> chr4:1736639(+)
   5' parent  ...CGCTTCCCGCTCAAGCGACAG | GTGTCCCTGGAGTCCAACGCG...   (FGFR3 continues)
-  3' parent  ...TTGGGAGCACTGGACATTCCT | GTGCCAGGCCCACCCCCAGGT...   (TACC3 continues)
-  fusion     ...CGCTTCCCGCTCAAGCGACAG | GTGCCAGGCCCACCCCCAGGT...
+  3' parent  ...CGTGGCCACCGAGACCAGCAG | CATGCACGGTGCAAATGAGAC...   (TACC3 continues)
+  fusion     ...CGCTTCCCGCTCAAGCGACAG | CATGCACGGTGCAAATGAGAC...
                                      ^ junction
-  protein   fusion length 648 aa, junction at aa 423
-  junction  KISRFPLKRQVPGPPPGVPAP
+  protein   fusion length 427 aa, junction at aa 423
+  junction  KISRFPLKRQHARCK
                       ^
-  peptide   QVPGPPPGV HLA-A*26:01 rank 0.883
+  peptide   FPLKRQHAR HLA-B*35:08 rank 1.568
   VAF       0.35
   clone     T (T_het)
 
-## IGI-SYN-SEQ-01-FUS-0005  NAB2-STAT6 in_frame
+## IGI-SYN-SEQ-01-FUS-0006  NAB2-STAT6 in_frame
   fusion    NAB2(ex1-4) :: STAT6(ex12-end)  INV  in-frame
-  DNA       chr12:57093036(+) -> chr12:57102644(-)
+  DNA       chr12:57093005(+) -> chr12:57102530(-)
   5' parent  ...CTGAAGAAGCTGAAACAAGAG | GTTGGAGAACAGAGTCACCCT...   (NAB2 continues)
   3' parent  ...GACAATGCCTTCTCTGAGATG | GACCGCGTGCCCTTTGTGGTG...   (STAT6 continues)
   fusion     ...CTGAAGAAGCTGAAACAAGAG | GACCGCGTGCCCTTTGTGGTG...
@@ -70,9 +84,23 @@
   VAF       0.35
   clone     T (T_het)
 
-## IGI-SYN-SEQ-01-FUS-0006  MYB-NFIB in_frame
+## IGI-SYN-SEQ-01-FUS-0007  SEC16A-NOTCH1 in_frame
+  fusion    SEC16A(ex1-15) :: NOTCH1(ex19-end)  DUP  in-frame
+  DNA       chr9:136459118(-) -> chr9:136509105(-)
+  5' parent  ...TGCCCCCTGCCTAGTTTCCAG | GTGTTTAAGTTCATCTACTCC...   (SEC16A continues)
+  3' parent  ...CACGCCTGACTGCACAGAGAG | CTCCTGCTTCAACGGTGGCAC...   (NOTCH1 continues)
+  fusion     ...TGCCCCCTGCCTAGTTTCCAG | CTCCTGCTTCAACGGTGGCAC...
+                                     ^ junction
+  protein   fusion length 1836 aa, junction at aa 1804
+  junction  AETCPLPSFQLLLQRWHLRGR
+                      ^
+  peptide   CPLPSFQLL HLA-B*35:08 rank 0.649
+  VAF       0.14
+  clone     A (A)
+
+## IGI-SYN-SEQ-01-FUS-0008  MYB-NFIB in_frame
   fusion    MYB(ex1-8) :: NFIB(ex7-end)  TRA  in-frame
-  DNA       chr6:135195487(+) -> chr9:14135107(-)
+  DNA       chr6:135194768(+) -> chr9:14138226(-)
   5' parent  ...AAAGGACAGCAGGTGCTACCA | ACACAGAACCACACATGCAGC...   (MYB continues)
   3' parent  ...CATGGCACGAAAGAGATCAAG | ATATGTCTTCTCCGACTACTA...   (NFIB continues)
   fusion     ...AAAGGACAGCAGGTGCTACCA | ATATGTCTTCTCCGACTACTA...
@@ -81,187 +109,145 @@
   junction  NELKGQQVLPICLLRLL
                       ^
   peptide   QQVLPICLL HLA-B*38:01 rank 0.853
-  VAF       0.35
-  clone     T (T_het)
-
-## IGI-SYN-SEQ-01-FUS-0007  FGFR2-BICC1 in_frame
-  fusion    FGFR2(ex1-8) :: BICC1(ex13-end)  INV  in-frame
-  DNA       chr10:121513998(-) -> chr10:58799546(+)
-  5' parent  ...CCCCTGCGGAGACAGGTAACA | GTTTCGGCTGAGTCCAGCTCC...   (FGFR2 continues)
-  3' parent  ...GCTTTAAATGGACATGCACAG | TCTCCAGATATAAAATATGGT...   (BICC1 continues)
-  fusion     ...CCCCTGCGGAGACAGGTAACA | TCTCCAGATATAAAATATGGT...
-                                     ^ junction
-  protein   fusion length 828 aa, junction at aa 430
-  junction  KRIPLRRQVTSPDIKYGAIST
-                      ^
-  peptide   QVTSPDIKY HLA-A*26:01 rank 0.099
-  VAF       0.0875
-  clone     B (B)
-
-## IGI-SYN-SEQ-01-FUS-0008  ETV6-NTRK3 in_frame
-  fusion    ETV6(ex1-6) :: NTRK3(ex9-end)  TRA  in-frame
-  DNA       chr12:11885554(+) -> chr15:88129983(-)
-  5' parent  ...CGACTGTGGGGAAACCATAAG | AACAGAACAAACATGACCTAT...   (ETV6 continues)
-  3' parent  ...TCCTCAAGGAGCCCTTTCCAG | AGAGCACGGATAACTTTATCT...   (NTRK3 continues)
-  fusion     ...CGACTGTGGGGAAACCATAAG | AGAGCACGGATAACTTTATCT...
-                                     ^ junction
-  protein   fusion length 395 aa, junction at aa 385
-  junction  GLARLWGNHKRARITLSCLTK
-                      ^
-  peptide   NHKRARITL HLA-B*38:01 rank 0.157
   VAF       0.14
   clone     A (A)
 
 ## IGI-SYN-SEQ-01-FUS-0009  MAGI3-AKT3 in_frame
-  fusion    MAGI3(ex1-11) :: AKT3(ex8-end)  INV  in-frame
-  DNA       chr1:113645793(+) -> chr1:243591059(-)
+  fusion    MAGI3(ex1-11) :: AKT3(ex6-end)  INV  in-frame
+  DNA       chr1:113646422(+) -> chr1:243624885(-)
   5' parent  ...CCAACCAAAACTGCCAAAATG | AAAACAGATAAAAAGGAAAAT...   (MAGI3 continues)
-  3' parent  ...GAATATGTTAATGGGGGCGAG | CTGTTTTTCCATTTGTCGAGA...   (AKT3 continues)
-  fusion     ...CCAACCAAAACTGCCAAAATG | CTGTTTTTCCATTTGTCGAGA...
+  3' parent  ...AAAGAAGTCATTATTGCAAAG | GATGAAGTGGCACACACTCTA...   (AKT3 continues)
+  fusion     ...CCAACCAAAACTGCCAAAATG | GATGAAGTGGCACACACTCTA...
                                      ^ junction
-  protein   fusion length 913 aa, junction at aa 667
-  junction  PPSPTKTAKMLFFHLSRERVF
+  protein   fusion length 958 aa, junction at aa 667
+  junction  PPSPTKTAKMDEVAHTLTESR
                       ^
-  peptide   SPTKTAKMLF HLA-B*35:08 rank 0.923
+  peptide   KMDEVAHTL HLA-C*04:01 rank 0.015
   VAF       0.0875
   clone     B (B)
 
-## IGI-SYN-SEQ-01-FUS-0010  TMPRSS2-ERG out_of_frame
-  fusion    TMPRSS2(ex1-7) :: ERG(ex6-end)  DEL  out-of-frame
-  DNA       chr21:41476528(-) -> chr21:38402174(-)
-  5' parent  ...TGGTTTCTTTACGCTGTATAG | CCTGCGGGGTCAACTTGAACT...   (TMPRSS2 continues)
-  3' parent  ...TAATGCATGCTAGAAACACAG | GGGGTGCAGCTTTTATTTTCC...   (ERG continues)
-  fusion     ...TGGTTTCTTTACGCTGTATAG | GGGGTGCAGCTTTTATTTTCC...
+## IGI-SYN-SEQ-01-FUS-0010  BCR-ABL1 out_of_frame
+  fusion    BCR(ex1-13) :: ABL1(ex6-end)  TRA  out-of-frame
+  DNA       chr22:23289908(+) -> chr9:130872668(+)
+  5' parent  ...CGCTGACCATCAATAAGGAAG | ATGATGAGTCTCCGGGGCTCT...   (BCR continues)
+  3' parent  ...CTAACCTGGTGCAGCTCCTTG | GGGTCTGCACCCGGGAGCCCC...   (ABL1 continues)
+  fusion     ...CGCTGACCATCAATAAGGAAG | GGGTCTGCACCCGGGAGCCCC...
                                      ^ junction
-  protein   fusion length 497 aa, junction at aa 243
-  junction  SKAVVSLRCIGGAAFIFPNTS
+  protein   fusion length 1730 aa, junction at aa 903
+  junction  HSIPLTINKEGVCTREPPFYI
                       ^
-  peptide   LRCIGGAAF HLA-B*38:01 rank 1.991
+  peptide   EGVCTREPPFY HLA-A*01:01 rank 3.911
+  VAF       0.042
+  clone     A1 (A1)
+
+## IGI-SYN-SEQ-01-FUS-0011  PAX3-FOXO1 out_of_frame
+  fusion    PAX3(ex1-8) :: FOXO1(ex2-end)  TRA  out-of-frame
+  DNA       chr2:222201936(-) -> chr13:40560904(-)
+  5' parent  ...AATATGGGCAGTATGGACAAA | GTGCCTTTCATTATCTCAAGC...   (PAX3 continues)
+  3' parent  ...AACAGCTCGGCGGGCTGGAAG | AATTCAATTCGTCATAATCTG...   (FOXO1 continues)
+  fusion     ...AATATGGGCAGTATGGACAAA | AATTCAATTCGTCATAATCTG...
+                                     ^ junction
+  protein   fusion length 478 aa, junction at aa 474
+  junction  TGYQYGQYGQKFNSS
+                      ^
+  peptide   YQYGQYGQKF HLA-B*38:01 rank 1.046
+  VAF       0.042
+  clone     A1 (A1)
+
+## IGI-SYN-SEQ-01-FUS-0012  FGFR2-BICC1 out_of_frame
+  fusion    FGFR2(ex1-9) :: BICC1(ex12-end)  INV  out-of-frame
+  DNA       chr10:121503776(-) -> chr10:58799038(+)
+  5' parent  ...ATGGGAGTTTCCAAGAGATAA | GCTGACACTGGGCAAGCCCCT...   (FGFR2 continues)
+  3' parent  ...CTAATACTTCAAGTGCCACAG | GTTTTTCTGCTATACCACACC...   (BICC1 continues)
+  fusion     ...ATGGGAGTTTCCAAGAGATAA | GTTTTTCTGCTATACCACACC...
+                                     ^ junction
+  protein   fusion length 498 aa, junction at aa 480
+  junction  EDPKWEFPRDKFFCYTTPYDS
+                      ^
+  peptide   FPRDKFFCY HLA-B*35:08 rank 0.081
+  VAF       0.042
+  clone     A1 (A1)
+
+## IGI-SYN-SEQ-01-FUS-0013  EML4-ALK out_of_frame
+  fusion    EML4(ex1-13) :: ALK(ex14-end)  INV  out-of-frame
+  DNA       chr2:42296396(+) -> chr2:29234006(-)
+  5' parent  ...CACCTGGGAAAGGACCTAAAG | GTGTATATCAAATCAGCAAAC...   (EML4 continues)
+  3' parent  ...GGAGAGGACGCCTGCCCCAGT | ACAAACCAGTTAATCCAGAAA...   (ALK continues)
+  fusion     ...CACCTGGGAAAGGACCTAAAG | ACAAACCAGTTAATCCAGAAA...
+                                     ^ junction
+  protein   fusion length 523 aa, junction at aa 497
+  junction  VEPTPGKGPKDKPVNPESLHW
+                      ^
+  peptide   DKPVNPESL HLA-B*38:01 rank 1.143
   VAF       0.0875
   clone     B (B)
 
-## IGI-SYN-SEQ-01-FUS-0011  KIF5B-RET out_of_frame
-  fusion    KIF5B(ex1-11) :: RET(ex12-end)  INV  out-of-frame
-  DNA       chr10:32034655(-) -> chr10:43116132(+)
-  5' parent  ...AGCTCAACAGATGGCGTAATG | GGGAGACGGTGCCTATTGATG...   (KIF5B continues)
-  3' parent  ...GTGGATGCCTTCAAGATCCTG | GAGGATCCAAAGTGGGAATTC...   (RET continues)
-  fusion     ...AGCTCAACAGATGGCGTAATG | GAGGATCCAAAGTGGGAATTC...
+## IGI-SYN-SEQ-01-FUS-0014  CTBS-GNG5 readthrough
+  fusion    CTBS(ex1-3) :: GNG5(ex2-end)  none  in-frame
+  DNA       none (read-through transcript; tumor-associated)
+  5' parent  ...CGTGAAATTGAGGGATCACAG | GTAACCTTTGATGTAGCTTGG...   (CTBS continues)
+  3' parent  ...GCCGGACTCAACCGCGTAAAA | GTTTCCCAGGCAGCTGCAGAC...   (GNG5 continues)
+  fusion     ...CGTGAAATTGAGGGATCACAG | GTTTCCCAGGCAGCTGCAGAC...
                                      ^ junction
-  protein   fusion length 425 aa, junction at aa 371
-  junction  LENELNRWRNGGSKVGIPSEE
+  protein   fusion length 216 aa, junction at aa 176
+  junction  SFHREIEGSQVSQAAADLKQF
                       ^
-  peptide   RWRNGGSKV HLA-C*04:01 rank 3.379
-  VAF       0.0875
-  clone     B (B)
-
-## IGI-SYN-SEQ-01-FUS-0012  EWSR1-FLI1 out_of_frame
-  fusion    EWSR1(ex1-7) :: FLI1(ex5-end)  TRA  out-of-frame
-  DNA       chr22:29287759(+) -> chr11:128778978(+)
-  5' parent  ...GCAGCAGCTACGGGCAGCAGA | GTTCATTCCGACAGGACCACC...   (EWSR1 continues)
-  3' parent  ...ACCTCAGTTACCTCAGGGAAA | GTTCACTGCTGGCCTATAATA...   (FLI1 continues)
-  fusion     ...GCAGCAGCTACGGGCAGCAGA | GTTCACTGCTGGCCTATAATA...
-                                     ^ junction
-  protein   fusion length 520 aa, junction at aa 265
-  junction  SQQSSSYGQQSSLLAYNTTSH
-                      ^
-  peptide   SSYGQQSSL HLA-C*12:03 rank 0.051
-  VAF       0.0875
-  clone     B (B)
-
-## IGI-SYN-SEQ-01-FUS-0013  CD74-ROS1 out_of_frame
-  fusion    CD74(ex1-6) :: ROS1(ex22-end)  TRA  out-of-frame
-  DNA       chr5:150403594(-) -> chr6:117364551(-)
-  5' parent  ...CCACTGACGCTCCACCGAAAG | TACTGACCAAGTGCCAGGAAG...   (CD74 continues)
-  3' parent  ...CACTTCGAGCACCTGAAACAG | TTCCATCAGCACCAGAGAACC...   (ROS1 continues)
-  fusion     ...CCACTGACGCTCCACCGAAAG | TTCCATCAGCACCAGAGAACC...
-                                     ^ junction
-  protein   fusion length 1515 aa, junction at aa 209
-  junction  EQKPTDAPPKVPSAPENPRIF
-                      ^
-  peptide   DAPPKVPSA HLA-C*12:03 rank 1.455
-  VAF       0.2154
+  peptide   SQVSQAAADL HLA-B*38:01 rank 5.157
+  VAF       n/a (no DNA breakpoint)
   clone     A (A)
 
-## IGI-SYN-SEQ-01-FUS-0014  TSNAX-DISC1 readthrough
-  fusion    TSNAX(ex1-5) :: DISC1(ex7-end)  none  in-frame
+## IGI-SYN-SEQ-01-FUS-0015  TSNAX-DISC1 readthrough
+  fusion    TSNAX(ex1-5) :: DISC1(ex6-end)  none  in-frame
   DNA       none (read-through transcript; tumor-associated)
   5' parent  ...AATGGGAAAGAAAATAAAACT | CCCTCCTCTGATGCACAGGAT...   (TSNAX continues)
-  3' parent  ...GCCACCGGAAACCATAAGGAG | CCTCCAGGAAAGAATAAAATC...   (DISC1 continues)
-  fusion     ...AATGGGAAAGAAAATAAAACT | CCTCCAGGAAAGAATAAAATC...
+  3' parent  ...CAGGAAAAGCAGCAGCTACAG | AAAGAAATCGAAGCTCTCCAA...   (DISC1 continues)
+  fusion     ...AATGGGAAAGAAAATAAAACT | AAAGAAATCGAAGCTCTCCAA...
                                      ^ junction
-  protein   fusion length 177 aa, junction at aa 166
-  junction  TEDNGKENKTPPGKNKIPQLV
+  protein   fusion length 553 aa, junction at aa 166
+  junction  TEDNGKENKTKEIEALQARMF
                       ^
-  peptide   KTPPGKNKI HLA-C*12:03 rank 1.302
+  peptide   NKTKEIEAL HLA-B*38:01 rank 0.376
   VAF       n/a (no DNA breakpoint)
+  clone     A1 (A1)
+
+## IGI-SYN-SEQ-01-FUS-0016  UBL4A-NDUFA3 in_frame_novel
+  fusion    UBL4A(ex1-3) :: NDUFA3(ex3-end)  TRA  in-frame
+  DNA       chrX:154485751(-) -> chr19:54105921(+)
+  5' parent  ...GTCCTGGAACAGCTACAGAGG | GATTACGAGAGGTCCCTGAGT...   (UBL4A continues)
+  3' parent  ...CCTTCGTCGTCGGGGGCCTCG | CTGTAATTCTGCCCCCATTGA...   (NDUFA3 continues)
+  fusion     ...GTCCTGGAACAGCTACAGAGG | CTGTAATTCTGCCCCCATTGA...
+                                     ^ junction
+  protein   fusion length 122 aa, junction at aa 122
+  junction  ASRVLEQLQRL
+                      ^
+  peptide   RVLEQLQRL HLA-C*12:03 rank 0.908
+  VAF       0.35
   clone     T (T_het)
 
-## IGI-SYN-SEQ-01-FUS-0015  SLC45A3-ELK4 readthrough
-  fusion    SLC45A3(ex1-3) :: ELK4(ex3-end)  none  in-frame
-  DNA       none (read-through transcript; tumor-associated)
-  5' parent  ...CTCTACCACCGGGAGAAGCAG | GTGTTCCTGCCCAAATACCGA...   (SLC45A3 continues)
-  3' parent  ...ACACCAGCATTTTTTTCACAG | ACACCCATCATACTGACTCCA...   (ELK4 continues)
-  fusion     ...CTCTACCACCGGGAGAAGCAG | ACACCCATCATACTGACTCCA...
+## IGI-SYN-SEQ-01-FUS-0017  IFT122-BCS1L in_frame_novel
+  fusion    IFT122(ex1-14) :: BCS1L(ex5-end)  TRA  in-frame
+  DNA       chr3:129481716(+) -> chr2:218662484(+)
+  5' parent  ...ACCAAGGAGCTGCTTTTTCAG | GAACCAAACGCCAACAGTGTA...   (IFT122 continues)
+  3' parent  ...TTGCGGAAAGAGCAGTTTTAT | CACAGCCCTGGCTGGGGAACT...   (BCS1L continues)
+  fusion     ...ACCAAGGAGCTGCTTTTTCAG | CACAGCCCTGGCTGGGGAACT...
                                      ^ junction
-  protein   fusion length 479 aa, junction at aa 409
-  junction  LASLYHREKQTPIILTPSPLL
+  protein   fusion length 573 aa, junction at aa 552
+  junction  DIDTKELLFQHSPGWGTGAQH
                       ^
-  peptide   YHREKQTPI HLA-B*38:01 rank 0.405
-  VAF       n/a (no DNA breakpoint)
-  clone     A1 (A1)
-
-## IGI-SYN-SEQ-01-FUS-0016  CHMP4C-GALNT1 in_frame_novel
-  fusion    CHMP4C(ex1-3) :: GALNT1(ex8-end)  TRA  in-frame
-  DNA       chr8:81756169(+) -> chr18:35691432(+)
-  5' parent  ...TTTGGTGATGACTTTGATGAG | GATGAGTTGATGGCAGAACTT...   (CHMP4C continues)
-  3' parent  ...TCTTCTATATAATTTCTCCAG | GTGTTACAAAGGTAGATTATG...   (GALNT1 continues)
-  fusion     ...TTTGGTGATGACTTTGATGAG | GTGTTACAAAGGTAGATTATG...
-                                     ^ junction
-  protein   fusion length 165 aa, junction at aa 162
-  junction  RVGFGDDFDEVLQR
-                      ^
-  peptide   FGDDFDEVL HLA-C*04:01 rank 0.197
-  VAF       0.042
-  clone     A1 (A1)
-
-## IGI-SYN-SEQ-01-FUS-0017  SGK3-NARS2 in_frame_novel
-  fusion    SGK3(ex1-8) :: NARS2(ex8-end)  TRA  in-frame
-  DNA       chr8:66835871(+) -> chr11:78488789(-)
-  5' parent  ...ATAGTTCTCAACAGAAAAGAG | CAAAAACATATTATGGCTGAA...   (SGK3 continues)
-  3' parent  ...AGCCTTCAAGATCTTATGCAG | GTTATAGAGGAACTGTTCAAG...   (NARS2 continues)
-  fusion     ...ATAGTTCTCAACAGAAAAGAG | GTTATAGAGGAACTGTTCAAG...
-                                     ^ junction
-  protein   fusion length 406 aa, junction at aa 204
-  junction  QKKIVLNRKEVIEELFKATTM
-                      ^
-  peptide   NRKEVIEEL HLA-B*38:01 rank 0.168
-  VAF       0.042
-  clone     A1 (A1)
-
-## IGI-SYN-SEQ-01-FUS-0018  LTO1-ICAM3 in_frame_novel
-  fusion    LTO1(ex1-4) :: ICAM3(ex7-end)  TRA  in-frame
-  DNA       chr11:69667621(-) -> chr19:10334103(-)
-  5' parent  ...ATCAGAGGAAAATTTAAACAG | TTTTGTTCGTTACTCAATGTT...   (LTO1 continues)
-  3' parent  ...TCGTGGTGATGGACATTGAGG | CTGGGAGCTCCCACTTTGTCC...   (ICAM3 continues)
-  fusion     ...ATCAGAGGAAAATTTAAACAG | CTGGGAGCTCCCACTTTGTCC...
-                                     ^ junction
-  protein   fusion length 129 aa, junction at aa 116
-  junction  LDKIRGKFKQLGAPTLSPSSW
-                      ^
-  peptide   FKQLGAPTL HLA-B*38:01 rank 0.297
+  peptide   DTKELLFQH HLA-A*26:01 rank 0.321
   VAF       0.0875
   clone     B (B)
 
-## IGI-SYN-SEQ-01-FUS-0019  IQGAP3-NEIL2 in_frame_novel
-  fusion    IQGAP3(ex1-18) :: NEIL2(ex3-end)  TRA  in-frame
-  DNA       chr1:156548272(-) -> chr8:11781157(+)
-  5' parent  ...CTGACCCGGGAGGAGATCCAG | TCAGCTGTCACCAAGGTCACT...   (IQGAP3 continues)
-  3' parent  ...CTGGAGGGACCCTTCCCCGAG | GTTGGTCCTGCACTTTGGTGG...   (NEIL2 continues)
-  fusion     ...CTGACCCGGGAGGAGATCCAG | GTTGGTCCTGCACTTTGGTGG...
+## IGI-SYN-SEQ-01-FUS-0018  NUP155-CHI3L2 in_frame_novel
+  fusion    NUP155(ex1-19) :: CHI3L2(ex6-end)  TRA  in-frame
+  DNA       chr5:37324990(-) -> chr1:111235239(+)
+  5' parent  ...GGCAACAGAGAGATCACTGCA | ATTGAAAGTAGTGTTCCCTGC...   (NUP155 continues)
+  3' parent  ...CATTTCACTGTGCTGATTCAT | GAGTTAGCAGAAGCCTTTCAG...   (CHI3L2 continues)
+  fusion     ...GGCAACAGAGAGATCACTGCA | GAGTTAGCAGAAGCCTTTCAG...
                                      ^ junction
-  protein   fusion length 725 aa, junction at aa 712
-  junction  TSHLTREEIQVGPALWWWWLP
+  protein   fusion length 927 aa, junction at aa 698
+  junction  FKSGNREITAELAEAFQKDFT
                       ^
-  peptide   SHLTREEIQV HLA-B*38:01 rank 0.706
-  VAF       0.0311
-  clone     A1 (A1)
+  peptide   EITAELAEAF HLA-A*26:01 rank 0.201
+  VAF       0.14
+  clone     A (A)

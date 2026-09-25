@@ -22,6 +22,9 @@ chromosome-arm BED; the expression baseline shipped in `resources/`.
 | `<ds>.snv_indel.summary.json` | counts by class, tier and context; grid fill; chr1to6 fraction |
 | `<ds>.fusions.tsv` | one row per designed fusion: partners and transcripts, exon junction, genomic breakpoints, DNA mechanism, frame, fusion protein length, junction window, clone and expected DNA VAF, expression and binding tiers, WES visibility |
 | `<ds>.fusions.diffcards.txt` | one card per fusion: the junction shown against both parent transcripts |
+| `<ds>.svs.tsv` | structural variants: type, span, size, haplotype and clone, expected DNA VAF, affected exons and computed coding effect, capture visibility |
+| `<ds>.viruses.tsv` | viral integrations and episomes: accession, host junction, copies per cell, expression, trace copies in the normal |
+| `<ds>.expressed.tsv` | CTAs, ERVs and splice variants: target expression, normal-panel expression, tumour-specific versus tumour-associated status, causal splice variant where there is one, and peptide with allele and %rank |
 
 ## Validation
 

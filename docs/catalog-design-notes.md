@@ -155,7 +155,39 @@ positions in the representative transcript and placed truncally with pre-CNA tim
 
 _Filled in from `catalog/output/*.summary.json` when the full runs complete._
 
-## 6. Gene fusions
+## 6. Structural variants, viruses, CTAs, ERVs and splice variants
+
+**Structural variants.** DEL, DUP, INV, TRA and mobile-element insertions across five log-spaced size
+classes from 50 bp to 5 Mb. Half are placed deliberately inside coding sequence: an exon span is chosen,
+the breakpoints are widened into the flanking introns, and the consequence is computed from how much CDS
+the event removes or duplicates, giving whole-gene loss, in-frame or out-of-frame exon loss, exon
+duplication and exon inversion. Each record carries the affected exons, the coding bases involved, and
+whether either breakpoint falls in a capture region.
+
+**Viruses.** Integrations carry a host junction, a haplotype and an expected DNA VAF, so they appear in
+WGS and, when the site is captured, in WES. Episomes carry copy number and no junction. The trace EBV in
+the normal sample is kept as a realistic negative that a caller should not report as tumour-specific.
+
+**CTAs.** Drawn from the LENS cancer-testis gene list, spread across the five expression tiers, with some
+restricted to a single clone so single-cell data can separate them. Each carries the normal-tissue 95th
+percentile TPM from the pan-normal reference, so tumour restriction is checkable rather than assumed.
+
+**ERVs.** Split into tumour-specific (absent from the normal panel), tumour-associated (low in normals and
+raised in the tumour) and unexpressed negatives. Loci come from the curated ERV set and the full Hsap38
+set. Where a locus has no annotated protein, the longest methionine-started ORF over the three forward
+frames of the locus sequence is derived and scored, since an ERV with no peptide cannot be benchmarked as
+an antigen.
+
+**Splice variants.** Half are tumour-specific, each caused by a designed somatic base change at a
+canonical donor or acceptor dinucleotide, recorded so the genomic cause and the RNA consequence can be
+checked together; half are tumour-associated isoform switches with no genomic cause. Five mechanisms are
+used: exon skip, intron retention, cryptic donor, cryptic acceptor and novel exon. An event is only placed
+on an exon where its mechanism is realizable, because short exons and short introns make some mechanisms
+impossible: three of the five fail outright on TP53, whose exon 3 is 22 bp. The novel isoform is
+translated and compared against the reference protein, and peptides spanning the changed residues are
+scored.
+
+## 7. Gene fusions
 
 Partners come from a list of cancer-relevant pairs, a list of adjacent same-strand pairs used for
 read-through transcripts, and novel pairs drawn from expressed genes. For a chosen pair the designer
@@ -169,7 +201,7 @@ breakpoint at all and no DNA VAF: they are the tumor-associated control that mus
 only. Junction neopeptides are the 9-mers spanning the junction codon after removing any peptide that
 occurs in either parent protein.
 
-## 7. Performance notes
+## 8. Performance notes
 
 The netMHCpan build available here scores about 40 peptide-allele pairs per second in one process and
 forks a separate process per allele and per length, so scoring whole peptide windows serially would have
@@ -182,7 +214,7 @@ taken days per dataset. Three changes make the full 8-11mer range affordable:
 
 Throughput scales with the cores available to the job, so the design run is given a 24-core allocation.
 
-## 8. Known limitations
+## 9. Known limitations
 
 - Binding is class I only and netMHCpan only. The mhcflurry models bundled with LENS are an older layout
   that the 2.1.1 image does not load, so the planned second opinion is not yet wired in.
@@ -192,13 +224,13 @@ Throughput scales with the cores available to the job, so the design run is give
 - Some grid cells are structurally hard to fill: amplified regions contain only a few dozen genes, so
   `T_amp` combined with a rare expression tier has few candidates. The summary reports the fill rate per
   run rather than forcing these cells.
-- Classes still to be designed: structural variants beyond fusion-implied breakpoints, CTAs, ERVs, splice
-  variants, viral integrations, and the negative-control set.
+- The negative-control set (germline look-alikes, RNA-editing sites, pseudogene mismatches) is the one
+  designed class still outstanding.
 - Binding is scored for the whole candidate pool (about 12,000 missense candidates) although only some
   600 are placed, because a candidate's tier has to be known before it can be assigned to a grid cell.
   Scoring in waves until each cell fills would cut this several-fold and is the obvious next optimization.
 
-## 9. Wild-type counterparts
+## 10. Wild-type counterparts
 
 For every event whose best mutant peptide keeps the wild-type reading frame (substitutions, start and
 stop loss), the same window in the wild-type protein is scored against the same allele and recorded as
