@@ -11,8 +11,10 @@ Tumour-specific versus tumour-associated is the distinction that matters for ERV
 import csv
 import gzip
 
+from .annotation import translate
 from .binding import NetMHCpan, spanning_peptides
 from .expression import Expression
+from .genome import revcomp
 
 CHR1TO6 = {f"chr{i}" for i in range(1, 7)}
 SPLICE_MECHANISMS = ["exon_skip", "intron_retention", "cryptic_5p", "cryptic_3p", "novel_exon"]
@@ -71,6 +73,18 @@ class ExpressedClassDesigner:
         if not best:
             return None, None, None, "na", 0
         return round(best[0], 3), best[1], best[3], NetMHCpan.tier(best[0]), n_lt2
+
+    @staticmethod
+    def longest_orf(seq, min_aa=8):
+        """Longest methionine-started ORF over the three forward frames of `seq`."""
+        best = ""
+        for frame in range(3):
+            prot = translate(seq[frame:])
+            for piece in prot.split("*"):
+                i = piece.find("M")
+                if i >= 0 and len(piece) - i > len(best):
+                    best = piece[i:]
+        return best if len(best) >= min_aa else ""
 
     def _clone_fields(self, clone, chrom, pos):
         cm = self.env.clones
@@ -148,6 +162,13 @@ class ExpressedClassDesigner:
                 status, normal_tpm = "unexpressed_negative", round(self.rng.uniform(0.0, 0.5), 2)
             rank = allele = pep = None
             tier, n_lt2 = "na", 0
+            orf_source = "annotated"
+            if not prot or len(prot) < 9:
+                seq = self.env.genome.seq(chrom, start - 1, end)
+                if row.get("strand") == "-":
+                    seq = revcomp(seq)
+                prot = self.longest_orf(seq)
+                orf_source = "derived_longest_orf" if prot else "none"
             if prot and len(prot) >= 9:
                 rank, allele, pep, tier, n_lt2 = self._score_window(prot, len(prot) // 2, 1)
             clone = "T" if made % 4 else self.rng.choice(clones)
@@ -156,7 +177,8 @@ class ExpressedClassDesigner:
                 "subclass": status, "locus_id": row.get("ID", ""), "chrom": chrom,
                 "start": start, "end": end, "strand": row.get("strand", "+"),
                 "repeat_family": row.get("Repbase", ""), "orf_aa_length": row.get("AA_length", ""),
-                "has_annotated_orf": bool(prot),
+                "has_annotated_orf": orf_source == "annotated", "orf_source": orf_source,
+                "orf_aa": len(prot) if prot else 0,
                 "normal_panel_tpm": normal_tpm,
                 "target_tumor_tpm": 0.0 if status == "unexpressed_negative" else round(self.rng.uniform(5, 120), 2),
                 "best_rank_el": rank, "best_allele": allele, "best_peptide": pep,
@@ -170,6 +192,28 @@ class ExpressedClassDesigner:
         return made
 
     # ------------------------------------------------------------------ splice
+    def _splice_peptides(self, t, exons):
+        """Protein of a novel isoform and the residue where it first differs from the reference.
+
+        The isoform is translated from its longest ORF, which is what a caller working from assembled
+        RNA would see; the comparison point is the first residue that differs from the reference protein.
+        """
+        from .annotation import CodingModel
+        from .transcriptome import exon_sequence
+        stub = type(t)(tid=t.tid + ".iso", gene_id=t.gene_id, gene_name=t.gene_name, gene_type=t.gene_type,
+                       chrom=t.chrom, strand=t.strand, start=min(s for s, _ in exons),
+                       end=max(e for _, e in exons), exons=exons, cds=[], tags=[], level=t.level)
+        iso = self.longest_orf(exon_sequence(self.env.genome, stub))
+        if not iso:
+            return None, None
+        ref = CodingModel(t, self.env.genome).protein
+        k = 0
+        while k < min(len(iso), len(ref)) and iso[k] == ref[k]:
+            k += 1
+        if k >= len(iso):
+            return iso, None
+        return iso, k
+
     def design_splice(self, n, clones, snv_designer, log=print):
         """Half the events are caused by a designed somatic splice-site variant (tumour-specific);
         half are isoform switches with no genomic cause (tumour-associated)."""
@@ -182,8 +226,15 @@ class ExpressedClassDesigner:
                 break
             specific = made < n_specific
             mech = SPLICE_MECHANISMS[made % len(SPLICE_MECHANISMS)]
+            from .transcriptome import skip_exon, retain_intron, cryptic_site, novel_exon
+            feasible = {"exon_skip": lambda i: skip_exon(t, i), "intron_retention": lambda i: retain_intron(t, i),
+                        "cryptic_5p": lambda i: cryptic_site(t, i, "5p"), "cryptic_3p": lambda i: cryptic_site(t, i, "3p"),
+                        "novel_exon": lambda i: novel_exon(t, i)}[mech]
             segs = t.cds if t.strand == "+" else t.cds[::-1]
-            i = self.rng.randrange(1, len(segs) - 1)
+            cand = [j for j in range(1, len(segs) - 1) if feasible(j + 1)]
+            if not cand:
+                continue
+            i = self.rng.choice(cand)
             exon_s, exon_e = segs[i]
             clone = "T" if made % 3 else self.rng.choice(clones)
             causal = None
@@ -196,6 +247,12 @@ class ExpressedClassDesigner:
                     continue
                 alt = "A" if ref[0] != "A" else "C"
                 causal = {"chrom": t.chrom, "pos": site, "ref": ref[0], "alt": alt}
+            iso_prot, first_diff = self._splice_peptides(t, feasible(i + 1) or [])
+            rank = allele = pep = None
+            tier, n_lt2 = "na", 0
+            if iso_prot and first_diff is not None:
+                n_new = max(1, len(iso_prot) - first_diff)
+                rank, allele, pep, tier, n_lt2 = self._score_window(iso_prot, first_diff, min(n_new, 25))
             ev = {
                 "event_id": self.next_id("SPL"), "dataset": self.ds, "class": "splice",
                 "subclass": "tumor_specific" if specific else "tumor_associated",
@@ -206,6 +263,10 @@ class ExpressedClassDesigner:
                 "target_tumor_junction_tpm": round(self.rng.uniform(5, 80), 2),
                 "gene_tpm": round(self.env.expr.gene(t.gene_id), 3),
                 "expression_tier": Expression.tier(self.env.expr.gene(t.gene_id)),
+                "isoform_orf_aa": len(iso_prot) if iso_prot else 0,
+                "first_changed_aa": (first_diff + 1) if first_diff is not None else "",
+                "best_rank_el": rank, "best_allele": allele, "best_peptide": pep,
+                "binding_tier": tier, "n_peptides_rank_lt2": n_lt2,
                 "chr1to6": t.chrom in CHR1TO6,
             }
             ev.update(self._clone_fields(clone, t.chrom, exon_s))
