@@ -64,7 +64,7 @@ class FusionDesigner:
         return "DEL" if upstream_first else "DUP"
 
     # ---------------------------------------------------------------- event construction
-    def make(self, g5, g3, kind, clone, flagpost=False):
+    def make(self, g5, g3, kind, clone, flagpost=False, near_exon=False):
         t5, t3 = self.by_name.get(g5), self.by_name.get(g3)
         if t5 is None or t3 is None or not t5.cds or not t3.cds:
             return None
@@ -77,8 +77,8 @@ class FusionDesigner:
             mech, bp5, bp3 = "none", None, None
         else:
             mech = self.mechanism(t5, t3)
-            bp5 = fc.intron_breakpoint(t5, n5 - 1, "after", self.rng)
-            bp3 = fc.intron_breakpoint(t3, from3, "before", self.rng)
+            bp5 = fc.intron_breakpoint(t5, n5 - 1, "after", self.rng, near_exon=near_exon)
+            bp3 = fc.intron_breakpoint(t3, from3, "before", self.rng, near_exon=near_exon)
             if bp5 is None or bp3 is None:
                 return None
         cm = self.env.clones
@@ -119,14 +119,20 @@ class FusionDesigner:
             "best_allele": best[1] if best else None,
             "best_peptide": best[3] if best else None,
             "n_junction_neopeptides": len(neo),
-            "wes_visible": bool(bp5 and self.env.ctx.exome.any(bp5[0], bp5[1] - 1, bp5[1])) or
-                           bool(bp3 and self.env.ctx.exome.any(bp3[0], bp3[1] - 1, bp3[1])),
+            "wes_visible": self._captured(bp5) or self._captured(bp3),
             "flagpost": flagpost,
             "chr1to6": t5.chrom in CHR1TO6 and t3.chrom in CHR1TO6,
         }
         self._card(ev, f, t5, t3, n5, from3)
         self.events.append(ev)
         return ev
+
+    def _captured(self, bp, flank=50):
+        """Whether a breakpoint falls inside a capture region once the kit's flank is allowed for."""
+        if not bp:
+            return False
+        chrom, pos = bp
+        return self.env.ctx.exome.any(chrom, max(0, pos - 1 - flank), pos + flank)
 
     def _parent_peptides(self, t):
         from .annotation import CodingModel
@@ -175,7 +181,8 @@ class FusionDesigner:
         made = 0
         for (g5, g3), kind in plan:
             clone = "T" if made < max(1, n_total // 3) else self.rng.choice(clones)
-            ev = self.make(g5, g3, kind, clone, flagpost=(made < 4 and kind == "in_frame"))
+            ev = self.make(g5, g3, kind, clone, flagpost=(made < 4 and kind == "in_frame"),
+                           near_exon=(made % 5 < 2))
             if ev:
                 made += 1
             else:

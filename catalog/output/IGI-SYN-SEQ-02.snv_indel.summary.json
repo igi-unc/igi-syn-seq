@@ -1,0 +1,95 @@
+{
+  "dataset": "IGI-SYN-SEQ-02",
+  "n_events": 876,
+  "by_class": {
+    "snv": 626,
+    "indel": 250
+  },
+  "by_subclass": {
+    "hotspot": 12,
+    "grid_missense": 319,
+    "context_homopolymer": 25,
+    "context_segdup": 25,
+    "context_near_germline_het": 25,
+    "context_exon_edge": 25,
+    "context_deep_intronic": 25,
+    "phased_pair": 50,
+    "nonsense": 60,
+    "synonymous": 40,
+    "stop_loss": 20,
+    "frameshift_del": 80,
+    "frameshift_ins": 60,
+    "inframe_del": 40,
+    "inframe_ins": 30,
+    "homopolymer_indel": 40
+  },
+  "by_consequence": {
+    "missense": 481,
+    "intronic": 25,
+    "nonsense": 60,
+    "synonymous": 40,
+    "stop_loss": 20,
+    "frameshift": 160,
+    "inframe_deletion": 59,
+    "inframe_insertion": 31
+  },
+  "by_clonality_tier": {
+    "T_LOH": 75,
+    "T_het": 195,
+    "T_amp": 24,
+    "A": 187,
+    "B": 201,
+    "A1": 194
+  },
+  "by_expression_tier": {
+    "T10": 311,
+    "T100": 155,
+    "T1": 136,
+    "T0": 214,
+    "T1000": 60
+  },
+  "by_binding_tier": {
+    "strong": 213,
+    "weak": 197,
+    "non": 213,
+    "na": 253
+  },
+  "by_context": {
+    "clean": 576,
+    "segdup": 49,
+    "exon_edge": 118,
+    "homopolymer": 67,
+    "near_germline_het": 38,
+    "deep_intronic": 25,
+    "repeat_other": 3
+  },
+  "chr1to6_fraction": 0.628,
+  "flagposts": 12,
+  "grid_cells_filled": 80,
+  "grid_cells_total": 90,
+  "fusions": {
+    "n": 20,
+    "by_subclass": {
+      "in_frame": 10,
+      "out_of_frame": 4,
+      "readthrough": 2,
+      "in_frame_novel": 4
+    },
+    "by_mechanism": {
+      "DEL": 1,
+      "INV": 5,
+      "TRA": 9,
+      "DUP": 3,
+      "none": 2
+    },
+    "in_frame": 16,
+    "wes_visible": 0,
+    "by_binding_tier": {
+      "strong": 9,
+      "weak": 8,
+      "non": 3
+    }
+  },
+  "runtime_s": 2995,
+  "scale": 1.0
+}

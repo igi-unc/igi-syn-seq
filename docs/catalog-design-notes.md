@@ -17,7 +17,27 @@ parameters: `catalog/design.yaml`. Final tables: `catalog/output/`.
   clone and local copy number; gene expression; the best neopeptide and its %rank; the context stratum;
   and a haplotype-aware diff card, so a missed call can be traced to a specific axis.
 
-## 2. Inputs
+## 2. Data provenance and attribution
+
+Both germline baselines are public datasets, and the published tables therefore contain derived sequence
+from them: the diff cards and the `wt_hap_window` / `mut_hap_window` columns print each individual's
+reconstructed haplotypes over a 41 bp window per event (about 71 kb per dataset, disclosing roughly 30
+genotypes), which is what makes the `near_germline_het` stratum debuggable.
+
+| Baseline | Source | Terms |
+|---|---|---|
+| HG002 / NA24385 | GIAB Ashkenazi trio son; Q100 v1.1 GRCh38 benchmark. HLA types from Chin et al. 2020, Nat Commun 11:4794, Supplementary Table 4 | consented public reference material |
+| IPISRC044 | public tumor/normal dataset; germline called and phased here (see `baseline-references.md`) | public |
+
+The expression baseline is derived from TCGA-BRCA RNA-seq, an open-access tier, via the UCSC Xena Toil
+recompute. Cite: the TCGA Research Network (https://www.cancer.gov/tcga); Vivian et al. 2017, Nat
+Biotechnol 35:314 (Toil); Goldman et al. 2020, Nat Biotechnol 38:675 (Xena). `resources/` holds only
+per-transcript medians across 191 tumors plus the contributing sample barcodes, not per-sample values.
+
+netMHCpan 4.1 is not redistributed here; the code calls whatever binary the site configuration points at,
+under that user's own licence.
+
+## 3. Inputs
 
 | Input | Role |
 |---|---|
@@ -28,9 +48,9 @@ parameters: `catalog/design.yaml`. Final tables: `catalog/output/`.
 | capture BED, UCSC RepeatMasker, UCSC segmental duplications, cytoband arms | context strata; arm-level copy-number regions |
 | netMHCpan 4.1 | MHC-I binding of neopeptides against the patient's six class I alleles |
 
-## 3. Method
+## 4. Method
 
-### 3.1 Candidate generation
+### 4.1 Candidate generation
 Random CDS positions are drawn from representative transcripts on chr1-22/X, excluding driver genes,
 the chromothripsis arm and homozygous deletions. Each position is mutated in silico (all three
 substitutions; for indels a deletion of 1-30 bp or a random insertion of the same lengths) and the
@@ -39,7 +59,7 @@ frameshift, in-frame insertion/deletion. Frameshifts are translated into the 3' 
 complete. Extra candidates are drawn inside LOH and amplified regions so those clonality tiers can be
 filled.
 
-### 3.2 Binding tier
+### 4.2 Binding tier
 Every 8-11mer that spans a changed residue (the whole neo-ORF for a frameshift) is scored with
 netMHCpan 4.1 (`-BA`, eluted-ligand %rank) against the patient's six class I alleles. Peptides identical
 to a wild-type peptide are discarded. The best remaining %rank sets the tier: strong <= 0.5, weak <= 2,
@@ -52,19 +72,19 @@ could collapse the `non` tier, since more draws make a low rank more likely. Mea
 windows the spread stays usable: 52 % strong, 37 % weak, 12 % non, because overlapping peptides from one
 window are correlated rather than independent draws.
 
-### 3.3 Expression tier
+### 4.3 Expression tier
 Gene TPM is the sum of the baseline medians of the gene's transcripts (GENCODE v23 IDs mapped by
 version-less ENST). Tiers: T0 < 0.5, T1 < 3, T10 < 30, T100 < 300, T1000 >= 300 TPM. A per-event
 allelic-expression setting (balanced 0.5, silenced 0.1, dominant 0.9 mutant fraction) is drawn for
 expressed genes and applied at transcriptome construction.
 
-### 3.4 Context strata
+### 4.4 Context strata
 Priority order: `deep_intronic` (outside the capture BED), `segdup`, `homopolymer` (run >= 6 touching
 the site), `near_germline_het` (phased het within 30 bp), `exon_edge` (<= 10 bp from a CDS boundary),
 `repeat_other`, `clean`. Raw features are kept as `ctx_*` columns. Phased pairs are two missense SNVs
 <= 150 bp apart on the same haplotype in the same clone, cross-referenced by `paired_event`.
 
-### 3.5 Clone assignment and expected VAF
+### 4.5 Clone assignment and expected VAF
 Clones and CCFs come from `design.yaml`. The copy-number model keeps per-haplotype copy numbers per
 clone (arm-level and focal events, inherited by descendants; WGD datasets start at 2+2). For an event on
 haplotype h acquired in clone c:
@@ -76,7 +96,7 @@ haplotype (this also encodes pre-WGD timing); post-CNA and subclonal events carr
 is retained and 0 where it is lost. Clonality tiers: `T_LOH` (truncal, in a one-haplotype region),
 `T_amp` (truncal, haplotype copy number >= 4), `T_het`, and the subclone names.
 
-### 3.6 Diff cards
+### 4.6 Diff cards
 Every designed event gets a card showing the patient's own sequence before and after the change, so a
 debugging session never has to reconstruct what was supposed to happen. For an SNV or indel the card
 carries the 41-bp reference window, both germline haplotypes with the individual's phased variants
@@ -116,16 +136,16 @@ The same windows are also columns of the truth table (`wt_hap_window`, `mut_hap_
 `wt_protein_window`, `mut_protein_window`, `junction_window`) so they can be joined against caller output
 programmatically rather than read by eye.
 
-### 3.7 Flagposts
+### 4.7 Flagposts
 Hotspot substitutions from `design.yaml` (TP53 R248Q/R273H, PIK3CA H1047R/E545K, KRAS G12D, BRAF V600E,
 IDH1 R132H, NRAS Q61R, EGFR L858R, CTNNB1 S45F, AKT1 E17K, ESR1 Y537S) are resolved to genomic
 positions in the representative transcript and placed truncally with pre-CNA timing.
 
-## 4. Results
+## 5. Results
 
 _Filled in from `catalog/output/*.summary.json` when the full runs complete._
 
-## 5. Gene fusions
+## 6. Gene fusions
 
 Partners come from a list of cancer-relevant pairs, a list of adjacent same-strand pairs used for
 read-through transcripts, and novel pairs drawn from expressed genes. For a chosen pair the designer
@@ -139,7 +159,7 @@ breakpoint at all and no DNA VAF: they are the tumor-associated control that mus
 only. Junction neopeptides are the 9-mers spanning the junction codon after removing any peptide that
 occurs in either parent protein.
 
-## 6. Performance notes
+## 7. Performance notes
 
 The netMHCpan build available here scores about 40 peptide-allele pairs per second in one process and
 forks a separate process per allele and per length, so scoring whole peptide windows serially would have
@@ -152,7 +172,7 @@ taken days per dataset. Three changes make the full 8-11mer range affordable:
 
 Throughput scales with the cores available to the job, so the design run is given a 24-core allocation.
 
-## 7. Known limitations
+## 8. Known limitations
 
 - Binding is class I only and netMHCpan only. The mhcflurry models bundled with LENS are an older layout
   that the 2.1.1 image does not load, so the planned second opinion is not yet wired in.
@@ -168,7 +188,7 @@ Throughput scales with the cores available to the job, so the design run is give
   600 are placed, because a candidate's tier has to be known before it can be assigned to a grid cell.
   Scoring in waves until each cell fills would cut this several-fold and is the obvious next optimization.
 
-## 8. Wild-type counterparts
+## 9. Wild-type counterparts
 
 For every event whose best mutant peptide keeps the wild-type reading frame (substitutions, start and
 stop loss), the same window in the wild-type protein is scored against the same allele and recorded as

@@ -38,11 +38,13 @@ def three_prime_cds(genome, t, from_seg):
     return "".join(segment_seq(genome, t, s, e) for s, e in cds_segments(t)[from_seg:])
 
 
-def intron_breakpoint(t, seg_index, side, rng):
+def intron_breakpoint(t, seg_index, side, rng, near_exon=False):
     """A genomic position in the intron flanking a CDS segment.
 
     side='after': in the intron following segment seg_index (5' partner's break).
     side='before': in the intron preceding segment seg_index (3' partner's break).
+    near_exon: place the break within 20-45 bp of the exon boundary, so it falls inside a capture
+    region's flank and the fusion is detectable in exome data as well as in WGS.
     Returns (chrom, pos1) or None when the required intron does not exist.
     """
     ex = coding_exon_bounds(t)
@@ -66,6 +68,14 @@ def intron_breakpoint(t, seg_index, side, rng):
             lo, hi = ex[seg_index][1] + 1, ex[seg_index - 1][0] - 1
     if hi - lo < 40:
         return None
+    if near_exon:
+        # the intron boundary adjacent to the retained exon: lo abuts it for 'after', hi for 'before'
+        if (t.strand == "+") == (side == "after"):
+            a, b = lo, min(hi, lo + 45)
+        else:
+            a, b = max(lo, hi - 45), hi
+        if b - a >= 25:
+            return t.chrom, rng.randrange(a + 20, b)
     return t.chrom, rng.randrange(lo + 20, hi - 20)
 
 
