@@ -230,12 +230,17 @@ class ExpressedClassDesigner:
             feasible = {"exon_skip": lambda i: skip_exon(t, i), "intron_retention": lambda i: retain_intron(t, i),
                         "cryptic_5p": lambda i: cryptic_site(t, i, "5p"), "cryptic_3p": lambda i: cryptic_site(t, i, "3p"),
                         "novel_exon": lambda i: novel_exon(t, i)}[mech]
-            segs = t.cds if t.strand == "+" else t.cds[::-1]
-            cand = [j for j in range(1, len(segs) - 1) if feasible(j + 1)]
+            # index in EXON space, not CDS space: the two differ whenever a transcript has untranslated
+            # exons, and modifying a non-coding exon leaves the protein unchanged
+            exons = t.exons if t.strand == "+" else t.exons[::-1]
+            cds_lo = min(a for a, _b in t.cds)
+            cds_hi = max(b for _a, b in t.cds)
+            cand = [j for j in range(2, len(exons))
+                    if exons[j - 1][1] >= cds_lo and exons[j - 1][0] <= cds_hi and feasible(j)]
             if not cand:
                 continue
-            i = self.rng.choice(cand)
-            exon_s, exon_e = segs[i]
+            i = self.rng.choice(cand) - 1
+            exon_s, exon_e = exons[i]
             clone = "T" if made % 3 else self.rng.choice(clones)
             causal = None
             if specific:
@@ -248,6 +253,8 @@ class ExpressedClassDesigner:
                 alt = "A" if ref[0] != "A" else "C"
                 causal = {"chrom": t.chrom, "pos": site, "ref": ref[0], "alt": alt}
             iso_prot, first_diff = self._splice_peptides(t, feasible(i + 1) or [])
+            if iso_prot is None or first_diff is None:
+                continue          # the isoform does not change the protein: not a usable antigen source
             rank = allele = pep = None
             tier, n_lt2 = "na", 0
             if iso_prot and first_diff is not None:
