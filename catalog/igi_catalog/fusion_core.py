@@ -23,9 +23,23 @@ def cds_prefix_len(t, n_segs):
     return sum(e - s + 1 for s, e in segs[:n_segs])
 
 
+_SEG_CACHE = {}
+
+
 def segment_seq(genome, t, s, e):
-    seq = genome.seq(t.chrom, s - 1, e)
-    return seq if t.strand == "+" else revcomp(seq)
+    """CDS segment sequence in transcript orientation, memoised: the junction search asks for the same
+    segments once per candidate exon pair, which is O(exons^2) fetches without a cache."""
+    key = (t.tid, s, e)
+    hit = _SEG_CACHE.get(key)
+    if hit is None:
+        seq = genome.seq(t.chrom, s - 1, e)
+        hit = seq if t.strand == "+" else revcomp(seq)
+        _SEG_CACHE[key] = hit
+    return hit
+
+
+def prefix_cache_clear():
+    _SEG_CACHE.clear()
 
 
 def five_prime_cds(genome, t, n_segs):

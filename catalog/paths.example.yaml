@@ -13,3 +13,7 @@ germline_vcf:
 netmhcpan_cmd: "singularity exec -B /data /path/netmhcpan-4.1b.img /netMHCpan-4.1/Linux_x86_64/bin/netMHCpan -BA -a {alleles} -f {fasta}"
 workdir: /scratch/igi/catalog_work
 netmhcpan_threads: 24
+cta_gene_list: /path/to/cta.gene_list
+erv_loci: /path/to/curated_erv_loci.tsv
+erv_all_loci: /path/to/Hsap38.txt
+pan_normal_quant: /path/to/pan_normal_and_mtec_exp.95th_perc.quant.sf

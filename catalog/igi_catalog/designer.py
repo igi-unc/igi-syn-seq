@@ -16,6 +16,8 @@ from .clones import CloneModel
 from .binding import NetMHCpan
 from .snv_indel import SnvIndelDesigner
 from .fusions import FusionDesigner
+from .structural import StructuralDesigner
+from .expressed_classes import ExpressedClassDesigner
 
 
 def build_env(paths, design, ds_name):
@@ -56,7 +58,8 @@ def write_cards(cards, path, header):
         fh.write("\n".join(cards))
 
 
-def write_outputs(events, cards, out_dir, ds_name, design, summary_extra=None, fusions=None, fusion_cards=None):
+def write_outputs(events, cards, out_dir, ds_name, design, summary_extra=None, fusions=None, fusion_cards=None,
+                  extra_tables=None):
     os.makedirs(out_dir, exist_ok=True)
     path = write_table(events, os.path.join(out_dir, f"{ds_name}.snv_indel.tsv"))
     write_cards(cards, os.path.join(out_dir, f"{ds_name}.snv_indel.diffcards.txt"),
@@ -65,6 +68,9 @@ def write_outputs(events, cards, out_dir, ds_name, design, summary_extra=None, f
         write_table(fusions, os.path.join(out_dir, f"{ds_name}.fusions.tsv"))
         write_cards(fusion_cards or [], os.path.join(out_dir, f"{ds_name}.fusions.diffcards.txt"),
                     f"# {ds_name} designed gene fusions: junction cards (design v{design['version']}, seed {design['seed']})")
+    for name, rows in (extra_tables or {}).items():
+        if rows:
+            write_table(rows, os.path.join(out_dir, f"{ds_name}.{name}.tsv"))
     # summary counts
     from collections import Counter
     summ = {
@@ -81,6 +87,9 @@ def write_outputs(events, cards, out_dir, ds_name, design, summary_extra=None, f
         "grid_cells_filled": len({(e["clonality_tier"], e["expression_tier"], e["binding_tier"]) for e in events if e["subclass"] == "grid_missense"}),
         "grid_cells_total": len(design["tiers"]["clonality"]) * len(design["tiers"]["expression"]) * len(design["tiers"]["binding"]),
     }
+    for name, rows in (extra_tables or {}).items():
+        if rows:
+            summ[name] = {"n": len(rows), "by_subclass": dict(Counter(r.get("subclass", "") for r in rows))}
     if fusions:
         summ["fusions"] = {
             "n": len(fusions),
@@ -122,11 +131,19 @@ def main(argv=None):
     t0 = time.time()
     log = lambda m: print(m, flush=True)
     events = des.design(log=log)
+    clones = list(dcfg["clones"])
     fus = FusionDesigner(env, a.dataset, dcfg, design, rng, des.next_id)
-    fusions = fus.design(design["counts"]["fusions"], list(dcfg["clones"]), log=log)
+    fusions = fus.design(design["counts"]["fusions"], clones, log=log)
+    sv = StructuralDesigner(env, a.dataset, dcfg, design, rng, des.next_id)
+    svs = sv.design(design["counts"]["svs"], clones, log=log)
+    exc = ExpressedClassDesigner(env, a.dataset, dcfg, design, rng, des.next_id, paths)
+    exc.design_ctas(design["counts"]["ctas"], clones, log=log)
+    exc.design_ervs(design["counts"]["ervs"], clones, log=log)
+    exc.design_splice(design["counts"]["splice"], clones, des, log=log)
     path, summ = write_outputs(events, des.cards, a.out, a.dataset, design,
                                {"runtime_s": round(time.time() - t0), "scale": a.scale},
-                               fusions=fusions, fusion_cards=fus.cards)
+                               fusions=fusions, fusion_cards=fus.cards,
+                               extra_tables={"svs": svs, "viruses": sv.viral, "expressed": exc.events})
     print(json.dumps(summ, indent=2))
     print(f"[done] {len(events)} events -> {path}")
 

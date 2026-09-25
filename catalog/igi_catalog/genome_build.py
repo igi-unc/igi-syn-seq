@@ -5,15 +5,15 @@ A clone's genome is the reference with, in order:
   2. the designed somatic small variants assigned to that haplotype and to a clone in this lineage,
   3. copy-number state, expressed as how many times each haplotype's sequence is emitted per region.
 
-Edits are applied right to left in reference coordinates so earlier offsets stay valid, and every applied
-edit is checked against the sequence it replaces, so a silent mismatch cannot pass.
+Edits are applied in one left-to-right pass over reference coordinates, and every applied edit is
+checked against the sequence it replaces, so a silent mismatch cannot pass.
 """
 import csv
 from collections import defaultdict
 
 
 class EditSet:
-    """Reference-coordinate substitutions for one chromosome, applied right to left."""
+    """Reference-coordinate substitutions for one chromosome."""
 
     def __init__(self, chrom):
         self.chrom = chrom
@@ -25,26 +25,37 @@ class EditSet:
     def apply(self, seq, offset1=1, strict=True):
         """Apply to `seq`, whose first base is reference position `offset1`.
 
+        Single left-to-right pass: reference stretches and alternate alleles are appended to a list and
+        joined once, so cost is linear in sequence length rather than quadratic in the number of edits.
         Returns (sequence, n_applied, [rejected labels]).
         """
-        out = seq
+        pieces = []
+        cursor = 0
         applied = 0
         rejected = []
-        for pos1, ref, alt, label in sorted(self.edits, key=lambda e: -e[0]):
+        last_end = -1
+        for pos1, ref, alt, label in sorted(self.edits, key=lambda e: (e[0], len(e[1]))):
             off = pos1 - offset1
-            if off < 0 or off + len(ref) > len(out):
+            if off < 0 or off + len(ref) > len(seq):
                 rejected.append(f"{label}:out_of_range")
                 continue
-            if out[off:off + len(ref)].upper() != ref.upper():
+            if off < last_end:
+                rejected.append(f"{label}:overlapping_edit")
+                continue
+            if seq[off:off + len(ref)].upper() != ref.upper():
                 rejected.append(f"{label}:ref_mismatch")
                 if strict:
                     raise ValueError(
                         f"{self.chrom}:{pos1} {label}: expected {ref!r}, found "
-                        f"{out[off:off + len(ref)].upper()!r}")
+                        f"{seq[off:off + len(ref)].upper()!r}")
                 continue
-            out = out[:off] + alt + out[off + len(ref):]
+            pieces.append(seq[cursor:off])
+            pieces.append(alt)
+            cursor = off + len(ref)
+            last_end = cursor
             applied += 1
-        return out, applied, rejected
+        pieces.append(seq[cursor:])
+        return "".join(pieces), applied, rejected
 
 
 def germline_edits(germline, chrom, hap, start1, end1):
@@ -96,12 +107,27 @@ def haplotype_sequence(genome, germline, events, clones, chrom, hap, clone, star
     seq = genome.seq(chrom, start1 - 1, end1)
     g = germline_edits(germline, chrom, hap, start1, end1)
     s = somatic_edits(events, clones, chrom, hap, clone)
-    # somatic first (right to left), then germline: both are in reference coordinates and the designer
-    # guarantees they never overlap, so the order only affects bookkeeping
-    seq, n_som, rej_som = s.apply(seq, start1, strict=strict)
-    seq, n_germ, rej_germ = g.apply(seq, start1, strict=False)
+    # germline and somatic edits are both in reference coordinates, so they must be applied in a single
+    # pass; applying one set first would shift the coordinates the other set refers to
+    merged = EditSet(chrom)
+    merged.edits = s.edits + g.edits
+    somatic_ids = {e[3] for e in s.edits}
+    seq, n_applied, rejected = merged.apply(seq, start1, strict=False)
+    rej_som = [r for r in rejected if r.split(":")[0] in somatic_ids]
+    if rej_som and strict:
+        raise ValueError(f"{chrom}: designed somatic edits could not be applied: {rej_som[:5]}")
+    n_som = len(somatic_ids) - len(rej_som)
     return seq, {
         "chrom": chrom, "hap": hap, "clone": clone, "length": len(seq),
         "somatic_applied": n_som, "somatic_rejected": rej_som,
-        "germline_applied": n_germ, "germline_rejected": len(rej_germ),
+        "germline_applied": n_applied - n_som,
+        "germline_rejected": len(rejected) - len(rej_som),
+        "reject_reasons": _reasons(rejected),
     }
+
+
+def _reasons(rejected):
+    out = {}
+    for r in rejected:
+        out[r.rsplit(":", 1)[-1]] = out.get(r.rsplit(":", 1)[-1], 0) + 1
+    return out
