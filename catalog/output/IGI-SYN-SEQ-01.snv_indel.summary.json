@@ -1,13 +1,13 @@
 {
-  "dataset": "IGI-SYN-SEQ-02",
-  "n_events": 876,
+  "dataset": "IGI-SYN-SEQ-01",
+  "n_events": 867,
   "by_class": {
-    "snv": 626,
-    "indel": 250
+    "snv": 628,
+    "indel": 239
   },
   "by_subclass": {
     "hotspot": 12,
-    "grid_missense": 319,
+    "grid_missense": 321,
     "context_homopolymer": 25,
     "context_segdup": 25,
     "context_near_germline_het": 25,
@@ -18,77 +18,78 @@
     "synonymous": 40,
     "stop_loss": 20,
     "frameshift_del": 80,
-    "frameshift_ins": 60,
+    "frameshift_ins": 49,
     "inframe_del": 40,
     "inframe_ins": 30,
     "homopolymer_indel": 40
   },
   "by_consequence": {
-    "missense": 481,
+    "missense": 483,
     "intronic": 25,
     "nonsense": 60,
     "synonymous": 40,
     "stop_loss": 20,
-    "frameshift": 160,
-    "inframe_deletion": 60,
-    "inframe_insertion": 30
+    "frameshift": 149,
+    "inframe_deletion": 59,
+    "inframe_insertion": 31
   },
   "by_clonality_tier": {
-    "T_LOH": 77,
-    "T_het": 193,
-    "T_amp": 24,
-    "A": 194,
-    "B": 186,
-    "A1": 202
+    "T_LOH": 91,
+    "T_het": 171,
+    "T_amp": 23,
+    "A": 175,
+    "B": 201,
+    "A1": 206
   },
   "by_expression_tier": {
     "T10": 287,
-    "T100": 157,
-    "T1": 143,
-    "T0": 224,
-    "T1000": 65
+    "T100": 171,
+    "T1": 139,
+    "T0": 206,
+    "T1000": 64
   },
   "by_binding_tier": {
-    "strong": 209,
-    "weak": 203,
-    "non": 212,
-    "na": 252
+    "weak": 197,
+    "strong": 219,
+    "non": 205,
+    "na": 246
   },
   "by_context": {
-    "clean": 574,
-    "segdup": 54,
-    "exon_edge": 114,
-    "homopolymer": 69,
-    "near_germline_het": 37,
-    "deep_intronic": 26,
-    "repeat_other": 2
+    "clean": 571,
+    "segdup": 52,
+    "exon_edge": 118,
+    "homopolymer": 66,
+    "near_germline_het": 31,
+    "deep_intronic": 25,
+    "repeat_other": 4
   },
-  "chr1to6_fraction": 0.648,
+  "chr1to6_fraction": 0.64,
   "flagposts": 12,
-  "grid_cells_filled": 80,
+  "grid_cells_filled": 81,
   "grid_cells_total": 90,
   "fusions": {
-    "n": 18,
+    "n": 19,
     "by_subclass": {
       "in_frame": 9,
       "out_of_frame": 4,
       "readthrough": 2,
-      "in_frame_novel": 3
+      "in_frame_novel": 4
     },
     "by_mechanism": {
+      "INV": 5,
       "TRA": 9,
       "DUP": 2,
-      "INV": 5,
+      "DEL": 1,
       "none": 2
     },
-    "in_frame": 14,
-    "wes_visible": 10,
+    "in_frame": 15,
+    "wes_visible": 1,
     "by_binding_tier": {
-      "strong": 7,
-      "weak": 10,
-      "non": 1
+      "non": 2,
+      "strong": 8,
+      "weak": 9
     }
   },
-  "runtime_s": 1702,
+  "runtime_s": 6786,
   "scale": 1.0
 }

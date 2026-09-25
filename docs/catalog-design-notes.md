@@ -96,7 +96,17 @@ haplotype (this also encodes pre-WGD timing); post-CNA and subclonal events carr
 is retained and 0 where it is lost. Clonality tiers: `T_LOH` (truncal, in a one-haplotype region),
 `T_amp` (truncal, haplotype copy number >= 4), `T_het`, and the subclone names.
 
-### 4.6 Diff cards
+### 4.6 Sites excluded by construction
+
+A somatic allele whose reference span overlaps a germline variant is rejected at candidate generation.
+Such a site cannot be written unambiguously in reference coordinates, and the haplotype edit would not
+apply cleanly, so the truth row would claim a change the sequence does not contain. The first full run
+produced exactly one such row before the check existed: a 21 bp deletion whose reference allele ran
+through a nearby germline substitution, which the haplotype builder skipped silently. A skipped somatic
+edit is now an error rather than a silent no-op, and `validate_catalog.py` checks window lengths against
+the indel size so the class of failure cannot reappear unnoticed.
+
+### 4.7 Diff cards
 Every designed event gets a card showing the patient's own sequence before and after the change, so a
 debugging session never has to reconstruct what was supposed to happen. For an SNV or indel the card
 carries the 41-bp reference window, both germline haplotypes with the individual's phased variants
@@ -136,7 +146,7 @@ The same windows are also columns of the truth table (`wt_hap_window`, `mut_hap_
 `wt_protein_window`, `mut_protein_window`, `junction_window`) so they can be joined against caller output
 programmatically rather than read by eye.
 
-### 4.7 Flagposts
+### 4.8 Flagposts
 Hotspot substitutions from `design.yaml` (TP53 R248Q/R273H, PIK3CA H1047R/E545K, KRAS G12D, BRAF V600E,
 IDH1 R132H, NRAS Q61R, EGFR L858R, CTNNB1 S45F, AKT1 E17K, ESR1 Y537S) are resolved to genomic
 positions in the representative transcript and placed truncally with pre-CNA timing.

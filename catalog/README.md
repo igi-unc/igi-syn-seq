@@ -23,6 +23,18 @@ chromosome-arm BED; the expression baseline shipped in `resources/`.
 | `<ds>.fusions.tsv` | one row per designed fusion: partners and transcripts, exon junction, genomic breakpoints, DNA mechanism, frame, fusion protein length, junction window, clone and expected DNA VAF, expression and binding tiers, WES visibility |
 | `<ds>.fusions.diffcards.txt` | one card per fusion: the junction shown against both parent transcripts |
 
+## Validation
+
+```bash
+python3 validate_catalog.py --table output/<ds>.snv_indel.tsv --reference /path/GRCh38.fa
+```
+
+Eight self-consistency checks, non-zero exit on failure so it can gate a regression run: REF alleles agree
+with the reference; the mutant window carries ALT at the marked offset; window lengths track the indel
+size; expected VAF is a probability; median VAF decreases down the clonality ladder; a binding tier implies
+a peptide and `na` implies none; the recorded tier matches the recorded %rank; and a wild-type counterpart
+is a same-length, different peptide.
+
 `resources/tcga_brca_basal.transcript_tpm.tsv.gz` is the tumor expression baseline: per-transcript median TPM
 across 191 TCGA-BRCA basal-like tumors (PanCanAtlas `Subtype_mRNA = Basal`) from the UCSC Xena Toil kallisto
 table; `resources/tcga_brca_basal.samples.txt` lists the samples.

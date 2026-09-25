@@ -94,6 +94,10 @@ class SnvIndelDesigner:
             ins = "".join(self.rng.choice("ACGT") for _ in range(L))
             tries.append((ref, ref + ins))                       # insertion after the anchor base
         for r, a in tries:
+            # a somatic allele overlapping a germline variant cannot be written unambiguously in
+            # reference coordinates, and the haplotype edit would not apply; skip such sites
+            if self.env.germline.overlaps_variant(t.chrom, gpos, len(r)):
+                continue
             mprot, k, cons = cm.mutate_protein(gpos, r, a)
             if mprot is None:
                 continue
