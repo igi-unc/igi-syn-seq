@@ -23,7 +23,12 @@ def spanning_peptides(protein, first_changed, n_changed=1, lengths=(8, 9, 10, 11
         return out
     last = first_changed + max(1, n_changed) - 1
     for L in lengths:
-        for start in range(max(0, last - L + 1), min(first_changed, len(protein) - L) + 1):
+        # a peptide [start, start+L-1] overlaps [first_changed, last] when it starts at or before `last`
+        # and ends at or after `first_changed`; requiring it to *contain* the whole changed region
+        # instead yields nothing as soon as the region is longer than the peptide
+        lo = max(0, first_changed - L + 1)
+        hi = min(last, len(protein) - L)
+        for start in range(lo, hi + 1):
             pep = protein[start:start + L]
             if len(pep) == L and "*" not in pep and "X" not in pep:
                 out.add(pep)

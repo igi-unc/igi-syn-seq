@@ -49,10 +49,10 @@
     "T1000": 65
   },
   "by_binding_tier": {
-    "strong": 209,
-    "weak": 203,
-    "non": 212,
-    "na": 252
+    "strong": 328,
+    "weak": 223,
+    "non": 190,
+    "na": 135
   },
   "by_context": {
     "clean": 574,
@@ -113,6 +113,6 @@
       "non": 1
     }
   },
-  "runtime_s": 282,
+  "runtime_s": 1333,
   "scale": 1.0
 }

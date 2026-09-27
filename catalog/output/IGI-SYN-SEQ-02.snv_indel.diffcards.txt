@@ -5304,13 +5304,14 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-02-SNV-0607  RPS24 *131ext*1 stop_loss  clone=T tier=T_LOH VAF=0.225 expr=T1000 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-SNV-0607  RPS24 *131ext*1 stop_loss  clone=T tier=T_LOH VAF=0.225 expr=T1000 bind=strong ctx=exon_edge
   window    chr10:78037175-78037215  somatic A>C at 78037195 on hap0
   hap0+mut  GTACTCTTTTCTCATTCAGCCTGGCCTGTATGAGAAGAAAA
                                 ^
   protein   aa 82-106  first change at aa 94 (stop_loss)
                         ^
-  peptide   none
+  peptide   HRLARPGLY HLA-C*07:01 rank 0.095
+  wt pep    HRLARHGLY rank 0.169  (agretopicity 1.089)
 
 ## IGI-SYN-SEQ-02-SNV-0608  RPS24 *131ext*1 stop_loss  clone=A1 tier=A1 VAF=0.0225 expr=T1000 bind=non ctx=exon_edge
   window    chr10:78037276-78037316  somatic G>A at 78037296 on hap0
@@ -5318,159 +5319,161 @@
                                 ^
   protein   aa 116-140  first change at aa 128 (stop_loss)
                         ^
-  peptide   ANVGASKKV HLA-C*07:01 rank 10.806
+  peptide   AKANVGASK HLA-B*27:05 rank 3.203
+  wt pep    AKANVGAGK rank 3.926  (agretopicity 1.118)
 
-## IGI-SYN-SEQ-02-SNV-0609  FAM174C *133ext*63 stop_loss  clone=T tier=T_het VAF=0.3103 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0609  FAM174C *133ext*63 stop_loss  clone=T tier=T_het VAF=0.3103 expr=T100 bind=strong ctx=clean
   window    chr19:1277263-1277303  somatic T>C at 1277283 on hap0
   hap0+mut  ACGAGGAGACGGTCTTTGAGCCCCGGAATCTGAGATGGTGT
                                 ^
   protein   aa 116-140  first change at aa 128 (stop_loss)
                         ^
-  peptide   none
+  peptide   GRLGWRLSR HLA-B*27:05 rank 0.061
 
-## IGI-SYN-SEQ-02-SNV-0610  FAM174C *133ext*63 stop_loss  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0610  FAM174C *133ext*63 stop_loss  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=strong ctx=clean
   window    chr19:1277254-1277294  somatic G>C at 1277274 on hap0
   hap0+mut  TGGACAGCGACGAGGAGACGCTCTTTGAGTCCCGGAATCTG
                                 ^
   protein   aa 113-137  first change at aa 125 (stop_loss)
                         ^
-  peptide   none
+  peptide   GRLGWRLSR HLA-B*27:05 rank 0.061
 
-## IGI-SYN-SEQ-02-SNV-0611  INPP5D *1190ext*17 stop_loss  clone=T tier=T_het VAF=0.1552 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0611  INPP5D *1190ext*17 stop_loss  clone=T tier=T_het VAF=0.1552 expr=T10 bind=weak ctx=clean
   window    chr2:233204638-233204678  somatic C>A at 233204658 on hap1
   hap1+mut  ACAACACCGAGCTCCCGTATAACGGCAAGCACCGGCCGGAG
                                 ^
   protein   aa 1158-1182  first change at aa 1170 (stop_loss)
                         ^
-  peptide   none
+  peptide   GPLGRTAM HLA-B*08:01 rank 0.739
 
-## IGI-SYN-SEQ-02-SNV-0612  INPP5D *1190ext*17 stop_loss  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0612  INPP5D *1190ext*17 stop_loss  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=clean
   window    chr2:233122158-233122198  somatic C>A at 233122178 on hap1
   hap1+mut  GAGTTTTACAAGAAGGAAAAAATGGGGCTGGTGACCCATCT
                                 ^
   protein   aa 78-102  first change at aa 90 (stop_loss)
                         ^
-  peptide   none
+  peptide   HLKKLTTL HLA-B*08:01 rank 0.011
 
-## IGI-SYN-SEQ-02-SNV-0613  WNK4 *1244ext*59 stop_loss  clone=A tier=A VAF=0.0788 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0613  WNK4 *1244ext*59 stop_loss  clone=A tier=A VAF=0.0788 expr=T0 bind=strong ctx=clean
   window    chr17:42785362-42785402  somatic T>A at 42785382 on hap0
   hap0+mut  CCTCAAGCTCTGGCTGCGCAAGGAGGACGCGCGGCGCGGGG
                                 ^
   protein   aa 447-471  first change at aa 459 (stop_loss)
                         ^
-  peptide   none
+  peptide   ASPPPARPL HLA-C*01:02 rank 0.005
 
-## IGI-SYN-SEQ-02-SNV-0614  WNK4 *1244ext*59 stop_loss  clone=A1 tier=A1 VAF=0.0225 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0614  WNK4 *1244ext*59 stop_loss  clone=A1 tier=A1 VAF=0.0225 expr=T0 bind=strong ctx=clean
   window    chr17:42795817-42795857  somatic G>C at 42795837 on hap0
   hap0+mut  AGAGCGACCGTGCAGCTGAGCGTCTGGGGGCTGGAGTTGAG
                                 ^
   protein   aa 1067-1091  first change at aa 1079 (stop_loss)
                         ^
-  peptide   none
+  peptide   FPTSRRNSL HLA-B*08:01 rank 0.012
 
-## IGI-SYN-SEQ-02-SNV-0615  ATXN10 *476ext*13 stop_loss  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0615  ATXN10 *476ext*13 stop_loss  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=strong ctx=clean
   window    chr22:45689729-45689769  somatic G>T at 45689749 on hap1
   hap1+mut  CTATCTTCCAAAGAGTTCTGTATATCCTAAAGAAATCTTCT
                                 ^
   protein   aa 40-64  first change at aa 52 (stop_loss)
                         ^
-  peptide   none
+  peptide   DLFLKSPEL HLA-B*08:01 rank 0.016
 
-## IGI-SYN-SEQ-02-SNV-0616  ATXN10 *476ext*13 stop_loss  clone=B tier=B VAF=0.0466 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0616  ATXN10 *476ext*13 stop_loss  clone=B tier=B VAF=0.0466 expr=T100 bind=strong ctx=clean
   window    chr22:45689709-45689749  somatic C>G at 45689729 on hap1
   hap1+mut  CAGAGAAACAGCACCCAGGAGTATCTTCCAAAGAGTTCTGG
                                 ^
   protein   aa 33-57  first change at aa 45 (stop_loss)
                         ^
-  peptide   none
+  peptide   DLFLKSPEL HLA-B*08:01 rank 0.016
 
-## IGI-SYN-SEQ-02-SNV-0617  RNF187 *236ext*31 stop_loss  clone=T tier=T_het VAF=0.403 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0617  RNF187 *236ext*31 stop_loss  clone=T tier=T_het VAF=0.403 expr=T100 bind=strong ctx=clean
   window    chr1:228487796-228487836  somatic A>C at 228487816 on hap0
   hap0+mut  CGCTCTGCGCCGCCTGCCGTCTGGCTGCGGGCCCCGAGCCG
                                 ^
   protein   aa 98-122  first change at aa 110 (stop_loss)
                         ^
-  peptide   none
+  peptide   DPTERFRSL HLA-B*08:01 rank 0.022
 
-## IGI-SYN-SEQ-02-SNV-0618  RNF187 *236ext*31 stop_loss  clone=T tier=T_het VAF=0.1343 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0618  RNF187 *236ext*31 stop_loss  clone=T tier=T_het VAF=0.1343 expr=T100 bind=strong ctx=clean
   window    chr1:228487805-228487845  somatic G>T at 228487825 on hap0
   hap0+mut  CCGCCTGCCGTATGGCTGCGTGCCCCGAGCCGCCCGAGTGG
                                 ^
   protein   aa 101-125  first change at aa 113 (stop_loss)
                         ^
-  peptide   none
+  peptide   DPTERFRSL HLA-B*08:01 rank 0.022
 
-## IGI-SYN-SEQ-02-SNV-0619  ZNF800 *665ext*1 stop_loss  clone=B tier=B VAF=0.0466 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0619  ZNF800 *665ext*1 stop_loss  clone=B tier=B VAF=0.0466 expr=T10 bind=strong ctx=clean
   window    chr7:127373637-127373677  somatic G>T at 127373657 on hap0
   hap0+mut  AATCAATAGGCTTTTTTATATCTCTGATCTCTAAACTGGCT
                                 ^
   protein   aa 548-572  first change at aa 560 (stop_loss)
                         ^
-  peptide   none
+  peptide   TSNSPSKKY HLA-A*01:01 rank 0.126
 
-## IGI-SYN-SEQ-02-SNV-0620  LRCOL1 *160ext*54 stop_loss  clone=T tier=T_het VAF=0.1552 expr=T0 bind=na ctx=repeat_other
+## IGI-SYN-SEQ-02-SNV-0620  LRCOL1 *160ext*54 stop_loss  clone=T tier=T_het VAF=0.1552 expr=T0 bind=strong ctx=repeat_other
   window    chr12:132606197-132606237  somatic A>C at 132606217 on hap0
   hap0+mut  CCAGCAGCAGCAGCAGCAGCCGCAGTAGCAGCAGCGTCCAC
                                 ^
   protein   aa 1-24  first change at aa 12 (stop_loss)
                        ^
-  peptide   none
+  peptide   VSPGRGLSL HLA-C*01:02 rank 0.004
 
-## IGI-SYN-SEQ-02-SNV-0621  LRCOL1 *160ext*54 stop_loss  clone=T tier=T_het VAF=0.3103 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-SNV-0621  LRCOL1 *160ext*54 stop_loss  clone=T tier=T_het VAF=0.3103 expr=T0 bind=strong ctx=exon_edge
   window    chr12:132604804-132604844  somatic C>G at 132604824 on hap0
   hap0+mut  CGTGTCTCCTGCATGGCTCCGCGATGCCCTGAAACACCACT
                                 ^
   protein   aa 26-50  first change at aa 38 (stop_loss)
                         ^
-  peptide   none
+  peptide   VSPGRGLSL HLA-C*01:02 rank 0.004
 
-## IGI-SYN-SEQ-02-SNV-0622  COL13A1 *729ext*67 stop_loss  clone=B tier=B VAF=0.0675 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-SNV-0622  COL13A1 *729ext*67 stop_loss  clone=B tier=B VAF=0.0675 expr=T1 bind=strong ctx=exon_edge
   window    chr10:69905800-69905840  somatic A>G at 69905820 on hap0
   hap0+mut  TCCAGGGCTACCACGGCCGGGAGGTAAGATGGAGGGGGAGG
                                 ^
   protein   aa 295-319  first change at aa 307 (stop_loss)
                         ^
-  peptide   none
+  peptide   KLPQFPFCL HLA-C*01:02 rank 0.071
 
-## IGI-SYN-SEQ-02-SNV-0623  COL13A1 *729ext*67 stop_loss  clone=A tier=A VAF=0.0788 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0623  COL13A1 *729ext*67 stop_loss  clone=A tier=A VAF=0.0788 expr=T1 bind=strong ctx=clean
   window    chr10:69930409-69930449  somatic C>T at 69930429 on hap0
   hap0+mut  GGTAAACCAGGAGACATGGGTCCTCCTGGTCCCCAAGGCCC
                                 ^
   protein   aa 717-741  first change at aa 729 (stop_loss)
                         ^
-  peptide   none
+  peptide   KLPQFPFCL HLA-C*01:02 rank 0.071
 
-## IGI-SYN-SEQ-02-SNV-0624  ANKRD37 *159ext*1 stop_loss  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-SNV-0624  ANKRD37 *159ext*1 stop_loss  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=exon_edge
   window    chr4:185396907-185396947  somatic C>G at 185396927 on hap0
   hap0+mut  TCTGCCTTAGGCGGGAAATGGTGTTGCTGGATTGCAACCCC
                                 ^
   protein   aa 1-14  first change at aa 2 (stop_loss)
              ^
-  peptide   none
+  peptide   VLRQKRSL HLA-B*08:01 rank 0.034
 
-## IGI-SYN-SEQ-02-SNV-0625  ANKRD37 *159ext*1 stop_loss  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0625  ANKRD37 *159ext*1 stop_loss  clone=A tier=A VAF=0.0543 expr=T10 bind=non ctx=clean
   window    chr4:185399714-185399754  somatic T>A at 185399734 on hap1
   hap1+mut  GCTCAGACAGAAACGGAGTCACGGAAGTGTAGAAAATACCA
                                 ^
   protein   aa 134-158  first change at aa 146 (stop_loss)
                         ^
-  peptide   none
+  peptide   VLRQKRSHGSV HLA-B*08:01 rank 2.365
+  wt pep    VLRQKRSLGSV rank 2.434  (agretopicity 1.071)
 
-## IGI-SYN-SEQ-02-SNV-0626  AHI1 *1197ext*32 stop_loss  clone=B tier=B VAF=0.0466 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-SNV-0626  AHI1 *1197ext*32 stop_loss  clone=B tier=B VAF=0.0466 expr=T10 bind=strong ctx=clean
   window    chr6:135466171-135466211  somatic C>A at 135466191 on hap1
   hap1+mut  TTTATCACCTTTTTATTTGGATTTCCTTGTTTGTCTTCCTC
                                 ^
   protein   aa 112-136  first change at aa 124 (stop_loss)
                         ^
-  peptide   none
+  peptide   HRGDIIRVF HLA-C*07:01 rank 0.005
 
-## IGI-SYN-SEQ-02-IND-0001  WT1 P381fs*72 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0001  WT1 P381fs*72 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=strong ctx=clean
   window    chr11:32396358-32396399  somatic CG>C at 32396378 on hap1
   hap1+mut  GATGCCGACCGTACAAGAGTCGGGCTACTCCAGGCACACGT
                                 ^
   protein   aa 369-393  first change at aa 381 (frameshift)
                         ^
-  peptide   none
+  peptide   RRVPGVARL HLA-C*07:01 rank 0.014
 
 ## IGI-SYN-SEQ-02-IND-0002  SLC2A8 A94fs*3 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=clean
   window    chr9:127397945-127397989  somatic GCCGG>G at 127397965 on hap1
@@ -5480,69 +5483,69 @@
                         ^
   peptide   WLVDRGAS HLA-B*08:01 rank 18.851
 
-## IGI-SYN-SEQ-02-IND-0003  MORC4 N193fs*6 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0003  MORC4 N193fs*6 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=clean
   window    chrX:106985172-106985214  somatic TTC>T at 106985192 on hap0
   hap0+mut  CACGGTTGAAAATGGAATAGTAAGATGGCTTCTAGGCTGGG
                                 ^
   protein   aa 181-205  first change at aa 193 (frameshift)
                         ^
-  peptide   ILLFHFQP HLA-B*08:01 rank 30.565
+  peptide   SLPSLEAILL HLA-C*01:02 rank 0.439
 
-## IGI-SYN-SEQ-02-IND-0004  PRXL2C S154fs*13 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0004  PRXL2C S154fs*13 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=weak ctx=clean
   window    chr9:96645963-96646005  somatic GGC>G at 96645983 on hap0
   hap0+mut  TGCCCGCCACAGGCTCTGAAGTTCCTGAGAGTAGATTTGAT
                                 ^
   protein   aa 142-166  first change at aa 154 (frameshift)
                         ^
-  peptide   none
+  peptide   VAGSDWPSL HLA-C*01:02 rank 1.283
 
-## IGI-SYN-SEQ-02-IND-0005  USP6 N779fs*6 frameshift  clone=A1 tier=A1 VAF=0.0225 expr=T1 bind=non ctx=segdup
+## IGI-SYN-SEQ-02-IND-0005  USP6 N779fs*6 frameshift  clone=A1 tier=A1 VAF=0.0225 expr=T1 bind=weak ctx=segdup
   window    chr17:5147079-5147123  somatic ACCAA>A at 5147099 on hap0
   hap0+mut  GTAGAACTTTCCTCAGGATAAAAAGTACAACTCTCAGTGAG
                                 ^
   protein   aa 767-791  first change at aa 779 (frameshift)
                         ^
-  peptide   FPQDKKYNSQ HLA-B*08:01 rank 6.565
+  peptide   KNFPQDKKY HLA-C*07:01 rank 1.544
 
-## IGI-SYN-SEQ-02-IND-0006  ZFP91-CNTF T168fs*49 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0006  ZFP91-CNTF T168fs*49 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=strong ctx=clean
   window    chr11:58609941-58609985  somatic ACCCG>A at 58609961 on hap0
   hap0+mut  GCCATCGTGATACAGAGAACAAAGCTCTCGGTCCAAGACCG
                                 ^
   protein   aa 156-180  first change at aa 168 (frameshift)
                         ^
-  peptide   none
+  peptide   MMLEKSISL HLA-B*08:01 rank 0.006
 
-## IGI-SYN-SEQ-02-IND-0007  DENND5A M332fs*20 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0007  DENND5A M332fs*20 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=strong ctx=clean
   window    chr11:9193612-9193656  somatic AAACA>A at 9193632 on hap1
   hap1+mut  ACATGCTGCCACTGGAAAGGATGAGAGCTGTAATCGTCTCC
                                 ^
   protein   aa 320-344  first change at aa 332 (frameshift)
                         ^
-  peptide   none
+  peptide   ILSSGSMSM HLA-C*01:02 rank 0.475
 
-## IGI-SYN-SEQ-02-IND-0008  TMIGD3 D288fs*12 frameshift  clone=T tier=T_het VAF=0.1552 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0008  TMIGD3 D288fs*12 frameshift  clone=T tier=T_het VAF=0.1552 expr=T1 bind=strong ctx=exon_edge
   window    chr1:111486574-111486615  somatic GT>G at 111486594 on hap1
   hap1+mut  ACTATGACTCACCTGGAGCGGCAGCCTTGCGGACAACTTTG
                                 ^
   protein   aa 276-300  first change at aa 288 (frameshift)
                         ^
-  peptide   none
+  peptide   AAPGRPFSSF HLA-C*01:02 rank 0.14
 
-## IGI-SYN-SEQ-02-IND-0009  WIPF3 G91fs*152 frameshift  clone=B tier=B VAF=0.0466 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0009  WIPF3 G91fs*152 frameshift  clone=B tier=B VAF=0.0466 expr=T1 bind=strong ctx=clean
   window    chr7:29879032-29879074  somatic ACG>A at 29879052 on hap0
   hap0+mut  GGAGGAGGTTCTGCAAACACAAGGCGCGAGCACACCTCCCA
                                 ^
   protein   aa 79-103  first change at aa 91 (frameshift)
                         ^
-  peptide   none
+  peptide   LTPAPSLFL HLA-C*01:02 rank 0.04
 
-## IGI-SYN-SEQ-02-IND-0010  ESYT2 K778fs*14 frameshift  clone=T tier=T_het VAF=0.1552 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0010  ESYT2 K778fs*14 frameshift  clone=T tier=T_het VAF=0.1552 expr=T100 bind=non ctx=clean
   window    chr7:158737090-158737134  somatic CCTCT>C at 158737110 on hap1
   hap1+mut  GTTTTCCTCCTTCCTGACCGCTGTCTGGTAATAAATACATG
                                 ^
   protein   aa 766-790  first change at aa 778 (frameshift)
                         ^
-  peptide   none
+  peptide   LLPDSGQEG HLA-C*01:02 rank 4.948
 
 ## IGI-SYN-SEQ-02-IND-0011  NTRK1 S246fs*9 frameshift  clone=B tier=B VAF=0.0403 expr=T0 bind=non ctx=clean
   window    chr1:156871617-156871662  somatic GCCATC>G at 156871637 on hap1
@@ -5552,21 +5555,21 @@
                         ^
   peptide   GADPGQCHQ HLA-A*01:01 rank 3.664
 
-## IGI-SYN-SEQ-02-IND-0012  RPAIN P191fs*16 frameshift  clone=A1 tier=A1 VAF=0.0225 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0012  RPAIN P191fs*16 frameshift  clone=A1 tier=A1 VAF=0.0225 expr=T10 bind=strong ctx=clean
   window    chr17:5428131-5428172  somatic AC>A at 5428151 on hap0
   hap0+mut  AGTGCACATTGTCCCCACACACTGAATTTTCAGTCACTGGA
                                 ^
   protein   aa 179-203  first change at aa 191 (frameshift)
                         ^
-  peptide   none
+  peptide   AHCPHTLNF HLA-C*07:01 rank 0.163
 
-## IGI-SYN-SEQ-02-IND-0013  VSTM4 K248fs*13 frameshift  clone=A1 tier=A1 VAF=0.0225 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0013  VSTM4 K248fs*13 frameshift  clone=A1 tier=A1 VAF=0.0225 expr=T1 bind=strong ctx=clean
   window    chr10:49048490-49048531  somatic TT>T at 49048510 on hap0
   hap0+mut  CTGCGGGAGGAATGTCAGGCTCTCCTTCTGCCTCTTGCCCT
                                 ^
   protein   aa 236-260  first change at aa 248 (frameshift)
                         ^
-  peptide   none
+  peptide   FLPQSLPKL HLA-C*01:02 rank 0.005
 
 ## IGI-SYN-SEQ-02-IND-0014  DDAH1 C274fs*4 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=non ctx=clean
   window    chr1:85321469-85321510  somatic CA>C at 85321489 on hap0
@@ -5576,13 +5579,13 @@
                         ^
   peptide   KVDGLLTAAQF HLA-A*01:01 rank 2.424
 
-## IGI-SYN-SEQ-02-IND-0015  WDR12 E95fs*5 frameshift  clone=T tier=T_het VAF=0.1552 expr=T100 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0015  WDR12 E95fs*5 frameshift  clone=T tier=T_het VAF=0.1552 expr=T100 bind=strong ctx=clean
   window    chr2:202899565-202899607  somatic TCT>T at 202899585 on hap1
   hap1+mut  CATCATGGAACATGCATTGCTGGCTGGGGTGCAGTATACTT
                                 ^
   protein   aa 83-107  first change at aa 95 (frameshift)
                         ^
-  peptide   TAPQPAMHVP HLA-C*01:02 rank 4.838
+  peptide   TAPQPAMHV HLA-C*01:02 rank 0.038
 
 ## IGI-SYN-SEQ-02-IND-0016  WDR5B H306fs*11 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=clean
   window    chr3:122414591-122414632  somatic AT>A at 122414611 on hap0
@@ -5590,7 +5593,7 @@
                                 ^
   protein   aa 294-318  first change at aa 306 (frameshift)
                         ^
-  peptide   LLQKTSSHQQH HLA-A*01:01 rank 16.481
+  peptide   VVISAACLL HLA-C*01:02 rank 2.048
 
 ## IGI-SYN-SEQ-02-IND-0017  NDUFA6 P76fs*2 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=clean
   window    chr22:42087063-42087108  somatic CCCTGG>C at 42087083 on hap1
@@ -5598,15 +5601,15 @@
                                 ^
   protein   aa 64-88  first change at aa 76 (frameshift)
                         ^
-  peptide   FMKNAHVTDRG HLA-B*08:01 rank 36.379
+  peptide   MKNAHVTDR HLA-B*27:05 rank 8.419
 
-## IGI-SYN-SEQ-02-IND-0018  RBM39 P102fs*18 frameshift  clone=A tier=A VAF=0.0543 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0018  RBM39 P102fs*18 frameshift  clone=A tier=A VAF=0.0543 expr=T100 bind=strong ctx=exon_edge
   window    chr20:35729499-35729540  somatic GG>G at 35729519 on hap0
   hap0+mut  GGATGGCACTGTTAAATTTTGTCCGGAGCTAAAAAGGAAAC
                                 ^
   protein   aa 90-114  first change at aa 102 (frameshift)
                         ^
-  peptide   none
+  peptide   RSPYSGQNL HLA-C*01:02 rank 0.018
 
 ## IGI-SYN-SEQ-02-IND-0019  LRBA V2166fs*0 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=clean
   window    chr4:150487766-150487808  somatic ACC>A at 150487786 on hap0
@@ -5616,85 +5619,85 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-02-IND-0020  CNOT11 P275fs*18 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0020  CNOT11 P275fs*18 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=exon_edge
   window    chr2:101262662-101262707  somatic CCTATT>C at 101262682 on hap1
   hap1+mut  TAGTCAGCGGACCAAAGCCACGAAAGTAGGTACATATAAAT
                                 ^
   protein   aa 263-287  first change at aa 275 (frameshift)
                         ^
-  peptide   none
+  peptide   SGPKPRKPF HLA-C*01:02 rank 0.232
 
-## IGI-SYN-SEQ-02-IND-0021  SPATA46 S8fs*35 frameshift  clone=A1 tier=A1 VAF=0.0134 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0021  SPATA46 S8fs*35 frameshift  clone=A1 tier=A1 VAF=0.0134 expr=T0 bind=strong ctx=clean
   window    chr1:162376747-162376789  somatic GCT>G at 162376767 on hap0
   hap0+mut  GAGATTGGAGGTCCAGAGATGGAGGAGTGAGAAGTTCTCCA
                                 ^
   protein   aa 1-20  first change at aa 8 (frameshift)
                    ^
-  peptide   none
+  peptide   ECFSRHYVL HLA-B*08:01 rank 0.077
 
-## IGI-SYN-SEQ-02-IND-0022  AUP1 L276fs*50 frameshift  clone=A tier=A VAF=0.0543 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0022  AUP1 L276fs*50 frameshift  clone=A tier=A VAF=0.0543 expr=T100 bind=strong ctx=clean
   window    chr2:74527728-74527769  somatic GC>G at 74527748 on hap0
   hap0+mut  CCACATACCTGACTGGGGGCGAATCTGGGGTGTCTTTGTCG
                                 ^
   protein   aa 264-288  first change at aa 276 (frameshift)
                         ^
-  peptide   none
+  peptide   FAPSQPSLL HLA-C*01:02 rank 0.003
 
-## IGI-SYN-SEQ-02-IND-0023  GNG4 P59fs*33 frameshift  clone=B tier=B VAF=0.0403 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0023  GNG4 P59fs*33 frameshift  clone=B tier=B VAF=0.0403 expr=T1 bind=strong ctx=clean
   window    chr1:235552140-235552184  somatic AGGCA>A at 235552160 on hap1
   hap1+mut  CGAAAGGGGTTTTCTGATGCACTGGAATGATGAGAGGATCT
                                 ^
   protein   aa 47-71  first change at aa 59 (frameshift)
                         ^
-  peptide   none
+  peptide   TPFARRSSF HLA-B*08:01 rank 0.027
 
-## IGI-SYN-SEQ-02-IND-0024  PKHD1L1 G978fs*23 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0024  PKHD1L1 G978fs*23 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=strong ctx=clean
   window    chr8:109427066-109427108  somatic AGG>A at 109427086 on hap1
   hap1+mut  AAGAATCTCAGTTACACGAGAGAACCTGTGCTGGCTACGCG
                                 ^
   protein   aa 966-990  first change at aa 978 (frameshift)
                         ^
-  peptide   none
+  peptide   GRISVTRENL HLA-B*27:05 rank 0.169
 
-## IGI-SYN-SEQ-02-IND-0025  CHADL C634fs*44 frameshift  clone=T tier=T_het VAF=0.3103 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0025  CHADL C634fs*44 frameshift  clone=T tier=T_het VAF=0.3103 expr=T1 bind=strong ctx=exon_edge
   window    chr22:41236622-41236667  somatic AGGACA>A at 41236642 on hap0
   hap0+mut  CCCAGGCCTGAAAAGGCCCCAAATCTGCAAGGAGTTGCCAG
                                 ^
   protein   aa 622-646  first change at aa 634 (frameshift)
                         ^
-  peptide   none
+  peptide   AHRPQQQSL HLA-C*07:01 rank 0.19
 
-## IGI-SYN-SEQ-02-IND-0026  OR6B2 L174fs*109 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-02-IND-0026  OR6B2 L174fs*109 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=strong ctx=segdup
   window    chr2:240029887-240029931  somatic TCAAG>T at 240029907 on hap1
   hap1+mut  AATGTCACGGAAGAAGTGGTTACGTTGGAGCCACAGAACGT
                                 ^
   protein   aa 162-186  first change at aa 174 (frameshift)
                         ^
-  peptide   none
+  peptide   RAPTSSSL HLA-C*01:02 rank 0.018
 
-## IGI-SYN-SEQ-02-IND-0027  RGS10 R174fs*18 frameshift  clone=T tier=T_LOH VAF=0.225 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0027  RGS10 R174fs*18 frameshift  clone=T tier=T_LOH VAF=0.225 expr=T100 bind=strong ctx=clean
   window    chr10:119500121-119500162  somatic TT>T at 119500141 on hap0
   hap0+mut  TATAAATTCTGGAAGCTCTTTAGCTGCAGTTTGAGCATCAG
                                 ^
   protein   aa 162-186  first change at aa 174 (frameshift)
                         ^
-  peptide   none
+  peptide   PPKSRDWQL HLA-B*08:01 rank 0.249
 
-## IGI-SYN-SEQ-02-IND-0028  CIB3 N3fs*25 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0028  CIB3 N3fs*25 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=weak ctx=exon_edge
   window    chr19:16173447-16173488  somatic GT>G at 16173467 on hap1
   hap1+mut  TGTGTGAAGACTGTCTGCTTGTGCCCATGGTGTGAACCACA
                                 ^
   protein   aa 1-15  first change at aa 3 (frameshift)
               ^
-  peptide   none
+  peptide   WKRIRTAHF HLA-B*08:01 rank 0.704
 
-## IGI-SYN-SEQ-02-IND-0029  PSMA3 A169fs*8 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0029  PSMA3 A169fs*8 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=weak ctx=clean
   window    chr14:58263711-58263752  somatic AG>A at 58263731 on hap0
   hap0+mut  TGGGGCTGTGCCATCGGCAAACCAGGCAAGCTGCAAAGACG
                                 ^
   protein   aa 157-181  first change at aa 169 (frameshift)
                         ^
-  peptide   GKPGKLQRRK HLA-B*27:05 rank 12.964
+  peptide   CAIGKPGKL HLA-C*01:02 rank 1.556
 
 ## IGI-SYN-SEQ-02-IND-0030  OR8H1 H65fs*3 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=weak ctx=clean
   window    chr11:56290845-56290890  somatic CAAGTG>C at 56290865 on hap1
@@ -5702,23 +5705,23 @@
                                 ^
   protein   aa 53-77  first change at aa 65 (frameshift)
                         ^
-  peptide   MYFFLTVIY HLA-C*07:01 rank 0.893
+  peptide   TPMYFFLTV HLA-B*08:01 rank 0.788
 
-## IGI-SYN-SEQ-02-IND-0031  NDUFS6 R19fs*27 frameshift  clone=B tier=B VAF=0.0466 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0031  NDUFS6 R19fs*27 frameshift  clone=B tier=B VAF=0.0466 expr=T100 bind=strong ctx=clean
   window    chr5:1801449-1801491  somatic GCG>G at 1801469 on hap1
   hap1+mut  TGAACCGGTGTGGCGAGGCGGCGGAGCCTGCCCCTGGGCGC
                                 ^
   protein   aa 7-31  first change at aa 19 (frameshift)
                         ^
-  peptide   none
+  peptide   EPAPGRQVF HLA-B*08:01 rank 0.495
 
-## IGI-SYN-SEQ-02-IND-0032  FZD5 R42fs*224 frameshift  clone=B tier=B VAF=0.0466 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0032  FZD5 R42fs*224 frameshift  clone=B tier=B VAF=0.0466 expr=T1 bind=strong ctx=clean
   window    chr2:207768591-207768636  somatic GCCGCG>G at 207768611 on hap1
   hap1+mut  TGCGTCAGGTTGTAGCCGATGGCACATGGGCACCGTGATTT
                                 ^
   protein   aa 30-54  first change at aa 42 (frameshift)
                         ^
-  peptide   none
+  peptide   RLPQAAAAL HLA-C*01:02 rank 0.01
 
 ## IGI-SYN-SEQ-02-IND-0033  TEX29 D133fs*2 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=non ctx=clean
   window    chr13:111342892-111342934  somatic TGA>T at 111342912 on hap1
@@ -5726,23 +5729,23 @@
                                 ^
   protein   aa 121-145  first change at aa 133 (frameshift)
                         ^
-  peptide   AGPSMKSRG HLA-C*01:02 rank 30.4
+  peptide   SAGPSMKSR HLA-C*07:01 rank 7.305
 
-## IGI-SYN-SEQ-02-IND-0034  PECR N107fs*8 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0034  PECR N107fs*8 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=strong ctx=clean
   window    chr2:216065392-216065437  somatic TCCATT>T at 216065412 on hap1
   hap1+mut  GGGGAAAGAAACTGGCCTCCTGTTCACCAAGAAATTGATCT
                                 ^
   protein   aa 95-119  first change at aa 107 (frameshift)
                         ^
-  peptide   NRRPVSFPC HLA-B*27:05 rank 2.634
+  peptide   LVNRRPVSF HLA-B*08:01 rank 0.05
 
-## IGI-SYN-SEQ-02-IND-0035  ALG11 M165fs*22 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0035  ALG11 M165fs*22 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=strong ctx=clean
   window    chr13:52024202-52024246  somatic AATGC>A at 52024222 on hap0
   hap0+mut  TTTCTTGGCTGGGAAGCTCTAAGTGTGTTCCTGATGTTTAC
                                 ^
   protein   aa 153-177  first change at aa 165 (frameshift)
                         ^
-  peptide   none
+  peptide   DTLLRFLCL HLA-B*08:01 rank 0.116
 
 ## IGI-SYN-SEQ-02-IND-0036  GSTA3 R187fs*7 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=non ctx=clean
   window    chr6:52896896-52896937  somatic TG>T at 52896916 on hap0
@@ -5750,103 +5753,103 @@
                                 ^
   protein   aa 175-199  first change at aa 187 (frameshift)
                         ^
-  peptide   KTESATCPR HLA-A*01:01 rank 6.475
+  peptide   LLKALKTESA HLA-B*08:01 rank 2.509
 
-## IGI-SYN-SEQ-02-IND-0037  CST4 A105fs*29 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-02-IND-0037  CST4 A105fs*29 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=strong ctx=segdup
   window    chr20:23687096-23687137  somatic GC>G at 23687116 on hap0
   hap0+mut  GTTCTGGCTGTTCATGGAAGGACAGGTGTCCAAGTTGGGCT
                                 ^
   protein   aa 93-117  first change at aa 105 (frameshift)
                         ^
-  peptide   none
+  peptide   RRNSCALSR HLA-B*27:05 rank 0.09
 
-## IGI-SYN-SEQ-02-IND-0038  SNX15 L234fs*34 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0038  SNX15 L234fs*34 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=strong ctx=clean
   window    chr11:65038585-65038629  somatic AGCTG>A at 65038605 on hap0
   hap0+mut  CAGCCCCACCCATGTGGCTGAGCAACGATGGAGGTGGAGTC
                                 ^
   protein   aa 222-246  first change at aa 234 (frameshift)
                         ^
-  peptide   none
+  peptide   EQRWRWSL HLA-B*08:01 rank 0.138
 
-## IGI-SYN-SEQ-02-IND-0039  TTC25 R495fs*23 frameshift  clone=T tier=T_LOH VAF=0.225 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0039  TTC25 R495fs*23 frameshift  clone=T tier=T_LOH VAF=0.225 expr=T0 bind=strong ctx=clean
   window    chr17:41961400-41961441  somatic GA>G at 41961420 on hap0
   hap0+mut  AAGGGTATCATCAGAGAACTGGGAAAACCAACTACGTGGAG
                                 ^
   protein   aa 483-507  first change at aa 495 (frameshift)
                         ^
-  peptide   none
+  peptide   KAREKLHCM HLA-B*08:01 rank 0.106
 
-## IGI-SYN-SEQ-02-IND-0040  PTPRO F755fs*35 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0040  PTPRO F755fs*35 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=strong ctx=clean
   window    chr12:15546645-15546690  somatic TTTTCT>T at 15546665 on hap1
   hap1+mut  AGTAGCTGATTTCTTTGAAGTGTCAACAAGTTGGCTCCAGT
                                 ^
   protein   aa 743-767  first change at aa 755 (frameshift)
                         ^
-  peptide   none
+  peptide   LQPSSCHCL HLA-C*01:02 rank 0.253
 
-## IGI-SYN-SEQ-02-IND-0041  MBOAT4 H362fs*12 frameshift  clone=A1 tier=A1 VAF=0.0184 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0041  MBOAT4 H362fs*12 frameshift  clone=A1 tier=A1 VAF=0.0184 expr=T0 bind=strong ctx=clean
   window    chr8:30132145-30132186  somatic GT>G at 30132165 on hap1
   hap1+mut  ATAAACTCATTGGCAAAGGAGGAATCAGGTAGTCAGCTTCC
                                 ^
   protein   aa 350-374  first change at aa 362 (frameshift)
                         ^
-  peptide   none
+  peptide   LIPPLPMSL HLA-C*01:02 rank 0.005
 
-## IGI-SYN-SEQ-02-IND-0042  MYOM3 L290fs*11 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0042  MYOM3 L290fs*11 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=weak ctx=clean
   window    chr1:24094893-24094935  somatic GGG>G at 24094913 on hap0
   hap0+mut  TTCCGAAAACAAGCATGACAGAGAAGGGTTCCTTCTCACGA
                                 ^
   protein   aa 278-302  first change at aa 290 (frameshift)
                         ^
-  peptide   VMLVFGRCVRC HLA-B*08:01 rank 49.7
+  peptide   AREKEPFSV HLA-B*27:05 rank 0.642
 
-## IGI-SYN-SEQ-02-IND-0043  POLR2J3 F7fs*42 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=segdup
+## IGI-SYN-SEQ-02-IND-0043  POLR2J3 F7fs*42 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=segdup
   window    chr7:102572478-102572522  somatic CTCGA>C at 102572498 on hap0
   hap0+mut  CCCTCGAAGAGCAAGAACGACAGGCTGGAGGGGCGTTCATG
                                 ^
   protein   aa 1-19  first change at aa 7 (frameshift)
                   ^
-  peptide   none
+  peptide   RRSPLTRTPRY HLA-B*27:05 rank 0.121
 
-## IGI-SYN-SEQ-02-IND-0044  PRICKLE4 D247fs*31 frameshift  clone=A tier=A VAF=0.0543 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0044  PRICKLE4 D247fs*31 frameshift  clone=A tier=A VAF=0.0543 expr=T1 bind=strong ctx=clean
   window    chr6:41786262-41786303  somatic CG>C at 41786282 on hap0
   hap0+mut  CTGCTTCGAGAACCGCTACTCGATGCAGGCTCGAGCTGGGC
                                 ^
   protein   aa 235-259  first change at aa 247 (frameshift)
                         ^
-  peptide   none
+  peptide   GRLDSTELK HLA-B*27:05 rank 0.109
 
-## IGI-SYN-SEQ-02-IND-0045  ENPP5 Q243fs*6 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0045  ENPP5 Q243fs*6 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=weak ctx=clean
   window    chr6:46167516-46167557  somatic GC>G at 46167536 on hap1
   hap1+mut  TAACCTTTCCTCAGAGCACTGGTCATTCCATGATCACTTGT
                                 ^
   protein   aa 231-255  first change at aa 243 (frameshift)
                         ^
-  peptide   DHGMTSALRKG HLA-B*27:05 rank 51.667
+  peptide   TSDHGMTSA HLA-A*01:01 rank 0.864
 
-## IGI-SYN-SEQ-02-IND-0046  ZNF518A R873fs*21 frameshift  clone=T tier=T_LOH VAF=0.225 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0046  ZNF518A R873fs*21 frameshift  clone=T tier=T_LOH VAF=0.225 expr=T10 bind=strong ctx=clean
   window    chr10:96158920-96158964  somatic GAGAT>G at 96158940 on hap0
   hap0+mut  ATCAATACCACAAGATGTGAGTCAGAGAAGATGCCTAGAAT
                                 ^
   protein   aa 861-885  first change at aa 873 (frameshift)
                         ^
-  peptide   none
+  peptide   RRCLEFQVL HLA-C*07:01 rank 0.25
 
-## IGI-SYN-SEQ-02-IND-0047  CACHD1 G514fs*34 frameshift  clone=T tier=T_het VAF=0.1552 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0047  CACHD1 G514fs*34 frameshift  clone=T tier=T_het VAF=0.1552 expr=T1 bind=strong ctx=exon_edge
   window    chr1:64652290-64652331  somatic GG>G at 64652310 on hap0
   hap0+mut  CTTTTCTCATAGACGACAAAGTAATCTGCTAAATGTTCATC
                                 ^
   protein   aa 502-526  first change at aa 514 (frameshift)
                         ^
-  peptide   none
+  peptide   YIMKIFQNL HLA-B*08:01 rank 0.139
 
-## IGI-SYN-SEQ-02-IND-0048  PUM2 T1027fs*20 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0048  PUM2 T1027fs*20 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=clean
   window    chr2:20251679-20251720  somatic AG>A at 20251699 on hap0
   hap0+mut  TATGTGTATTTGCGCAAAGTATAATGTGAGGTCGAATCTGA
                                 ^
   protein   aa 1015-1039  first change at aa 1027 (frameshift)
                         ^
-  peptide   none
+  peptide   MHKIRPHII HLA-B*08:01 rank 0.394
 
 ## IGI-SYN-SEQ-02-IND-0049  C1R N40fs*7 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=strong ctx=clean
   window    chr12:7091542-7091583  somatic TG>T at 7091562 on hap0
@@ -5854,23 +5857,23 @@
                                 ^
   protein   aa 28-52  first change at aa 40 (frameshift)
                         ^
-  peptide   YPKTLKQPL HLA-B*08:01 rank 0.022
+  peptide   FPKPYPKTL HLA-B*08:01 rank 0.007
 
-## IGI-SYN-SEQ-02-IND-0050  ZNF710 D623fs*27 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0050  ZNF710 D623fs*27 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=weak ctx=clean
   window    chr15:90079679-90079724  somatic TCGACG>T at 90079699 on hap1
   hap1+mut  AGGCACTGACCCTTCAGAGCTGCCAGCAGGAGATGGAGGAC
                                 ^
   protein   aa 611-635  first change at aa 623 (frameshift)
                         ^
-  peptide   none
+  peptide   DGGLRGERL HLA-B*08:01 rank 0.769
 
-## IGI-SYN-SEQ-02-IND-0051  SMOC1 E360fs*2 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0051  SMOC1 E360fs*2 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=strong ctx=clean
   window    chr14:70023212-70023256  somatic TGGAG>T at 70023232 on hap1
   hap1+mut  GCCAGACCCCAGCCACACCCTGAGCGGGTAGTGCACTGGTA
                                 ^
   protein   aa 348-372  first change at aa 360 (frameshift)
                         ^
-  peptide   SEPDPSHTLSG HLA-C*01:02 rank 18.295
+  peptide   FSEPDPSHTLS HLA-C*01:02 rank 0.357
 
 ## IGI-SYN-SEQ-02-IND-0052  CLPX K67fs*4 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=non ctx=clean
   window    chr15:65180063-65180105  somatic TTT>T at 65180083 on hap0
@@ -5878,23 +5881,23 @@
                                 ^
   protein   aa 55-79  first change at aa 67 (frameshift)
                         ^
-  peptide   AYFASRWDK HLA-B*27:05 rank 6.172
+  peptide   FTETPAYFASR HLA-A*01:01 rank 3.43
 
-## IGI-SYN-SEQ-02-IND-0053  SCFD1 N264fs*27 frameshift  clone=A tier=A VAF=0.0543 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0053  SCFD1 N264fs*27 frameshift  clone=A tier=A VAF=0.0543 expr=T100 bind=strong ctx=clean
   window    chr14:30653502-30653547  somatic AAACAT>A at 30653522 on hap1
   hap1+mut  TTATTAGTCCTTGTTGACAGAAGATTTGGCAACTCCTTTAC
                                 ^
   protein   aa 252-276  first change at aa 264 (frameshift)
                         ^
-  peptide   none
+  peptide   RRFGNSFTSY HLA-B*27:05 rank 0.007
 
-## IGI-SYN-SEQ-02-IND-0054  TMIGD2 I71fs*47 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0054  TMIGD2 I71fs*47 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=strong ctx=clean
   window    chr19:4298158-4298203  somatic TGATGT>T at 4298178 on hap0
   hap0+mut  CAGGCTGAGGCTGCCGTTGGTACGGTTGACACAGGATGGCC
                                 ^
   protein   aa 59-83  first change at aa 71 (frameshift)
                         ^
-  peptide   none
+  peptide   LRAPGTALL HLA-C*07:01 rank 0.046
 
 ## IGI-SYN-SEQ-02-IND-0055  TP53INP2 S113fs*1 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=non ctx=clean
   window    chr20:34709426-34709470  somatic GCAGC>G at 34709446 on hap1
@@ -5904,29 +5907,29 @@
                         ^
   peptide   SMSVYVTGP HLA-B*08:01 rank 32.975
 
-## IGI-SYN-SEQ-02-IND-0056  BLZF1 E183fs*5 frameshift  clone=B tier=B VAF=0.0403 expr=T10 bind=weak ctx=clean
+## IGI-SYN-SEQ-02-IND-0056  BLZF1 E183fs*5 frameshift  clone=B tier=B VAF=0.0403 expr=T10 bind=strong ctx=clean
   window    chr1:169378383-169378427  somatic CCCGT>C at 169378403 on hap0
   hap0+mut  GTATCACTTTGAACGTCTAGCGAGAAAAATCAGCTTATTTT
                                 ^
   protein   aa 171-195  first change at aa 183 (frameshift)
                         ^
-  peptide   RLARKISLF HLA-B*08:01 rank 0.753
+  peptide   ERLARKISL HLA-B*08:01 rank 0.099
 
-## IGI-SYN-SEQ-02-IND-0057  KCNJ2 S13fs*22 frameshift  clone=T tier=T_LOH VAF=0.45 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0057  KCNJ2 S13fs*22 frameshift  clone=T tier=T_LOH VAF=0.45 expr=T1 bind=strong ctx=clean
   window    chr17:70175053-70175095  somatic GTC>G at 70175073 on hap0
   hap0+mut  GAACCAACCGCTACAGCATCGTCTTCAGAAGAAGACGGTAT
                                 ^
   protein   aa 1-25  first change at aa 13 (frameshift)
                         ^
-  peptide   none
+  peptide   NRYSIVFRR HLA-B*27:05 rank 0.052
 
-## IGI-SYN-SEQ-02-IND-0058  KCNIP1 E37fs*69 frameshift  clone=A1 tier=A1 VAF=0.0184 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0058  KCNIP1 E37fs*69 frameshift  clone=A1 tier=A1 VAF=0.0184 expr=T0 bind=strong ctx=clean
   window    chr5:170718785-170718826  somatic GA>G at 170718805 on hap1
   hap1+mut  CCATGGTTTGCCATCGGCCCGGGGACTGGAGCAGCTCGAGG
                                 ^
   protein   aa 25-49  first change at aa 37 (frameshift)
                         ^
-  peptide   none
+  peptide   ARMPITSSM HLA-B*27:05 rank 0.007
 
 ## IGI-SYN-SEQ-02-IND-0059  SNAPC5 H23fs*2 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=non ctx=clean
   window    chr15:66497641-66497685  somatic TCGTG>T at 66497661 on hap0
@@ -5934,31 +5937,31 @@
                                 ^
   protein   aa 11-35  first change at aa 23 (frameshift)
                         ^
-  peptide   LRLKAALTS HLA-B*27:05 rank 2.94
+  peptide   LLRLKAALT HLA-B*08:01 rank 2.838
 
-## IGI-SYN-SEQ-02-IND-0060  RBMX2 R219fs*19 frameshift  clone=T tier=T_het VAF=0.3103 expr=T10 bind=na ctx=segdup
+## IGI-SYN-SEQ-02-IND-0060  RBMX2 R219fs*19 frameshift  clone=T tier=T_het VAF=0.3103 expr=T10 bind=strong ctx=segdup
   window    chrX:130412513-130412554  somatic CA>C at 130412533 on hap1
   hap1+mut  AGAGCTCAGAAGTCAGAGCCCGGGAGGGGCAGAAGCTCCCC
                                 ^
   protein   aa 207-231  first change at aa 219 (frameshift)
                         ^
-  peptide   none
+  peptide   SSPNPGRPTL HLA-C*01:02 rank 0.027
 
-## IGI-SYN-SEQ-02-IND-0061  POLR3F L25fs*12 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0061  POLR3F L25fs*12 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=strong ctx=exon_edge
   window    chr20:18468934-18468975  somatic TT>T at 18468954 on hap1
   hap1+mut  TTGTTTCTAGGATTATAGAATATGTCACCAGTTCCCTCATG
                                 ^
   protein   aa 13-37  first change at aa 25 (frameshift)
                         ^
-  peptide   none
+  peptide   EIENRIIEY HLA-A*01:01 rank 0.18
 
-## IGI-SYN-SEQ-02-IND-0062  MYL12A N43fs*26 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1000 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0062  MYL12A N43fs*26 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1000 bind=strong ctx=clean
   window    chr18:3253352-3253393  somatic AG>A at 3253372 on hap1
   hap1+mut  GGCCTTCAACATGATTGATCAAACAGAGATGGTTTCATCGA
                                 ^
   protein   aa 31-55  first change at aa 43 (frameshift)
                         ^
-  peptide   none
+  peptide   LHWGRIQLM HLA-C*07:01 rank 0.248
 
 ## IGI-SYN-SEQ-02-IND-0063  APOL6 Q294fs*2 frameshift  clone=T tier=T_het VAF=0.3103 expr=T10 bind=non ctx=clean
   window    chr22:35659423-35659464  somatic GC>G at 35659443 on hap1
@@ -5966,15 +5969,15 @@
                                 ^
   protein   aa 282-306  first change at aa 294 (frameshift)
                         ^
-  peptide   QLYKSLQRK HLA-B*27:05 rank 4.891
+  peptide   TQLYKSLQR HLA-B*27:05 rank 2.883
 
-## IGI-SYN-SEQ-02-IND-0064  MYL6 L128fs*3 frameshift  clone=T tier=T_het VAF=0.3103 expr=T1000 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0064  MYL6 L128fs*3 frameshift  clone=T tier=T_het VAF=0.3103 expr=T1000 bind=weak ctx=clean
   window    chr12:56160255-56160300  somatic CTGGTG>C at 56160275 on hap0
   hap0+mut  CAGAGGAAGAAGTAGAGATGCGCAGGGCATGAGGACAGCAA
                                 ^
   protein   aa 116-140  first change at aa 128 (frameshift)
                         ^
-  peptide   MTEEEVEMRRA HLA-A*01:01 rank 6.598
+  peptide   MTEEEVEMR HLA-A*01:01 rank 1.86
 
 ## IGI-SYN-SEQ-02-IND-0065  UACA E788fs*4 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=non ctx=clean
   window    chr15:70668302-70668343  somatic CC>C at 70668322 on hap1
@@ -5982,39 +5985,39 @@
                                 ^
   protein   aa 776-800  first change at aa 788 (frameshift)
                         ^
-  peptide   KLLLKMTA HLA-B*08:01 rank 5.786
+  peptide   EMEKLLLKM HLA-B*08:01 rank 2.08
 
-## IGI-SYN-SEQ-02-IND-0066  ARMH2 K199fs*24 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0066  ARMH2 K199fs*24 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=strong ctx=clean
   window    chr6:24797483-24797527  somatic ATATT>A at 24797503 on hap1
   hap1+mut  GCAGCCAACATTTGCAAATGATTAGAGCACTGTGGTCTTTA
                                 ^
   protein   aa 187-211  first change at aa 199 (frameshift)
                         ^
-  peptide   none
+  peptide   ELKDHSALI HLA-B*08:01 rank 0.39
 
-## IGI-SYN-SEQ-02-IND-0067  FZD6 T499fs*7 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=weak ctx=clean
+## IGI-SYN-SEQ-02-IND-0067  FZD6 T499fs*7 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=clean
   window    chr8:103328349-103328394  somatic GACATG>G at 103328369 on hap0
   hap0+mut  TTCTGGGTTGGAAGCAAAAAGCACAGAATGGGCTGGGTTTT
                                 ^
   protein   aa 487-511  first change at aa 499 (frameshift)
                         ^
-  peptide   KKHRMGWVF HLA-C*07:01 rank 1.688
+  peptide   WVGSKKHRM HLA-B*08:01 rank 0.479
 
-## IGI-SYN-SEQ-02-IND-0068  AC073610.1 D26fs*31 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0068  AC073610.1 D26fs*31 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=strong ctx=clean
   window    chr12:48940996-48941041  somatic GCATCC>G at 48941016 on hap0
   hap0+mut  GGATGGTGGTCTTTCCTGCGGAGGCCCACCATCAGGATGCG
                                 ^
   protein   aa 14-38  first change at aa 26 (frameshift)
                         ^
-  peptide   none
+  peptide   ETRGDRHHHPY HLA-A*01:01 rank 0.155
 
-## IGI-SYN-SEQ-02-IND-0069  LMBRD1 A409fs*6 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0069  LMBRD1 A409fs*6 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=strong ctx=clean
   window    chr6:69699137-69699178  somatic TT>T at 69699157 on hap0
   hap0+mut  ATGCAGAGAAAAAGGAGTGCTGGGGCCTGGTTCTACCTCTT
                                 ^
   protein   aa 397-421  first change at aa 409 (frameshift)
                         ^
-  peptide   RPQHSFFSA HLA-B*08:01 rank 3.197
+  peptide   GRTRPQHSF HLA-B*27:05 rank 0.03
 
 ## IGI-SYN-SEQ-02-IND-0070  MMD2 V219fs*0 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=na ctx=clean
   window    chr7:4907461-4907502  somatic AC>A at 4907481 on hap1
@@ -6024,21 +6027,21 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-02-IND-0071  EEPD1 K347fs*16 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0071  EEPD1 K347fs*16 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=weak ctx=exon_edge
   window    chr7:36281201-36281245  somatic AGAAG>A at 36281221 on hap1
   hap1+mut  GAAGCCCTCGAATCAGCTCCAGTACCCTCGTCTGCAAAGCC
                                 ^
   protein   aa 335-359  first change at aa 347 (frameshift)
                         ^
-  peptide   none
+  peptide   LQELGMQDSY HLA-A*01:01 rank 0.663
 
-## IGI-SYN-SEQ-02-IND-0072  CNTNAP1 R1121fs*12 frameshift  clone=A1 tier=A1 VAF=0.0225 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0072  CNTNAP1 R1121fs*12 frameshift  clone=A1 tier=A1 VAF=0.0225 expr=T1 bind=non ctx=clean
   window    chr17:42696018-42696059  somatic GC>G at 42696038 on hap0
   hap0+mut  CCCACAGGGACCCTTCAGCTGGATATCAGCTGGGCACCAGT
                                 ^
   protein   aa 1109-1133  first change at aa 1121 (frameshift)
                         ^
-  peptide   none
+  peptide   WAPVPTCTS HLA-C*01:02 rank 4.271
 
 ## IGI-SYN-SEQ-02-IND-0073  NEURL4 T1411fs*1 frameshift  clone=A tier=A VAF=0.0788 expr=T10 bind=non ctx=clean
   window    chr17:7317527-7317568  somatic GT>G at 7317547 on hap0
@@ -6054,15 +6057,15 @@
                                 ^
   protein   aa 187-211  first change at aa 199 (frameshift)
                         ^
-  peptide   DRLGRQKC HLA-B*08:01 rank 13.649
+  peptide   QADRLGRQK HLA-A*01:01 rank 3.204
 
-## IGI-SYN-SEQ-02-IND-0075  COG5 A88fs*4 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0075  COG5 A88fs*4 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=strong ctx=clean
   window    chr7:107554291-107554336  somatic TGTGCC>T at 107554311 on hap1
   hap1+mut  ACGACTCAATCCCAGTTGCTTAGTAAATCTTCATGTCTTGC
                                 ^
   protein   aa 76-100  first change at aa 88 (frameshift)
                         ^
-  peptide   ARHEDLLSNWD HLA-B*27:05 rank 2.963
+  peptide   ARHEDLLSNW HLA-B*27:05 rank 0.367
 
 ## IGI-SYN-SEQ-02-IND-0076  MSMO1 A215fs*2 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=clean
   window    chr4:165340309-165340350  somatic TG>T at 165340329 on hap0
@@ -6070,15 +6073,15 @@
                                 ^
   protein   aa 203-227  first change at aa 215 (frameshift)
                         ^
-  peptide   DHVILLWHG HLA-B*08:01 rank 41.889
+  peptide   LCDHVILLWH HLA-A*01:01 rank 5.309
 
-## IGI-SYN-SEQ-02-IND-0077  PANX3 N176fs*16 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0077  PANX3 N176fs*16 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=strong ctx=clean
   window    chr11:124617454-124617495  somatic GA>G at 124617474 on hap1
   hap1+mut  TCCGACCCCTATGTGTTCTGGATGAGCTGGAGAAGTGAGTT
                                 ^
   protein   aa 164-188  first change at aa 176 (frameshift)
                         ^
-  peptide   none
+  peptide   RRLGKNDTL HLA-B*27:05 rank 0.133
 
 ## IGI-SYN-SEQ-02-IND-0078  P3R3URF F92fs*0 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=na ctx=exon_edge
   window    chr1:46175577-46175621  somatic GAAAA>G at 46175597 on hap1
@@ -6096,29 +6099,29 @@
                         ^
   peptide   KRMIETAG HLA-B*27:05 rank 8.083
 
-## IGI-SYN-SEQ-02-IND-0080  CATSPERB L832fs*7 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0080  CATSPERB L832fs*7 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=weak ctx=clean
   window    chr14:91610561-91610603  somatic TGA>T at 91610581 on hap0
   hap0+mut  AGGAATGTGATGCATAGATCTGATAACTACAGCTGCTTTTC
                                 ^
   protein   aa 820-844  first change at aa 832 (frameshift)
                         ^
-  peptide   SYQIYASHS HLA-C*01:02 rank 23.815
+  peptide   KSSCSYQIY HLA-A*01:01 rank 0.659
 
-## IGI-SYN-SEQ-02-IND-0081  APCDD1L C64fs*291 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0081  APCDD1L C64fs*291 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=strong ctx=exon_edge
   window    chr20:58467638-58467678  somatic G>GTTGT at 58467658 on hap1
   hap1+mut  GGTCCTGGGCGCACCTCGCAGTTGTCTGCAGGGGTGGAAGGAGAT
                                 ^^^^^
   protein   aa 52-76  first change at aa 64 (frameshift)
                         ^
-  peptide   none
+  peptide   SSPVPHPAL HLA-C*01:02 rank 0.002
 
-## IGI-SYN-SEQ-02-IND-0082  MEA1 P11fs*8 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0082  MEA1 P11fs*8 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=strong ctx=exon_edge
   window    chr6:43013366-43013406  somatic G>GCACAT at 43013386 on hap1
   hap1+mut  CTACTGTTGCCATCCGGGCAGCACATGGGCTGCAAGAACAGGGAGG
                                 ^^^^^^
   protein   aa 1-23  first change at aa 11 (frameshift)
                       ^
-  peptide   AHVLPGWQQ HLA-B*27:05 rank 6.282
+  peptide   RHLSGAHVL HLA-C*07:01 rank 0.375
 
 ## IGI-SYN-SEQ-02-IND-0083  PRAMEF18 L394fs*2 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=non ctx=segdup
   window    chr1:13223573-13223613  somatic A>AGCGCC at 13223593 on hap0
@@ -6128,13 +6131,13 @@
                         ^
   peptide   HGNDTSMDAAL HLA-C*01:02 rank 7.929
 
-## IGI-SYN-SEQ-02-IND-0084  CACNB4 Y132fs*8 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0084  CACNB4 Y132fs*8 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=strong ctx=exon_edge
   window    chr2:151876535-151876575  somatic T>TGACCT at 151876555 on hap1
   hap1+mut  TCCACCAATCATTGTTATATTGACCTTCTGGAATTCAGAAATAAAA
                                 ^^^^^^
   protein   aa 120-144  first change at aa 132 (frameshift)
                         ^
-  peptide   KVNITMIGG HLA-B*27:05 rank 58.333
+  peptide   HIKEKVNITM HLA-B*08:01 rank 0.102
 
 ## IGI-SYN-SEQ-02-IND-0085  FSTL4 I538fs*2 frameshift  clone=B tier=B VAF=0.0551 expr=T0 bind=non ctx=exon_edge
   window    chr5:133210276-133210316  somatic G>GGGCGG at 133210296 on hap1
@@ -6142,7 +6145,7 @@
                                 ^^^^^^
   protein   aa 526-550  first change at aa 538 (frameshift)
                         ^
-  peptide   AQKVLQSRP HLA-B*27:05 rank 19.981
+  peptide   QAQKVLQSR HLA-C*07:01 rank 6.817
 
 ## IGI-SYN-SEQ-02-IND-0086  AL627230.1 V41fs*1 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=non ctx=segdup
   window    chr9:67726014-67726054  somatic G>GGT at 67726034 on hap1
@@ -6160,29 +6163,29 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-02-IND-0088  TMEM63B S508fs*27 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0088  TMEM63B S508fs*27 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=strong ctx=exon_edge
   window    chr6:44149945-44149985  somatic G>GTG at 44149965 on hap0
   hap0+mut  CTTTGAAGCCCACTGGACACGTGGTAAGGTGCCTCCACTCACA
                                 ^^^
   protein   aa 496-520  first change at aa 508 (frameshift)
                         ^
-  peptide   none
+  peptide   SSSSWCCSY HLA-A*01:01 rank 0.327
 
-## IGI-SYN-SEQ-02-IND-0089  PLA2G4A S140fs*26 frameshift  clone=A1 tier=A1 VAF=0.0134 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0089  PLA2G4A S140fs*26 frameshift  clone=A1 tier=A1 VAF=0.0134 expr=T10 bind=strong ctx=exon_edge
   window    chr1:186906982-186907022  somatic G>GCC at 186907002 on hap1
   hap1+mut  AGAAATGTCTCTTGAAGTTTGCCGTAAGTGCATTTATTTAGTT
                                 ^^^
   protein   aa 128-152  first change at aa 140 (frameshift)
                         ^
-  peptide   none
+  peptide   SLEVCPHAQTY HLA-A*01:01 rank 0.161
 
-## IGI-SYN-SEQ-02-IND-0090  TBC1D13 L306fs*17 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0090  TBC1D13 L306fs*17 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=strong ctx=exon_edge
   window    chr9:128804096-128804136  somatic A>AGGGAT at 128804116 on hap1
   hap1+mut  GATGTGGAGCTCTACCTGAAAGGGATCTGGTGAGGACCCCAGGAAC
                                 ^^^^^^
   protein   aa 294-318  first change at aa 306 (frameshift)
                         ^
-  peptide   none
+  peptide   ICKSRTSSL HLA-B*08:01 rank 0.038
 
 ## IGI-SYN-SEQ-02-IND-0091  NPHP3-ACAD11 L374fs*7 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=strong ctx=exon_edge
   window    chr3:132708237-132708277  somatic G>GATGG at 132708257 on hap1
@@ -6190,15 +6193,15 @@
                                 ^^^^^
   protein   aa 362-386  first change at aa 374 (frameshift)
                         ^
-  peptide   TLPSHPFIGRL HLA-C*01:02 rank 0.433
+  peptide   TLPSHPFI HLA-C*01:02 rank 0.244
 
-## IGI-SYN-SEQ-02-IND-0092  BSDC1 P139fs*27 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0092  BSDC1 P139fs*27 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=strong ctx=exon_edge
   window    chr1:32378817-32378857  somatic G>GGCTAA at 32378837 on hap1
   hap1+mut  GGCGTCAAACAATTCCGGGGGGCTAACCCTGCAGAGGGACAGATGC
                                 ^^^^^^
   protein   aa 127-151  first change at aa 139 (frameshift)
                         ^
-  peptide   none
+  peptide   RRGRSQSSL HLA-C*07:01 rank 0.301
 
 ## IGI-SYN-SEQ-02-IND-0093  IFI16 K128fs*0 frameshift  clone=A tier=A VAF=0.047 expr=T100 bind=na ctx=exon_edge
   window    chr1:159015967-159016007  somatic G>GTAGA at 159015987 on hap1
@@ -6208,61 +6211,61 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-02-IND-0094  FAM153B Q322fs*64 frameshift  clone=B tier=B VAF=0.0551 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-02-IND-0094  FAM153B Q322fs*64 frameshift  clone=B tier=B VAF=0.0551 expr=T0 bind=strong ctx=segdup
   window    chr5:176109116-176109156  somatic G>GGCTG at 176109136 on hap1
   hap1+mut  GACCCAGCCACACTGGCAAAGGCTGCGTACGTATTCTGGGATCAT
                                 ^^^^^
   protein   aa 310-334  first change at aa 322 (frameshift)
                         ^
-  peptide   none
+  peptide   AAIGRLHHY HLA-C*07:01 rank 0.107
 
-## IGI-SYN-SEQ-02-IND-0095  TMEM14B S35fs*15 frameshift  clone=A tier=A VAF=0.0543 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0095  TMEM14B S35fs*15 frameshift  clone=A tier=A VAF=0.0543 expr=T100 bind=weak ctx=exon_edge
   window    chr6:10749677-10749717  somatic A>AGGAAA at 10749697 on hap0
   hap0+mut  ATCGTTGGCTATGTAAAAACAGGAAAGGTAGGGTTTTGTTGTTACT
                                 ^^^^^^
   protein   aa 23-47  first change at aa 35 (frameshift)
                         ^
-  peptide   none
+  peptide   YVKTGKAAC HLA-B*08:01 rank 1.984
 
-## IGI-SYN-SEQ-02-IND-0096  SCYGR3 C35fs*34 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=na ctx=near_germline_het
+## IGI-SYN-SEQ-02-IND-0096  SCYGR3 C35fs*34 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=strong ctx=near_germline_het
   window    chr2:227614719-227614759  somatic G>GGC at 227614739 on hap1
   hap1+mut  CAGGTGGTGCAGCTGCCACAGGCACACCACCACAGCCACCACC
                                 ^^^
   protein   aa 23-47  first change at aa 35 (frameshift)
                         ^
-  peptide   none
+  peptide   AAPAAAAAV HLA-C*01:02 rank 0.055
 
-## IGI-SYN-SEQ-02-IND-0097  GPANK1 P211fs*55 frameshift  clone=T tier=T_LOH VAF=0.45 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0097  GPANK1 P211fs*55 frameshift  clone=T tier=T_LOH VAF=0.45 expr=T1 bind=strong ctx=exon_edge
   window    chr6:31662690-31662730  somatic C>CAACTC at 31662710 on hap0
   hap0+mut  TGGAGGGAGGGAGTAGGAGACAACTCCTGCAGAGAAAGAAGAAAAA
                                 ^^^^^^
   protein   aa 199-223  first change at aa 211 (frameshift)
                         ^
-  peptide   none
+  peptide   KIPTTAHPL HLA-C*01:02 rank 0.017
 
-## IGI-SYN-SEQ-02-IND-0098  SLC38A4 V240fs*40 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0098  SLC38A4 V240fs*40 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=strong ctx=exon_edge
   window    chr12:46778755-46778795  somatic A>ATACT at 46778775 on hap0
   hap0+mut  TTTGGAATTTCTTGTAAATCATACTCCTAGACTCAGTCATTAAAA
                                 ^^^^^
   protein   aa 228-252  first change at aa 240 (frameshift)
                         ^
-  peptide   none
+  peptide   DLQEIPNTL HLA-B*08:01 rank 0.227
 
-## IGI-SYN-SEQ-02-IND-0099  PRAMEF1 E11fs*9 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=non ctx=segdup
+## IGI-SYN-SEQ-02-IND-0099  PRAMEF1 E11fs*9 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=weak ctx=segdup
   window    chr1:12793233-12793273  somatic T>TGCTTG at 12793253 on hap1
   hap1+mut  CATCCAGGCCCCACCCAGACTGCTTGACTGGAGCTGGCAGGGCAGA
                                 ^^^^^^
   protein   aa 1-23  first change at aa 11 (frameshift)
                       ^
-  peptide   DWSWQGRAC HLA-B*08:01 rank 16.162
+  peptide   QAPPRLLDW HLA-C*01:02 rank 1.738
 
-## IGI-SYN-SEQ-02-IND-0100  AC112229.3 Q228fs*58 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=na ctx=deep_intronic
+## IGI-SYN-SEQ-02-IND-0100  AC112229.3 Q228fs*58 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=strong ctx=deep_intronic
   window    chr2:110451996-110452036  somatic T>TGCAAT at 110452016 on hap1
   hap1+mut  ATCGGCAGTCAGATCCTTCCTGCAATGTCTGTGAGAAAGACACCCA
                                 ^^^^^^
   protein   aa 216-240  first change at aa 228 (frameshift)
                         ^
-  peptide   none
+  peptide   ELKGELYCL HLA-B*08:01 rank 0.271
 
 ## IGI-SYN-SEQ-02-IND-0101  DAPP1 M200fs*1 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=exon_edge
   window    chr4:99863049-99863089  somatic G>GAAGTA at 99863069 on hap0
@@ -6280,13 +6283,13 @@
                         ^
   peptide   SGAKGIPDL HLA-C*01:02 rank 1.653
 
-## IGI-SYN-SEQ-02-IND-0103  TRPM8 D552fs*22 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0103  TRPM8 D552fs*22 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=strong ctx=exon_edge
   window    chr2:233961044-233961084  somatic C>CATCG at 233961064 on hap0
   hap0+mut  ACGAGATGGACATAGAACTCCATCGACGTAGGTACTGGGAGAGTT
                                 ^^^^^
   protein   aa 540-564  first change at aa 552 (frameshift)
                         ^
-  peptide   none
+  peptide   SAPPASSL HLA-C*01:02 rank 0.006
 
 ## IGI-SYN-SEQ-02-IND-0104  WFDC10A Q30fs*1 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=strong ctx=exon_edge
   window    chr20:45629881-45629921  somatic C>CTGTA at 45629901 on hap1
@@ -6296,21 +6299,21 @@
                         ^
   peptide   YRDKKRML HLA-C*07:01 rank 0.218
 
-## IGI-SYN-SEQ-02-IND-0105  PSG4 N268fs*24 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-02-IND-0105  PSG4 N268fs*24 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=strong ctx=segdup
   window    chr19:43195162-43195202  somatic C>CGCCC at 43195182 on hap0
   hap0+mut  CACCAAATGTAGGTGTAGTTCGCCCTCACTCTTAGGTTCACAGGT
                                 ^^^^^
   protein   aa 256-280  first change at aa 268 (frameshift)
                         ^
-  peptide   none
+  peptide   EPKSKGEL HLA-B*08:01 rank 0.108
 
-## IGI-SYN-SEQ-02-IND-0106  MPHOSPH6 L9fs*8 frameshift  clone=B tier=B VAF=0.0466 expr=T100 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0106  MPHOSPH6 L9fs*8 frameshift  clone=B tier=B VAF=0.0466 expr=T100 bind=weak ctx=clean
   window    chr16:82170131-82170171  somatic A>ACC at 82170151 on hap0
   hap0+mut  GCGCAGCAGATTCTTGGACAACCCTTTGTCTTTCTCTCGGCCG
                                 ^^^
   protein   aa 1-21  first change at aa 9 (frameshift)
                     ^
-  peptide   RGCPRIYCA HLA-B*08:01 rank 7.391
+  peptide   KTRGCPRIY HLA-C*07:01 rank 1.548
 
 ## IGI-SYN-SEQ-02-IND-0107  FKBP14 K118fs*1 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=weak ctx=exon_edge
   window    chr7:30019102-30019142  somatic A>ATAGG at 30019122 on hap1
@@ -6320,13 +6323,13 @@
                         ^
   peptide   YGKEGKGL HLA-B*08:01 rank 1.688
 
-## IGI-SYN-SEQ-02-IND-0108  TMEM170B E33fs*25 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0108  TMEM170B E33fs*25 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=weak ctx=exon_edge
   window    chr6:11538352-11538392  somatic C>CACTAC at 11538372 on hap1
   hap1+mut  GACGGTGCTGAGGAACCTCACACTACGGGTAATTGACGCGCCTGGG
                                 ^^^^^^
   protein   aa 21-45  first change at aa 33 (frameshift)
                         ^
-  peptide   none
+  peptide   TVLRNLTL HLA-B*08:01 rank 0.572
 
 ## IGI-SYN-SEQ-02-IND-0109  WDR70 M426fs*2 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=exon_edge
   window    chr5:37701120-37701160  somatic A>AGCTAA at 37701140 on hap0
@@ -6336,53 +6339,53 @@
                         ^
   peptide   ASGLPTMFPAK HLA-A*01:01 rank 12.354
 
-## IGI-SYN-SEQ-02-IND-0110  HAGH G181fs*94 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0110  HAGH G181fs*94 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=exon_edge
   window    chr16:1817251-1817291  somatic C>CCGTAA at 1817271 on hap1
   hap1+mut  CAGCCACAAACAAGGTGTCACCGTAACTGGAAACAAGGACAGCCAC
                                 ^^^^^^
   protein   aa 169-193  first change at aa 181 (frameshift)
                         ^
-  peptide   none
+  peptide   STPSTTSSL HLA-C*01:02 rank 0.003
 
-## IGI-SYN-SEQ-02-IND-0111  DCTN6 Y66fs*3 frameshift  clone=T tier=T_het VAF=0.1837 expr=T10 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0111  DCTN6 Y66fs*3 frameshift  clone=T tier=T_het VAF=0.1837 expr=T10 bind=weak ctx=exon_edge
   window    chr8:30175170-30175210  somatic C>CG at 30175190 on hap1
   hap1+mut  ACAGGCCCTTATCATAAATGCGGTAAGACTCTTATACATACT
                                 ^^
   protein   aa 54-78  first change at aa 66 (frameshift)
                         ^
-  peptide   ALIINALPR HLA-B*27:05 rank 16.433
+  peptide   EQALIINAL HLA-B*08:01 rank 0.76
 
-## IGI-SYN-SEQ-02-IND-0112  PIANP V176fs*76 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0112  PIANP V176fs*76 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=strong ctx=exon_edge
   window    chr12:6696503-6696543  somatic A>ATTGG at 6696523 on hap0
   hap0+mut  ACATAGAGCTGGGGGTCCACATTGGCCTGATTGGGGTGGGAAGAA
                                 ^^^^^
   protein   aa 164-188  first change at aa 176 (frameshift)
                         ^
-  peptide   none
+  peptide   LGPQPEATQTL HLA-C*01:02 rank 0.18
 
-## IGI-SYN-SEQ-02-IND-0113  PLGRKT L28fs*12 frameshift  clone=T tier=T_het VAF=0.3103 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0113  PLGRKT L28fs*12 frameshift  clone=T tier=T_het VAF=0.3103 expr=T100 bind=strong ctx=exon_edge
   window    chr9:5361868-5361908  somatic G>GAGCCT at 5361888 on hap0
   hap0+mut  CATGATGAGCTGCCTTTCCAGAGCCTCTAAGGACAAAACAAAAGAC
                                 ^^^^^^
   protein   aa 16-40  first change at aa 28 (frameshift)
                         ^
-  peptide   none
+  peptide   LMNARLQRL HLA-B*08:01 rank 0.081
 
-## IGI-SYN-SEQ-02-IND-0114  GUK1 H38fs*20 frameshift  clone=A tier=A VAF=0.047 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0114  GUK1 H38fs*20 frameshift  clone=A tier=A VAF=0.047 expr=T100 bind=strong ctx=exon_edge
   window    chr1:228145602-228145642  somatic C>CCTTAT at 228145622 on hap1
   hap1+mut  CATCTTTGGCTTCAGCGTGTCCTTATCCGTGAGTCCAGGGCTCTCG
                                 ^^^^^^
   protein   aa 26-50  first change at aa 38 (frameshift)
                         ^
-  peptide   none
+  peptide   RRTAKITTL HLA-C*07:01 rank 0.009
 
-## IGI-SYN-SEQ-02-IND-0115  INSC I391fs*16 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0115  INSC I391fs*16 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=strong ctx=exon_edge
   window    chr11:15225808-15225848  somatic G>GT at 15225828 on hap1
   hap1+mut  ACGCCTTACACTCGGGACCAGTGTAAGACGCCCAGAAGGCAC
                                 ^^
   protein   aa 379-403  first change at aa 391 (frameshift)
                         ^
-  peptide   none
+  peptide   RVDTPYTRDQY HLA-A*01:01 rank 0.122
 
 ## IGI-SYN-SEQ-02-IND-0116  C1QL4 R181fs*0 frameshift  clone=A tier=A VAF=0.0543 expr=T1 bind=na ctx=exon_edge
   window    chr12:49333212-49333252  somatic A>ACTAGA at 49333232 on hap1
@@ -6392,53 +6395,53 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-02-IND-0117  FSCN3 T49fs*8 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0117  FSCN3 T49fs*8 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=strong ctx=exon_edge
   window    chr7:127593977-127594017  somatic G>GC at 127593997 on hap1
   hap1+mut  AAGAGTTTGGGCAGGAGACAGCGTGACAAAGCAAACCCATGC
                                 ^^
   protein   aa 37-61  first change at aa 49 (frameshift)
                         ^
-  peptide   RRQHLGDLGEQ HLA-B*27:05 rank 4.234
+  peptide   SLGRRQHL HLA-B*08:01 rank 0.359
 
-## IGI-SYN-SEQ-02-IND-0118  FMC1-LUC7L2 E236fs*29 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0118  FMC1-LUC7L2 E236fs*29 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=exon_edge
   window    chr7:139405765-139405805  somatic G>GCTTAC at 139405785 on hap0
   hap0+mut  GGGCAAAGAAAAGAGAAGCAGCTTACAGGTAAATTCTTAATAGTAG
                                 ^^^^^^
   protein   aa 224-248  first change at aa 236 (frameshift)
                         ^
-  peptide   none
+  peptide   KREAAYRKF HLA-C*07:01 rank 0.134
 
-## IGI-SYN-SEQ-02-IND-0119  PGAM5 V167fs*97 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0119  PGAM5 V167fs*97 frameshift  clone=B tier=B VAF=0.0466 expr=T10 bind=strong ctx=exon_edge
   window    chr12:132717544-132717584  somatic G>GGG at 132717564 on hap1
   hap1+mut  TCATCAGCCGGCACCTGCCAGGGGTGAGTGCTGCGCGCGGGGC
                                 ^^^
   protein   aa 155-179  first change at aa 167 (frameshift)
                         ^
-  peptide   none
+  peptide   QMPGRRRTV HLA-C*01:02 rank 0.339
 
-## IGI-SYN-SEQ-02-IND-0120  SEC14L6 V79fs*73 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0120  SEC14L6 V79fs*73 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=strong ctx=exon_edge
   window    chr22:30532692-30532732  somatic A>AGCTAG at 30532712 on hap1
   hap1+mut  TAGCGTTGTACAGCCTGACCAGCTAGCCTGGATGCATACACAGGAG
                                 ^^^^^^
   protein   aa 67-91  first change at aa 79 (frameshift)
                         ^
-  peptide   none
+  peptide   RAALSGTTL HLA-C*01:02 rank 0.166
 
-## IGI-SYN-SEQ-02-IND-0121  CREB3 L204fs*16 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0121  CREB3 L204fs*16 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=non ctx=exon_edge
   window    chr9:35735353-35735393  somatic T>TCTGT at 35735373 on hap1
   hap1+mut  AGCTTCTGGAGGAACAGAATTCTGTTGTAAGTATCCCTCCAAACC
                                 ^^^^^
   protein   aa 192-216  first change at aa 204 (frameshift)
                         ^
-  peptide   none
+  peptide   SRSTEETPGH HLA-B*27:05 rank 2.461
 
-## IGI-SYN-SEQ-02-IND-0122  MTG1 E140fs*48 frameshift  clone=A tier=A VAF=0.0788 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0122  MTG1 E140fs*48 frameshift  clone=A tier=A VAF=0.0788 expr=T10 bind=strong ctx=exon_edge
   window    chr10:133399204-133399244  somatic G>GTGACT at 133399224 on hap0
   hap0+mut  GCCACCGCTACCACCGAAAAGTGACTAGGTTGGTTGGTGGGGCCCA
                                 ^^^^^^
   protein   aa 128-152  first change at aa 140 (frameshift)
                         ^
-  peptide   none
+  peptide   HRYHRKVTR HLA-B*27:05 rank 0.127
 
 ## IGI-SYN-SEQ-02-IND-0123  DIABLO A2fs*4 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=na ctx=exon_edge
   window    chr12:122225991-122226031  somatic C>CAAGTC at 122226011 on hap1
@@ -6448,29 +6451,29 @@
              ^
   peptide   none
 
-## IGI-SYN-SEQ-02-IND-0124  ERICH6B K142fs*15 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=na ctx=near_germline_het
+## IGI-SYN-SEQ-02-IND-0124  ERICH6B K142fs*15 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=strong ctx=near_germline_het
   window    chr13:45596563-45596603  somatic C>CCGGTC at 45596583 on hap0
   hap0+mut  TTCTCCAGATACCCTTCCTTCCGGTCCC
                                 ^^^^^^
   protein   aa 130-154  first change at aa 142 (frameshift)
                         ^
-  peptide   none
+  peptide   WRRKIILRR HLA-B*27:05 rank 0.37
 
-## IGI-SYN-SEQ-02-IND-0125  XAGE1A Q32fs*8 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=non ctx=segdup
+## IGI-SYN-SEQ-02-IND-0125  XAGE1A Q32fs*8 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=weak ctx=segdup
   window    chrX:52497435-52497475  somatic C>CCTCGC at 52497455 on hap0
   hap0+mut  TCAGGATACAGCTGAGATCCCCTCGCAGGTGCTGGGAAGGGAAAGT
                                 ^^^^^^
   protein   aa 20-44  first change at aa 32 (frameshift)
                         ^
-  peptide   LRSPRSARHGR HLA-B*27:05 rank 2.398
+  peptide   IRIQLRSPR HLA-B*27:05 rank 0.572
 
-## IGI-SYN-SEQ-02-IND-0126  SPANXC M25fs*19 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-02-IND-0126  SPANXC M25fs*19 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=weak ctx=segdup
   window    chrX:141241717-141241757  somatic A>AGTGAC at 141241737 on hap1
   hap1+mut  ACCCACTCGAGGTCTCCGGCAGTGACTCTGTTAAGAAAGCAGGGAG
                                 ^^^^^^
   protein   aa 13-37  first change at aa 25 (frameshift)
                         ^
-  peptide   none
+  peptide   RRPRVGTQTR HLA-B*27:05 rank 0.604
 
 ## IGI-SYN-SEQ-02-IND-0127  TFPI D107fs*2 frameshift  clone=T tier=T_het VAF=0.3103 expr=T10 bind=non ctx=exon_edge
   window    chr2:187488354-187488394  somatic A>ATCTC at 187488374 on hap1
@@ -6480,61 +6483,61 @@
                         ^
   peptide   KKMCTRER HLA-B*27:05 rank 13.859
 
-## IGI-SYN-SEQ-02-IND-0128  G2E3 R337fs*14 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0128  G2E3 R337fs*14 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=exon_edge
   window    chr14:30602111-30602151  somatic G>GCG at 30602131 on hap1
   hap1+mut  CCAGAGTAAAGATCTACTGAGCGGTATGTATTTTGAATTGGAG
                                 ^^^
   protein   aa 325-349  first change at aa 337 (frameshift)
                         ^
-  peptide   none
+  peptide   NLEEMYQHY HLA-A*01:01 rank 0.116
 
-## IGI-SYN-SEQ-02-IND-0129  SRP72 I37fs*9 frameshift  clone=T tier=T_het VAF=0.3103 expr=T100 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0129  SRP72 I37fs*9 frameshift  clone=T tier=T_het VAF=0.3103 expr=T100 bind=weak ctx=exon_edge
   window    chr4:56467724-56467764  somatic A>AGC at 56467744 on hap0
   hap0+mut  CTCTCAAGACCGTCAATAAGAGCGTAAGTGTCGGGGTGGGCAC
                                 ^^^
   protein   aa 25-49  first change at aa 37 (frameshift)
                         ^
-  peptide   SYYRSTKMT HLA-C*07:01 rank 9.033
+  peptide   KSYYRSTKM HLA-C*07:01 rank 0.572
 
-## IGI-SYN-SEQ-02-IND-0130  ZPLD1 D364fs*21 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0130  ZPLD1 D364fs*21 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=strong ctx=exon_edge
   window    chr3:102470481-102470521  somatic T>TGCCCG at 102470501 on hap1
   hap1+mut  GGTCCCATCATTACTCGGAGTGCCCGGGTAAGTGTGCTCCTCCTTC
                                 ^^^^^^
   protein   aa 352-376  first change at aa 364 (frameshift)
                         ^
-  peptide   none
+  peptide   QPTIRNLVL HLA-B*08:01 rank 0.057
 
-## IGI-SYN-SEQ-02-IND-0131  KRT6C S67fs*80 frameshift  clone=A tier=A VAF=0.0543 expr=T1 bind=na ctx=segdup
+## IGI-SYN-SEQ-02-IND-0131  KRT6C S67fs*80 frameshift  clone=A tier=A VAF=0.0543 expr=T1 bind=strong ctx=segdup
   window    chr12:52473519-52473559  somatic A>AGCCAC at 52473539 on hap1
   hap1+mut  TCCAATGGAGATCCTCTTGGAGCCACTCCCCCCAGGCCATATAAGC
                                 ^^^^^^
   protein   aa 55-79  first change at aa 67 (frameshift)
                         ^
-  peptide   none
+  peptide   VAPRGSPL HLA-C*01:02 rank 0.03
 
-## IGI-SYN-SEQ-02-IND-0132  NAGPA P112fs*73 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0132  NAGPA P112fs*73 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=clean
   window    chr16:5033461-5033501  somatic G>GA at 5033481 on hap0
   hap0+mut  TCTCGCCGCGCAGCCGCCGGGACCCACCGGGCTCCAGCACCG
                                 ^^
   protein   aa 100-124  first change at aa 112 (frameshift)
                         ^
-  peptide   none
+  peptide   RRLRGETTR HLA-B*27:05 rank 0.07
 
-## IGI-SYN-SEQ-02-IND-0133  CTSD V158fs*87 frameshift  clone=A tier=A VAF=0.0543 expr=T1000 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0133  CTSD V158fs*87 frameshift  clone=A tier=A VAF=0.0543 expr=T1000 bind=strong ctx=exon_edge
   window    chr11:1757535-1757575  somatic A>ATGCG at 1757555 on hap0
   hap0+mut  ACGACGCTGACTGGCAGGGCATGCGCCTGCAGGCCAGGGCAGAGT
                                 ^^^^^
   protein   aa 146-170  first change at aa 158 (frameshift)
                         ^
-  peptide   none
+  peptide   ALPVSVVSL HLA-C*01:02 rank 0.01
 
-## IGI-SYN-SEQ-02-IND-0134  UBL5 N19fs*12 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1000 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0134  UBL5 N19fs*12 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1000 bind=strong ctx=exon_edge
   window    chr19:9828372-9828412  somatic A>AAG at 9828392 on hap0
   hap0+mut  AGAAGGTCCGCGTTAAATGCAAGAGTATCCACTGGCAGCCGAG
                                 ^^^
   protein   aa 7-31  first change at aa 19 (frameshift)
                         ^
-  peptide   none
+  peptide   TRMIPSGTL HLA-C*07:01 rank 0.17
 
 ## IGI-SYN-SEQ-02-IND-0135  PLB1 N1143fs*0 frameshift  clone=A tier=A VAF=0.0543 expr=T1 bind=na ctx=exon_edge
   window    chr2:28620622-28620662  somatic C>CTAGAT at 28620642 on hap1
@@ -6544,13 +6547,13 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-02-IND-0136  NXPE2 R9fs*60 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0136  NXPE2 R9fs*60 frameshift  clone=T tier=T_het VAF=0.3103 expr=T0 bind=strong ctx=exon_edge
   window    chr11:114678581-114678621  somatic G>GTCTC at 114678601 on hap0
   hap0+mut  GGAGAAAATACTCATCCATAGTCTCGTGTGGTACTTTCCAACTCT
                                 ^^^^^
   protein   aa 1-21  first change at aa 9 (frameshift)
                     ^
-  peptide   none
+  peptide   YYPEPREHL HLA-C*01:02 rank 0.065
 
 ## IGI-SYN-SEQ-02-IND-0137  IL4 N121fs*5 frameshift  clone=T tier=T_het VAF=0.3673 expr=T0 bind=strong ctx=exon_edge
   window    chr5:132679869-132679909  somatic T>TGC at 132679889 on hap0
@@ -6560,21 +6563,21 @@
                         ^
   peptide   LAGLRIPVL HLA-B*08:01 rank 0.174
 
-## IGI-SYN-SEQ-02-IND-0138  VPS9D1 P252fs*19 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0138  VPS9D1 P252fs*19 frameshift  clone=A tier=A VAF=0.0543 expr=T10 bind=weak ctx=exon_edge
   window    chr16:89711388-89711428  somatic C>CCAACC at 89711408 on hap1
   hap1+mut  TGGCCTTCCAGTGCTTCGGCCCAACCAGTCCTACGGGACAGGGGGC
                                 ^^^^^^
   protein   aa 240-264  first change at aa 252 (frameshift)
                         ^
-  peptide   none
+  peptide   GRSTGRPSSR HLA-B*27:05 rank 0.862
 
-## IGI-SYN-SEQ-02-IND-0139  AC069503.2 Q47fs*13 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0139  AC069503.2 Q47fs*13 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=non ctx=exon_edge
   window    chr12:121888974-121889014  somatic C>CG at 121888994 on hap1
   hap1+mut  AACTATGACGTGCTGGAAAGCGGTGAGTGTGGGTTCGGGGCG
                                 ^^
   protein   aa 35-59  first change at aa 47 (frameshift)
                         ^
-  peptide   none
+  peptide   KRHWDERAA HLA-B*27:05 rank 2.774
 
 ## IGI-SYN-SEQ-02-IND-0140  CLEC12A E127fs*4 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=strong ctx=exon_edge
   window    chr12:9979504-9979544  somatic G>GG at 9979524 on hap1
@@ -6904,13 +6907,13 @@
                         ^
   peptide   TLPMLRKM HLA-C*01:02 rank 0.736
 
-## IGI-SYN-SEQ-02-IND-0181  DPCD E82ins inframe_insertion  clone=A tier=A VAF=0.0788 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0181  DPCD E82ins inframe_insertion  clone=A tier=A VAF=0.0788 expr=T10 bind=non ctx=clean
   window    chr10:101600816-101600856  somatic G>GCGTAATTATCCCCCATCCGACGTCAGCGGA at 101600836 on hap0
   hap0+mut  GAGCAGGGAACCTGGGGCCTGCGTAATTATCCCCCATCCGACGTCAGCGGAAACTCATCAAGGAAAGCAAT
                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 70-94  first change at aa 82 (inframe_insertion)
                         ^
-  peptide   none
+  peptide   LGAGNLGPA HLA-C*01:02 rank 28.917
 
 ## IGI-SYN-SEQ-02-IND-0182  ERLIN1 E189ins inframe_insertion  clone=B tier=B VAF=0.0675 expr=T10 bind=weak ctx=exon_edge
   window    chr10:100164074-100164114  somatic C>CGGGATG at 100164094 on hap0
@@ -6928,13 +6931,13 @@
                         ^
   peptide   VAYSPYLL HLA-C*01:02 rank 0.873
 
-## IGI-SYN-SEQ-02-IND-0184  ACTA1 P335ins inframe_insertion  clone=T tier=T_het VAF=0.1343 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0184  ACTA1 P335ins inframe_insertion  clone=T tier=T_het VAF=0.1343 expr=T1 bind=weak ctx=clean
   window    chr1:229431611-229431651  somatic C>CTGTCAATAAACCACG at 229431631 on hap0
   hap0+mut  ACCGAGTATTTGCGCTCCGGCTGTCAATAAACCACGGGGGCGATGATCTGCAAGAC
                                 ^^^^^^^^^^^^^^^^
   protein   aa 323-347  first change at aa 335 (inframe_insertion)
                         ^
-  peptide   none
+  peptide   TMKIKIIAPV HLA-B*08:01 rank 0.766
 
 ## IGI-SYN-SEQ-02-IND-0185  MAP3K19 L106ins inframe_insertion  clone=B tier=B VAF=0.0466 expr=T0 bind=strong ctx=exon_edge
   window    chr2:134998975-134999015  somatic A>ATAACTAGCG at 134998995 on hap1
@@ -6942,7 +6945,7 @@
                                 ^^^^^^^^^^
   protein   aa 94-118  first change at aa 106 (inframe_insertion)
                         ^
-  peptide   DLKEKNPLV HLA-B*08:01 rank 0.128
+  peptide   DLKEKNPL HLA-B*08:01 rank 0.024
 
 ## IGI-SYN-SEQ-02-IND-0186  PDE1A S460ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=strong ctx=exon_edge
   window    chr2:182186059-182186099  somatic G>GCATCTCGGA at 182186079 on hap0
@@ -6952,21 +6955,21 @@
                         ^
   peptide   SSPRCSTTI HLA-C*01:02 rank 0.12
 
-## IGI-SYN-SEQ-02-IND-0187  RNF111 R800ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0187  RNF111 R800ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=non ctx=clean
   window    chr15:59084209-59084249  somatic C>CCGTTTAGTGAGAACTAAGTATGCATTTCGA at 59084229 on hap1
   hap1+mut  AGACTATGTCCTCACATCCTCCGTTTAGTGAGAACTAAGTATGCATTTCGAGACAGGCTCCAGAGAGGTCT
                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 788-812  first change at aa 800 (inframe_insertion)
                         ^
-  peptide   none
+  peptide   QTMSSHPPF HLA-C*01:02 rank 2.389
 
-## IGI-SYN-SEQ-02-IND-0188  GSAP K195ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=near_germline_het
+## IGI-SYN-SEQ-02-IND-0188  GSAP K195ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T10 bind=non ctx=near_germline_het
   window    chr7:77377364-77377404  somatic T>TTCTTTATCC at 77377384 on hap0
   hap0+mut  TGGGAGATGGCCAGAATTTTTTCTTTATCCAATCACCTAAAAATGCAAAA
                                 ^^^^^^^^^^
   protein   aa 183-207  first change at aa 195 (inframe_insertion)
                         ^
-  peptide   none
+  peptide   DGNRVVIG HLA-B*08:01 rank 33.081
 
 ## IGI-SYN-SEQ-02-IND-0189  FAM171B L187ins inframe_insertion  clone=T tier=T_het VAF=0.3103 expr=T1 bind=non ctx=exon_edge
   window    chr2:186743550-186743590  somatic T>TCTCTTGGGGAGGCAGCGGGTTTCGTGGCCC at 186743570 on hap0
@@ -6974,7 +6977,7 @@
                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 175-199  first change at aa 187 (inframe_insertion)
                         ^
-  peptide   FSWGGSGFRG HLA-A*01:01 rank 40.154
+  peptide   GKFSWGGSGF HLA-B*27:05 rank 2.322
 
 ## IGI-SYN-SEQ-02-IND-0190  COQ10A P43ins inframe_insertion  clone=T tier=T_het VAF=0.3103 expr=T10 bind=strong ctx=exon_edge
   window    chr12:56267223-56267263  somatic G>GTATGCCAGACTTAGC at 56267243 on hap0
@@ -6982,23 +6985,23 @@
                                 ^^^^^^^^^^^^^^^^
   protein   aa 31-55  first change at aa 43 (inframe_insertion)
                         ^
-  peptide   RMPDLAPMRFL HLA-C*01:02 rank 0.339
+  peptide   LPPPRMPDL HLA-B*08:01 rank 0.195
 
-## IGI-SYN-SEQ-02-IND-0191  AARSD1 H271ins inframe_insertion  clone=T tier=T_LOH VAF=0.45 expr=T10 bind=weak ctx=clean
+## IGI-SYN-SEQ-02-IND-0191  AARSD1 H271ins inframe_insertion  clone=T tier=T_LOH VAF=0.45 expr=T10 bind=strong ctx=clean
   window    chr17:42955189-42955229  somatic A>AACGGAGTATTCGTGTACTGTG at 42955209 on hap0
   hap0+mut  TTTTTCACTGCTTCCACATGAACGGAGTATTCGTGTACTGTGTCCTCTGCTCCACACCTGAA
                                 ^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 259-283  first change at aa 271 (inframe_insertion)
                         ^
-  peptide   TVHEYSVHV HLA-C*01:02 rank 1.09
+  peptide   GAEDTVHEY HLA-A*01:01 rank 0.054
 
-## IGI-SYN-SEQ-02-IND-0192  ESPNL A846ins inframe_insertion  clone=T tier=T_het VAF=0.1552 expr=T0 bind=weak ctx=clean
+## IGI-SYN-SEQ-02-IND-0192  ESPNL A846ins inframe_insertion  clone=T tier=T_het VAF=0.1552 expr=T0 bind=strong ctx=clean
   window    chr2:238131229-238131269  somatic G>GGAGATCCTCGCA at 238131249 on hap0
   hap0+mut  TTCCTGCCCCACGTGGACGGGGAGATCCTCGCAGCTCCCGTGCCCTACAGCAG
                                 ^^^^^^^^^^^^^
   protein   aa 834-858  first change at aa 846 (inframe_insertion)
                         ^
-  peptide   HVDGEILAA HLA-A*01:01 rank 1.529
+  peptide   AAPVPYSSL HLA-C*01:02 rank 0.002
 
 ## IGI-SYN-SEQ-02-IND-0193  PTMS E64ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T100 bind=non ctx=exon_edge
   window    chr12:6769973-6770013  somatic G>GTATCAGCGAGTG at 6769993 on hap1
@@ -7006,23 +7009,23 @@
                                 ^^^^^^^^^^^^^
   protein   aa 52-76  first change at aa 64 (inframe_insertion)
                         ^
-  peptide   VSASEEDEE HLA-A*01:01 rank 21.903
+  peptide   EEDEGEVSA HLA-C*07:01 rank 9.382
 
-## IGI-SYN-SEQ-02-IND-0194  SPDYE9 K7ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T0 bind=non ctx=segdup
+## IGI-SYN-SEQ-02-IND-0194  SPDYE9 K7ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T0 bind=strong ctx=segdup
   window    chr7:73084200-73084240  somatic T>TCACCGCCTTTTGCCTCGCCTTGAGGATTTG at 73084220 on hap0
   hap0+mut  TTGATGGCTCATCATGATCTTCACCGCCTTTTGCCTCGCCTTGAGGATTTGTCCCAAAATCTGTCCCATCT
                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 1-19  first change at aa 7 (inframe_insertion)
                   ^
-  peptide   QILKARQKAV HLA-B*08:01 rank 2.454
+  peptide   ILKARQKAV HLA-B*08:01 rank 0.03
 
-## IGI-SYN-SEQ-02-IND-0195  GPATCH3 D376ins inframe_insertion  clone=T tier=T_het VAF=0.3103 expr=T10 bind=weak ctx=clean
+## IGI-SYN-SEQ-02-IND-0195  GPATCH3 D376ins inframe_insertion  clone=T tier=T_het VAF=0.3103 expr=T10 bind=strong ctx=clean
   window    chr1:26892756-26892796  somatic T>TAGAAAGTCCCTAATCCTAGCGAGCCGGGCT at 26892776 on hap1
   hap1+mut  TTTGGACAGAGTCTCGGGCATAGAAAGTCCCTAATCCTAGCGAGCCGGGCTCCTTGTCTCCACCATCTGAG
                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 364-388  first change at aa 376 (inframe_insertion)
                         ^
-  peptide   EPGSLGLGTFY HLA-A*01:01 rank 0.888
+  peptide   GSLGLGTFY HLA-A*01:01 rank 0.386
 
 ## IGI-SYN-SEQ-02-IND-0196  H4C9 L98ins inframe_insertion  clone=T tier=T_het VAF=0.1552 expr=T10 bind=strong ctx=clean
   window    chr6:27139580-27139620  somatic C>CATAGCGTGAGCCGAACTCACC at 27139600 on hap1
@@ -7040,21 +7043,21 @@
                         ^
   peptide   FVMEGETFV HLA-C*01:02 rank 0.991
 
-## IGI-SYN-SEQ-02-IND-0198  CRIPT G22ins inframe_insertion  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-02-IND-0198  CRIPT G22ins inframe_insertion  clone=B tier=B VAF=0.0466 expr=T10 bind=strong ctx=clean
   window    chr2:46618800-46618840  somatic G>GCTACTGCTCCGCGCCTTCGCCACTGGGTAC at 46618820 on hap0
   hap0+mut  CTCCAGATACATGGAAAGATGCTACTGCTCCGCGCCTTCGCCACTGGGTACGTGCTAGGAATACCACAGGT
                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 10-34  first change at aa 22 (inframe_insertion)
                         ^
-  peptide   ATAPRLRHWV HLA-C*01:02 rank 7.939
+  peptide   APRLRHWV HLA-B*08:01 rank 0.391
 
-## IGI-SYN-SEQ-02-IND-0199  GADD45A C124ins inframe_insertion  clone=B tier=B VAF=0.0466 expr=T10 bind=non ctx=near_germline_het
+## IGI-SYN-SEQ-02-IND-0199  GADD45A C124ins inframe_insertion  clone=B tier=B VAF=0.0466 expr=T10 bind=weak ctx=near_germline_het
   window    chr1:67686552-67686592  somatic C>CACGGGTAGTAAACCCATACAA at 67686572 on hap1
   hap1+mut  GAGCAGCCCCCGGACCTGCACACGGGTAGTAAACCCATACAATGCGTGCTGGTGACGGTAAG
                                 ^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 112-136  first change at aa 124 (inframe_insertion)
                         ^
-  peptide   TGSKPIQCV HLA-C*01:02 rank 3.615
+  peptide   GSKPIQCVL HLA-C*07:01 rank 1.994
 
 ## IGI-SYN-SEQ-02-IND-0200  GAR1 G190ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T100 bind=weak ctx=exon_edge
   window    chr4:109822464-109822504  somatic A>ACCGATTACC at 109822484 on hap0
@@ -7064,21 +7067,21 @@
                         ^
   peptide   GRPITGGGF HLA-B*27:05 rank 1.279
 
-## IGI-SYN-SEQ-02-IND-0201  ETV2 K51ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0201  ETV2 K51ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=weak ctx=exon_edge
   window    chr19:35642674-35642714  somatic G>GGTTATTAATTTTCTGCTCTGC at 35642694 on hap0
   hap0+mut  GCGACAGCAGAGACATGCTGGGTTATTAATTTTCTGCTCTGCAAAGGTGGCTGCGGGCTGGG
                                 ^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 39-63  first change at aa 51 (inframe_insertion)
                         ^
-  peptide   WVINFLLCK HLA-A*01:01 rank 12.966
+  peptide   FLLCKGTSSSL HLA-B*08:01 rank 1.189
 
-## IGI-SYN-SEQ-02-IND-0202  DUS4L-BCAP29 E226ins inframe_insertion  clone=B tier=B VAF=0.0466 expr=T1 bind=non ctx=near_germline_het
+## IGI-SYN-SEQ-02-IND-0202  DUS4L-BCAP29 E226ins inframe_insertion  clone=B tier=B VAF=0.0466 expr=T1 bind=weak ctx=near_germline_het
   window    chr7:107576541-107576581  somatic A>ACCTTATTTTCACGGGCTGACA at 107576561 on hap0
   hap0+mut  ATCAGAAGCTTAAAGGAAGCACCTTATTTTCACGGGCTGACAGAAAATGTGTGGCGGATTAC
                                 ^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 214-238  first change at aa 226 (inframe_insertion)
                         ^
-  peptide   APYFHGLTE HLA-B*08:01 rank 8.075
+  peptide   EAPYFHGL HLA-C*01:02 rank 0.581
 
 ## IGI-SYN-SEQ-02-IND-0203  GDPGP1 L36ins inframe_insertion  clone=T tier=T_het VAF=0.1552 expr=T10 bind=strong ctx=clean
   window    chr15:90240992-90241032  somatic A>ACAGAGCTATTCC at 90241012 on hap0
@@ -7088,21 +7091,21 @@
                         ^
   peptide   GQKDRAIPL HLA-B*08:01 rank 0.406
 
-## IGI-SYN-SEQ-02-IND-0204  SGIP1 V678ins inframe_insertion  clone=B tier=B VAF=0.0466 expr=T1 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0204  SGIP1 V678ins inframe_insertion  clone=B tier=B VAF=0.0466 expr=T1 bind=strong ctx=exon_edge
   window    chr1:66733859-66733899  somatic A>AATACGCATTACACATTGAGTGTAACAGTTC at 66733879 on hap0
   hap0+mut  CGTTGACATGCTCAAATATCAATACGCATTACACATTGAGTGTAACAGTTCGGTAAGCCTATTTACATGAT
                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 666-690  first change at aa 678 (inframe_insertion)
                         ^
-  peptide   YALHIECNSSV HLA-C*01:02 rank 14.761
+  peptide   NVDMLKYQY HLA-A*01:01 rank 0.038
 
-## IGI-SYN-SEQ-02-IND-0205  HHLA2 E395ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=non ctx=near_germline_het
+## IGI-SYN-SEQ-02-IND-0205  HHLA2 E395ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=weak ctx=near_germline_het
   window    chr3:108376495-108376535  somatic T>TAGGCGGACTCGG at 108376515 on hap1
   hap1+mut  AGATGTTGTGTCCCTCCTGGTAGGCGGACTCGGGAGCGCTGTCCCAGTGCACC
                                 ^^^^^^^^^^^^^
   protein   aa 383-407  first change at aa 395 (inframe_insertion)
                         ^
-  peptide   RRTRERCPSA HLA-B*27:05 rank 4.016
+  peptide   ERCCVPPGR HLA-B*27:05 rank 1.962
 
 ## IGI-SYN-SEQ-02-IND-0206  GPIHBP1 E99ins inframe_insertion  clone=T tier=T_het VAF=0.3103 expr=T0 bind=non ctx=exon_edge
   window    chr8:143215106-143215146  somatic G>GGTT at 143215126 on hap0
@@ -7112,37 +7115,37 @@
                         ^
   peptide   TLIAHGNTG HLA-B*08:01 rank 20.678
 
-## IGI-SYN-SEQ-02-IND-0207  DDAH1 V163ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T10 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0207  DDAH1 V163ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=exon_edge
   window    chr1:85350506-85350546  somatic T>TCTACTTATCAACTGGTTCGGAGGTATGTCA at 85350526 on hap1
   hap1+mut  GCCACTGGCACTGTGGAGACTCTACTTATCAACTGGTTCGGAGGTATGTCAGCATAGTCCTACGTGGACAA
                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 151-175  first change at aa 163 (inframe_insertion)
                         ^
-  peptide   DIPPNQLISRV HLA-C*01:02 rank 5.338
+  peptide   YADIPPNQL HLA-C*01:02 rank 0.057
 
-## IGI-SYN-SEQ-02-IND-0208  PSPH E6ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-02-IND-0208  PSPH E6ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T10 bind=non ctx=clean
   window    chr7:56021178-56021218  somatic T>TCTTCATTGCACGGTA at 56021198 on hap1
   hap1+mut  TAGAAAAGCTTCCTCAGCTCTCTTCATTGCACGGTAGAGTGGGAGACCATCGCTGG
                                 ^^^^^^^^^^^^^^^^
   protein   aa 1-18  first change at aa 6 (inframe_insertion)
                  ^
-  peptide   none
+  peptide   MVSHSTVQ HLA-A*01:01 rank 37.4
 
-## IGI-SYN-SEQ-02-IND-0209  CD164L2 P4ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0209  CD164L2 P4ins inframe_insertion  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=strong ctx=exon_edge
   window    chr1:27383209-27383249  somatic G>GGTGAGAAAGCGTACTTAGGTCTATAGGGCA at 27383229 on hap0
   hap0+mut  TCCGCAAGGCGCGGGGTCCCGGTGAGAAAGCGTACTTAGGTCTATAGGGCAGAGCCTCCATGGGCTCGCGG
                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   protein   aa 1-16  first change at aa 4 (inframe_insertion)
                ^
-  peptide   LPYRPKYAFS HLA-B*08:01 rank 7.529
+  peptide   FSPGPRAL HLA-C*01:02 rank 0.011
 
-## IGI-SYN-SEQ-02-IND-0210  RPS27A E34ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T1000 bind=weak ctx=exon_edge
+## IGI-SYN-SEQ-02-IND-0210  RPS27A E34ins inframe_insertion  clone=A tier=A VAF=0.0543 expr=T1000 bind=strong ctx=exon_edge
   window    chr2:55233395-55233435  somatic A>ACCGAATACT at 55233415 on hap1
   hap1+mut  GGCCAAGATCCAGGATAAGGACCGAATACTAGGCAAGTAGTATTTTGTAG
                                 ^^^^^^^^^^
   protein   aa 22-46  first change at aa 34 (inframe_insertion)
                         ^
-  peptide   KIQDKDRIL HLA-C*01:02 rank 1.133
+  peptide   ILGIPPDQQRL HLA-C*01:02 rank 0.344
 
 ## IGI-SYN-SEQ-02-IND-0211  CYSLTR1 L257del inframe_deletion  clone=T tier=T_het VAF=0.3103 expr=T1 bind=strong ctx=homopolymer
   window    chrX:78272953-78272999  somatic ATGAAGG>A at 78272973 on hap0
@@ -7152,21 +7155,21 @@
                         ^
   peptide   YHIQRTIHF HLA-C*07:01 rank 0.069
 
-## IGI-SYN-SEQ-02-IND-0212  NPW A10fs*182 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0212  NPW A10fs*182 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=strong ctx=homopolymer
   window    chr16:2019906-2019947  somatic GG>G at 2019926 on hap1
   hap1+mut  CGTGGCGCCCAGGGGAGCGGGGGCTCCCGCGAGCCGGCCGC
                                 ^
   protein   aa 1-22  first change at aa 10 (frameshift)
                      ^
-  peptide   none
+  peptide   RSPWTSAEL HLA-C*01:02 rank 0.015
 
-## IGI-SYN-SEQ-02-IND-0213  KCNA10 P74fs*7 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=weak ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0213  KCNA10 P74fs*7 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=strong ctx=homopolymer
   window    chr1:110518551-110518592  somatic GG>G at 110518571 on hap0
   hap0+mut  CACTGGCTCAGGCCCTGGGGGTCAGCATAGTCTCCCGGAAG
                                 ^
   protein   aa 62-86  first change at aa 74 (frameshift)
                         ^
-  peptide   YADPQGLSQWS HLA-A*01:01 rank 1.982
+  peptide   YADPQGLSQW HLA-A*01:01 rank 0.377
 
 ## IGI-SYN-SEQ-02-IND-0214  C9orf153 D232del inframe_deletion  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=strong ctx=homopolymer
   window    chr9:86221562-86221614  somatic GAAAATAACGTCA>G at 86221582 on hap1
@@ -7176,21 +7179,21 @@
                         ^
   peptide   DMPPPIVRKSL HLA-C*01:02 rank 0.353
 
-## IGI-SYN-SEQ-02-IND-0215  HERC6 K663fs*26 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0215  HERC6 K663fs*26 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=strong ctx=homopolymer
   window    chr4:88428605-88428646  somatic CA>C at 88428625 on hap0
   hap0+mut  TTATGCATGAAACAATTCTGCAAAAAAGGATGAATTTCCTC
                                 ^
   protein   aa 651-675  first change at aa 663 (frameshift)
                         ^
-  peptide   none
+  peptide   ILQKRMNFL HLA-B*08:01 rank 0.137
 
-## IGI-SYN-SEQ-02-IND-0216  MIF Q36fs*66 frameshift  clone=T tier=T_het VAF=0.1552 expr=T100 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0216  MIF Q36fs*66 frameshift  clone=T tier=T_het VAF=0.1552 expr=T100 bind=strong ctx=homopolymer
   window    chr22:23894554-23894595  somatic CC>C at 23894574 on hap1
   hap1+mut  TGGCGCAGGCCACCGGCAAGCCCCCCAGGTTTGCCGGGAGG
                                 ^
   protein   aa 24-48  first change at aa 36 (frameshift)
                         ^
-  peptide   none
+  peptide   ARTGSTSTI HLA-C*07:01 rank 0.278
 
 ## IGI-SYN-SEQ-02-IND-0217  RNF217 Q532del inframe_deletion  clone=A tier=A VAF=0.0543 expr=T10 bind=strong ctx=homopolymer
   window    chr6:125082880-125082926  somatic AACAGAG>A at 125082900 on hap0
@@ -7208,13 +7211,13 @@
                         ^
   peptide   TRGGGASEK HLA-B*27:05 rank 1.661
 
-## IGI-SYN-SEQ-02-IND-0219  RAB4A L13fs*33 frameshift  clone=T tier=T_het VAF=0.2687 expr=T100 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0219  RAB4A L13fs*33 frameshift  clone=T tier=T_het VAF=0.2687 expr=T100 bind=strong ctx=homopolymer
   window    chr1:229286469-229286510  somatic TT>T at 229286489 on hap1
   hap1+mut  CTCTTTTTATCTTTCAGATTTTTGTTTAAGTTCTTGGTTAT
                                 ^
   protein   aa 1-25  first change at aa 13 (frameshift)
                         ^
-  peptide   none
+  peptide   SLLKKNSKM HLA-B*08:01 rank 0.13
 
 ## IGI-SYN-SEQ-02-IND-0220  SSTR3 G365fs*5 frameshift  clone=A tier=A VAF=0.0543 expr=T0 bind=non ctx=homopolymer
   window    chr22:37206692-37206733  somatic CC>C at 37206712 on hap0
@@ -7248,21 +7251,21 @@
                         ^
   peptide   TVSPIPVSEY HLA-A*01:01 rank 0.207
 
-## IGI-SYN-SEQ-02-IND-0224  MUC15 T235fs*6 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=non ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0224  MUC15 T235fs*6 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T1 bind=strong ctx=homopolymer
   window    chr11:26565221-26565262  somatic TT>T at 26565241 on hap1
   hap1+mut  GTAGGCTGTAGAGTTGTTTTTCTTGATAAGGGATAAACCCA
                                 ^
   protein   aa 223-247  first change at aa 235 (frameshift)
                         ^
-  peptide   YQEKQLYSLP HLA-B*08:01 rank 17.357
+  peptide   FTPYQEKQL HLA-C*01:02 rank 0.05
 
-## IGI-SYN-SEQ-02-IND-0225  CAGE1 K460fs*34 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0225  CAGE1 K460fs*34 frameshift  clone=T tier=T_het VAF=0.1552 expr=T0 bind=strong ctx=homopolymer
   window    chr6:7373419-7373461  somatic TTT>T at 7373439 on hap0
   hap0+mut  GCTGTGGCCTTTTCCAGTTCTTTTGAGTTGTTGTAGTCTCT
                                 ^
   protein   aa 448-472  first change at aa 460 (frameshift)
                         ^
-  peptide   none
+  peptide   KRTGKGHSF HLA-C*07:01 rank 0.025
 
 ## IGI-SYN-SEQ-02-IND-0226  TAOK1 K535del inframe_deletion  clone=A tier=A VAF=0.0788 expr=T10 bind=non ctx=homopolymer
   window    chr17:29510869-29510921  somatic AAAAATTTCAGCA>A at 29510889 on hap0
@@ -7272,13 +7275,13 @@
                         ^
   peptide   KHIQAQQKK HLA-B*27:05 rank 2.353
 
-## IGI-SYN-SEQ-02-IND-0227  SV2A V422fs*47 frameshift  clone=B tier=B VAF=0.0403 expr=T1 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0227  SV2A V422fs*47 frameshift  clone=B tier=B VAF=0.0403 expr=T1 bind=strong ctx=homopolymer
   window    chr1:149909467-149909509  somatic CCC>C at 149909487 on hap1
   hap1+mut  CCCTAGGCTCAAGGCCCGGACCCCAGCGCTGGTACCAGGTC
                                 ^
   protein   aa 410-434  first change at aa 422 (frameshift)
                         ^
-  peptide   none
+  peptide   QRWGPGLEPR HLA-B*27:05 rank 0.077
 
 ## IGI-SYN-SEQ-02-IND-0228  SPAG16 E205del inframe_deletion  clone=T tier=T_het VAF=0.3103 expr=T10 bind=weak ctx=homopolymer
   window    chr2:213340220-213340266  somatic AAAAAAA>A at 213340240 on hap0
@@ -7336,21 +7339,21 @@
                         ^
   peptide   KASEPKEVM HLA-C*01:02 rank 0.718
 
-## IGI-SYN-SEQ-02-IND-0235  TP53AIP1 K118fs*83 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0235  TP53AIP1 K118fs*83 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=strong ctx=homopolymer
   window    chr11:128935596-128935638  somatic TTC>T at 128935616 on hap0
   hap0+mut  GCAACCTCAACGGTGCTTTTTTGATCATAGCTGAGCTCAAA
                                 ^
   protein   aa 106-130  first change at aa 118 (frameshift)
                         ^
-  peptide   none
+  peptide   ARLPHFASF HLA-B*27:05 rank 0.012
 
-## IGI-SYN-SEQ-02-IND-0236  CYTH1 N241fs*27 frameshift  clone=A tier=A VAF=0.0788 expr=T10 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0236  CYTH1 N241fs*27 frameshift  clone=A tier=A VAF=0.0788 expr=T10 bind=weak ctx=homopolymer
   window    chr17:78698341-78698382  somatic TT>T at 78698361 on hap0
   hap0+mut  GGATTTTAAAGGGTTCATTTTTATGCTCTCATAGAGATTCT
                                 ^
   protein   aa 229-253  first change at aa 241 (frameshift)
                         ^
-  peptide   none
+  peptide   LSSIQTEKAGY HLA-A*01:01 rank 0.599
 
 ## IGI-SYN-SEQ-02-IND-0237  SMKR1 G8del inframe_deletion  clone=A tier=A VAF=0.0543 expr=T10 bind=non ctx=homopolymer
   window    chr7:129512244-129512299  somatic AGGAAAAGGCCAGGGC>A at 129512264 on hap1
@@ -7376,13 +7379,13 @@
             ^
   peptide   IPPAVCAC HLA-C*01:02 rank 11.408
 
-## IGI-SYN-SEQ-02-IND-0240  TRIM15 G458fs*98 frameshift  clone=T tier=T_LOH VAF=0.45 expr=T0 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0240  TRIM15 G458fs*98 frameshift  clone=T tier=T_LOH VAF=0.45 expr=T0 bind=strong ctx=homopolymer
   window    chr6:30172303-30172348  somatic GGTTCC>G at 30172323 on hap0
   hap0+mut  TCTTTGCCGTCTGGAAAAAAGTGCCTTACGCTGAAAGGCTG
                                 ^
   protein   aa 446-470  first change at aa 458 (frameshift)
                         ^
-  peptide   none
+  peptide   SRTAVVFTL HLA-C*07:01 rank 0.008
 
 ## IGI-SYN-SEQ-02-IND-0241  IL21 Y128fs*0 frameshift  clone=B tier=B VAF=0.0466 expr=T0 bind=na ctx=homopolymer
   window    chr4:122612881-122612926  somatic TCTCAT>T at 122612901 on hap0
@@ -7392,21 +7395,21 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-02-IND-0242  ABHD12 L114fs*11 frameshift  clone=T tier=T_het VAF=0.3103 expr=T100 bind=non ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0242  ABHD12 L114fs*11 frameshift  clone=T tier=T_het VAF=0.3103 expr=T100 bind=strong ctx=homopolymer
   window    chr20:25323382-25323427  somatic TTTCAA>T at 25323402 on hap1
   hap1+mut  AAACCTTGATCCTGTGGTTTTATCAATGAAATAGGGAACTC
                                 ^
   protein   aa 102-126  first change at aa 114 (frameshift)
                         ^
-  peptide   KTTGSRFESHV HLA-C*01:02 rank 25.2
+  peptide   VRVPYFIDK HLA-B*27:05 rank 0.286
 
-## IGI-SYN-SEQ-02-IND-0243  CAMSAP3 N100fs*27 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0243  CAMSAP3 N100fs*27 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=weak ctx=homopolymer
   window    chr19:7605348-7605389  somatic AC>A at 7605368 on hap0
   hap0+mut  GCACTGCCACAGCTTGAAACACCCCCAACCCCTCTGCACTG
                                 ^
   protein   aa 88-112  first change at aa 100 (frameshift)
                         ^
-  peptide   none
+  peptide   QLETPPTPL HLA-C*01:02 rank 0.819
 
 ## IGI-SYN-SEQ-02-IND-0244  WNT9A N159del inframe_deletion  clone=B tier=B VAF=0.0403 expr=T1 bind=weak ctx=homopolymer
   window    chr1:227924238-227924299  somatic CCACTGCCAGGCCTCACGGTTC>C at 227924258 on hap1
@@ -7416,21 +7419,21 @@
                         ^
   peptide   EGGCGDNLKY HLA-A*01:01 rank 1.647
 
-## IGI-SYN-SEQ-02-IND-0245  BICRA A979fs*84 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0245  BICRA A979fs*84 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T10 bind=strong ctx=homopolymer
   window    chr19:47694918-47694960  somatic GGC>G at 47694938 on hap1
   hap1+mut  CTCCAGAACAAGGCTGGGGGGCCCTGCCGCCCCGCAGACCT
                                 ^
   protein   aa 967-991  first change at aa 979 (frameshift)
                         ^
-  peptide   none
+  peptide   FLRAREAL HLA-B*08:01 rank 0.032
 
-## IGI-SYN-SEQ-02-IND-0246  CCDC88B P1332fs*25 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0246  CCDC88B P1332fs*25 frameshift  clone=T tier=T_het VAF=0.1552 expr=T10 bind=strong ctx=homopolymer
   window    chr11:64354045-64354090  somatic CCCCCT>C at 64354065 on hap0
   hap0+mut  GGCCCCGGCGGGAGGGGGGCCGGGGGGCTGCGCCTGGGGGC
                                 ^
   protein   aa 1320-1344  first change at aa 1332 (frameshift)
                         ^
-  peptide   none
+  peptide   GRWGWQHRE HLA-B*27:05 rank 0.386
 
 ## IGI-SYN-SEQ-02-IND-0247  FAM228B E259del inframe_deletion  clone=A tier=A VAF=0.0543 expr=T10 bind=weak ctx=homopolymer
   window    chr2:24161574-24161629  somatic GAAAAAACAGTTATTT>G at 24161594 on hap1
@@ -7448,13 +7451,13 @@
                         ^
   peptide   LADLACPDAR HLA-A*01:01 rank 8.394
 
-## IGI-SYN-SEQ-02-IND-0249  MMRN1 F1104fs*15 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-02-IND-0249  MMRN1 F1104fs*15 frameshift  clone=A1 tier=A1 VAF=0.0155 expr=T0 bind=strong ctx=homopolymer
   window    chr4:89953018-89953060  somatic TTT>T at 89953038 on hap1
   hap1+mut  GATATGCACCCATGGTGGCATTTTGCATCTCATACGTATGG
                                 ^
   protein   aa 1092-1116  first change at aa 1104 (frameshift)
                         ^
-  peptide   none
+  peptide   YVWNDYTWSY HLA-A*01:01 rank 0.282
 
 ## IGI-SYN-SEQ-02-IND-0250  LCE2D K31del inframe_deletion  clone=A tier=A VAF=0.047 expr=T0 bind=non ctx=homopolymer
   window    chr1:152664174-152664223  somatic CCAAATGCCC>C at 152664194 on hap0

@@ -8326,7 +8326,7 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-01-SNV-0610  ADAM7 *755ext*1 stop_loss  clone=B tier=B VAF=0.1346 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0610  ADAM7 *755ext*1 stop_loss  clone=B tier=B VAF=0.1346 expr=T0 bind=strong ctx=clean
   window    chr8:24489169-24489209  somatic C>A at 24489189 on hap1
   ref       CTGAAATTCAGTAAATGCAGCCAAAACCAATACCACCAGTA
   hap0      CTGAAATTCAGTAAATGCAGCCAAAACCAATACCACCAGTA
@@ -8337,9 +8337,9 @@
   WT        DGSIPALKFSKCSQNQYHQYLKDYK
   MUT       DGSIPALKFSKCRQNQYHQYLKDYK
                         ^
-  peptide   none
+  peptide   YHDSTDIGL HLA-B*38:01 rank 0.005
 
-## IGI-SYN-SEQ-01-SNV-0611  ADAM7 *755ext*1 stop_loss  clone=A tier=A VAF=0.2154 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0611  ADAM7 *755ext*1 stop_loss  clone=A tier=A VAF=0.2154 expr=T0 bind=strong ctx=clean
   window    chr8:24468777-24468817  somatic T>C at 24468797 on hap1
   ref       ATGAAAAGTATGTTGAATTGTTCATTGTTGCTGATGATACT
   hap0      ATGAAAAGTATGTTGAATTGTTCATTGTTGCTGATGATACT
@@ -8350,9 +8350,9 @@
   WT        IKGIHDEKYVELFIVADDTVYRRNG
   MUT       IKGIHDEKYVELLIVADDTVYRRNG
                         ^
-  peptide   none
+  peptide   YHDSTDIGL HLA-B*38:01 rank 0.005
 
-## IGI-SYN-SEQ-01-SNV-0612  AL451136.1 *675ext*19 stop_loss  clone=T tier=T_het VAF=0.35 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0612  AL451136.1 *675ext*19 stop_loss  clone=T tier=T_het VAF=0.35 expr=T0 bind=strong ctx=clean
   window    chr1:45332408-45332448  somatic C>G at 45332428 on hap0
   ref       AAGGGTGCTGCTGGGATCAGCACCAATGGCTCGGACACGGC
   hap0      AAGGGTGCTGCTGGGATCAGCACCAATGGCTCGGACACGGC
@@ -8363,9 +8363,9 @@
   WT        VARVLCRVRAIGADPSSTLVSQQLW
   MUT       VARVLCRVRAIGPDPSSTLVSQQLW
                         ^
-  peptide   none
+  peptide   HTFSHIKLTY HLA-A*26:01 rank 0.022
 
-## IGI-SYN-SEQ-01-SNV-0613  RNF187 *236ext*31 stop_loss  clone=T tier=T_het VAF=0.5185 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0613  RNF187 *236ext*31 stop_loss  clone=T tier=T_het VAF=0.5185 expr=T100 bind=strong ctx=clean
   window    chr1:228487598-228487638  somatic G>A at 228487618 on hap0
   ref       TGCGCTTCTGGGCCGAGGAGGACGGGCCCTTCCCGTGCCCC
   hap0      TGCGCTTCTGGGCCGAGGAGGACGGGCCCTTCCCGTGCCCC
@@ -8376,9 +8376,9 @@
   WT        CRACVVRFWAEEDGPFPCPECADDC
   MUT       CRACVVRFWAEENGPFPCPECADDC
                         ^
-  peptide   none
+  peptide   ELADPTERF HLA-A*26:01 rank 0.034
 
-## IGI-SYN-SEQ-01-SNV-0614  RNF187 *236ext*31 stop_loss  clone=A1 tier=A1 VAF=0.0311 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0614  RNF187 *236ext*31 stop_loss  clone=A1 tier=A1 VAF=0.0311 expr=T100 bind=strong ctx=clean
   window    chr1:228489010-228489050  somatic A>T at 228489030 on hap1
   ref       GGACCTGCATGGCCAGGCAGAGTCAGCAGCTGCAGTGTGGA
   hap0      GGACCTGCATGGCCAGGCAGAGTCAGCAGCTGCAGTGTGGA
@@ -8389,9 +8389,9 @@
   WT        DLNDARDLHGQAESAAAVWKGHVMD
   MUT       DLNDARDLHGQAVSAAAVWKGHVMD
                         ^
-  peptide   none
+  peptide   ELADPTERF HLA-A*26:01 rank 0.034
 
-## IGI-SYN-SEQ-01-SNV-0615  CABYR *380ext*1 stop_loss  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0615  CABYR *380ext*1 stop_loss  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=clean
   window    chr18:24155981-24156021  somatic A>T at 24156001 on hap0
   ref       TGTCTCACCAGAGTTTGCCTACGTCCCAGCTGACCCAGCTC
   hap0      TGTCTCACCAGAGTTTGCCTACGTCCCAGCTGACCCAGCTC
@@ -8402,9 +8402,9 @@
   WT        SPPPTAVSPEFAYVPADPAQLAAQM
   MUT       SPPPTAVSPEFAFVPADPAQLAAQM
                         ^
-  peptide   none
+  peptide   LPNPKDPQF HLA-B*35:08 rank 0.013
 
-## IGI-SYN-SEQ-01-SNV-0616  CABYR *380ext*1 stop_loss  clone=T tier=T_het VAF=0.35 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0616  CABYR *380ext*1 stop_loss  clone=T tier=T_het VAF=0.35 expr=T10 bind=strong ctx=clean
   window    chr18:24155912-24155952  somatic C>T at 24155932 on hap1
   ref       TGGTGGTCTTTCTTCCAAACCAGCCACCCCTAAGACTACTA
   hap0      TGGTGGTCTTTCTTCCAAACCAGCCACCCCTAAGACTACTA
@@ -8415,9 +8415,9 @@
   WT        EQTEAVGGLSSKPATPKTTTPPSSP
   MUT       EQTEAVGGLSSKLATPKTTTPPSSP
                         ^
-  peptide   none
+  peptide   LPNPKDPQF HLA-B*35:08 rank 0.013
 
-## IGI-SYN-SEQ-01-SNV-0617  SYS1-DBNDD2 *98ext*31 stop_loss  clone=A1 tier=A1 VAF=0.042 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-SNV-0617  SYS1-DBNDD2 *98ext*31 stop_loss  clone=A1 tier=A1 VAF=0.042 expr=T1 bind=strong ctx=exon_edge
   window    chr20:45365656-45365696  somatic G>C at 45365676 on hap0
   ref       TGATGTCCTTCATCCTCAACGCCCTCACCTGGTGAGTATCA
   hap0      TGATGTCCTTCATCCTCAACGCCCTCACCTGGTGAGTATCA
@@ -8428,9 +8428,9 @@
   WT        PGRLSMMSFILNALTWHFSLLLPHE
   MUT       PGRLSMMSFILNPLTWHFSLLLPHE
                         ^
-  peptide   none
+  peptide   FPFHHDCKF HLA-B*35:08 rank 0.029
 
-## IGI-SYN-SEQ-01-SNV-0618  SYS1-DBNDD2 *98ext*31 stop_loss  clone=B tier=B VAF=0.0875 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0618  SYS1-DBNDD2 *98ext*31 stop_loss  clone=B tier=B VAF=0.0875 expr=T1 bind=strong ctx=clean
   window    chr20:45363643-45363683  somatic C>A at 45363663 on hap1
   ref       GACGGGCTAGTGCGAAGCAGCCCCTCGCTGGACCAGATGTT
   hap0      GACGGGCTAGTGCGAAGCAGCCCCTCGCTGGACCAGATGTT
@@ -8441,9 +8441,9 @@
   WT        LWLALVDGLVRSSPSLDQMFDAEIL
   MUT       LWLALVDGLVRSRPSLDQMFDAEIL
                         ^
-  peptide   none
+  peptide   MFDAEILGF HLA-C*04:01 rank 0.017
 
-## IGI-SYN-SEQ-01-SNV-0619  COL13A1 *729ext*67 stop_loss  clone=T tier=T_het VAF=0.35 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-SNV-0619  COL13A1 *729ext*67 stop_loss  clone=T tier=T_het VAF=0.35 expr=T1 bind=strong ctx=exon_edge
   window    chr10:69941002-69941042  somatic C>G at 69941022 on hap1
   ref       GGACGGCAGGCCTGGGCCACCGGTGAGTGTCACTTCTCCAT
   hap0      GGACGGCAGGCCTGGGCCACCGGTGAGTGTCACTTCTCCAT
@@ -8454,9 +8454,9 @@
   WT        PGASGLDGRPGPPGTPGPIGVPGPA
   MUT       PGASGLDGRPGPRGTPGPIGVPGPA
                         ^
-  peptide   none
+  peptide   RHRSNSHCL HLA-B*38:01 rank 0.305
 
-## IGI-SYN-SEQ-01-SNV-0620  COL13A1 *729ext*67 stop_loss  clone=A1 tier=A1 VAF=0.042 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-SNV-0620  COL13A1 *729ext*67 stop_loss  clone=A1 tier=A1 VAF=0.042 expr=T1 bind=strong ctx=exon_edge
   window    chr10:69928979-69929019  somatic G>T at 69928999 on hap1
   ref       CCAGGGATTCCAGGCCAGAAGGTAAATCTTATCTTGACAAA
   hap0      CCAGGGATTCCAGGCCAGAAGGTAAATCTTATCTTGACAAA
@@ -8467,9 +8467,9 @@
   WT        IGPPGAPGIPGQKGEIGLPGPPGHD
   MUT       IGPPGAPGIPGQNGEIGLPGPPGHD
                         ^
-  peptide   none
+  peptide   RHRSNSHCL HLA-B*38:01 rank 0.305
 
-## IGI-SYN-SEQ-01-SNV-0621  RBFOX3 *359ext*13 stop_loss  clone=B tier=B VAF=0.1346 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0621  RBFOX3 *359ext*13 stop_loss  clone=B tier=B VAF=0.1346 expr=T0 bind=weak ctx=clean
   window    chr17:79103184-79103224  somatic C>G at 79103204 on hap0
   ref       ATCGTCCCATTCAGCTTCTCCCGGGCTCGGTCAGCATCTGA
   hap0      ATCGTCCCATTCAGCTTCTCCCGGGCTCGGTCAGCATCTGA
@@ -8480,9 +8480,9 @@
   WT        IGPAATYSIGTM
   MUT       IGPAATYSIGTMVRSPGPPSPGCQS
                         ^
-  peptide   none
+  peptide   ATYSIGTMV HLA-C*12:03 rank 0.619
 
-## IGI-SYN-SEQ-01-SNV-0622  RBFOX3 *359ext*13 stop_loss  clone=A tier=A VAF=0.2154 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0622  RBFOX3 *359ext*13 stop_loss  clone=A tier=A VAF=0.2154 expr=T0 bind=weak ctx=clean
   window    chr17:79115543-79115583  somatic T>A at 79115563 on hap0
   ref       GGCTGCTCGGGGTGGGTCTGTGCTGGTGTGTACAGGGTCAT
   hap0      GGCTGCTCGGGGTGGGTCTGTGCTGGTGTGTACAGGGTCAT
@@ -8493,9 +8493,9 @@
   WT        IGPAATYSIGTM
   MUT       IGPAATYSIGTMVRSPGPPSPGCQS
                         ^
-  peptide   none
+  peptide   ATYSIGTMV HLA-C*12:03 rank 0.619
 
-## IGI-SYN-SEQ-01-SNV-0623  SUSD1 *748ext*52 stop_loss  clone=B tier=B VAF=0.0875 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0623  SUSD1 *748ext*52 stop_loss  clone=B tier=B VAF=0.0875 expr=T10 bind=strong ctx=clean
   window    chr9:112058578-112058618  somatic A>T at 112058598 on hap1
   ref       CACGTATCCATCAGCATCAGAGGCGTTGCTAAAGAAGGAGG
   hap0      CACGTATCCATCAGCATCAGAGGCGTTGCTAAAGAAGGAGG
@@ -8506,9 +8506,9 @@
   WT        DSEGASSFFSNASDADGYVAAELLA
   MUT       DSEGASSFFSNATDADGYVAAELLA
                         ^
-  peptide   none
+  peptide   IPIGDRLYY HLA-B*35:08 rank 0.027
 
-## IGI-SYN-SEQ-01-SNV-0624  SUSD1 *748ext*52 stop_loss  clone=A tier=A VAF=0.14 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0624  SUSD1 *748ext*52 stop_loss  clone=A tier=A VAF=0.14 expr=T10 bind=weak ctx=clean
   window    chr9:112112805-112112845  somatic G>C at 112112825 on hap0
   ref       TTTATTTGCCATCTCACACAGGTATCATTAAACAGTGATAC
   hap0      TTTATTTGCCATCTCACACAGGTATCATTAAACAGTGATAC
@@ -8519,9 +8519,9 @@
   WT        VIILTFLSFSAV
   MUT       VIILTFLSFSAVWYVRVSFLRNDWN
                         ^
-  peptide   none
+  peptide   FLSFSAVWY HLA-A*01:01 rank 0.645
 
-## IGI-SYN-SEQ-01-SNV-0625  ATXN10 *476ext*13 stop_loss  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0625  ATXN10 *476ext*13 stop_loss  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=strong ctx=clean
   window    chr22:45702680-45702720  somatic A>G at 45702700 on hap1
   ref       GTTTGGAAGGTCTTGCTTAAATCATCCGGACAAAAAAATTG
   hap0      GTTTGGAAGGTCTTGCTTAAATCATCCGGACAAAAAAATTG
@@ -8532,9 +8532,9 @@
   WT        VHAFPELFLSCLNHPDKKIVAYSSM
   MUT       VHAFPELFLSCLSHPDKKIVAYSSM
                         ^
-  peptide   none
+  peptide   HPDKKIVAY HLA-B*35:08 rank 0.001
 
-## IGI-SYN-SEQ-01-SNV-0626  ATXN10 *476ext*13 stop_loss  clone=T tier=T_het VAF=0.35 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0626  ATXN10 *476ext*13 stop_loss  clone=T tier=T_het VAF=0.35 expr=T100 bind=strong ctx=clean
   window    chr22:45729547-45729587  somatic T>A at 45729567 on hap1
   ref       AGACTGTGCTCAAGCTGGCCTCTGAGGAGCCTCCTGATGAT
   hap0      AGACTGTGCTCAAGCTGGCCTCTGAGGAGCCTCCTGATGAT
@@ -8545,9 +8545,9 @@
   WT        FVDQCKTVLKLASEEPPDDEEALAT
   MUT       FVDQCKTVLKLATEEPPDDEEALAT
                         ^
-  peptide   none
+  peptide   VANGFKSHL HLA-C*12:03 rank 0.065
 
-## IGI-SYN-SEQ-01-SNV-0627  ANKRD37 *159ext*1 stop_loss  clone=A tier=A VAF=0.14 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-SNV-0627  ANKRD37 *159ext*1 stop_loss  clone=A tier=A VAF=0.14 expr=T10 bind=strong ctx=clean
   window    chr4:185399689-185399729  somatic G>A at 185399709 on hap0
   ref       CTGACAGGAATGATTGTGTTGCCGTGCTCAGACAGAAACGG
   hap0      CTGACAGGAATGATTGTGTTGCCGTGCTCAGACAGAAACGG
@@ -8558,9 +8558,10 @@
   WT        KASEHPDRNDCVAVLRQKRSLGSVE
   MUT       KASEHPDRNDCVTVLRQKRSLGSVE
                         ^
-  peptide   none
+  peptide   DRNDCVTVL HLA-B*38:01 rank 0.232
+  wt pep    DRNDCVAVL rank 0.343  (agretopicity 0.931)
 
-## IGI-SYN-SEQ-01-SNV-0628  ANKRD37 *159ext*1 stop_loss  clone=A tier=A VAF=0.14 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-SNV-0628  ANKRD37 *159ext*1 stop_loss  clone=A tier=A VAF=0.14 expr=T10 bind=strong ctx=exon_edge
   window    chr4:185396908-185396948  somatic T>G at 185396928 on hap1
   ref       CTGCCTTAGGCGGGAAATGCTGTTGCTGGATTGCAACCCCG
   hap0      CTGCCTTAGGCGGGAAATGCTGTTGCTGGATTGCAACCCCG
@@ -8571,9 +8572,9 @@
   WT        MLLLDCNPEVDGLK
   MUT       MRLLDCNPEVDGLK
              ^
-  peptide   none
+  peptide   VHLAAGSGL HLA-B*38:01 rank 0.087
 
-## IGI-SYN-SEQ-01-SNV-0629  AL627230.1 *115ext*16 stop_loss  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-01-SNV-0629  AL627230.1 *115ext*16 stop_loss  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=segdup
   window    chr9:67725945-67725985  somatic C>T at 67725965 on hap1
   ref       GACGCATCTCCTCACGTGGGCCAGGCTTTCAGGCACCCAAA
   hap0      GACGCATCTCCTCACGTGGGCCAGGCTTTCAGGCACCCAAA
@@ -8584,7 +8585,7 @@
   WT        QLLRERRISSRGPGFQAPKADPPRR
   MUT       QLLRERRISSRGSGFQAPKADPPRR
                         ^
-  peptide   none
+  peptide   HTHSHTHTH HLA-A*26:01 rank 0.232
 
 ## IGI-SYN-SEQ-01-IND-0001  PROCR G224fs*3 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=non ctx=clean
   window    chr20:35176746-35176787  somatic GG>G at 35176766 on hap1
@@ -8597,9 +8598,9 @@
   WT        VLGVLVGSFIIAGVAVGIFLCTGGR
   MUT       VLGVLVGSFIIAVWL
                         ^
-  peptide   SFIIAVWL HLA-C*04:01 rank 7.189
+  peptide   LVGSFIIAV HLA-C*12:03 rank 3.275
 
-## IGI-SYN-SEQ-01-IND-0002  SMN2 C289fs*45 frameshift  clone=B tier=B VAF=0.1346 expr=T1 bind=na ctx=segdup
+## IGI-SYN-SEQ-01-IND-0002  SMN2 C289fs*45 frameshift  clone=B tier=B VAF=0.1346 expr=T1 bind=strong ctx=segdup
   window    chr5:70076530-70076572  somatic GTG>G at 70076550 on hap0
   ref       CAAAATCAAAAAGAAGGAAGGTGCTCACATTCCTTAAATTAAG
   hap0      CAAAATCAAAAAGAAGGAAGGTGCTCACATTCCTTAAATTAAG
@@ -8610,9 +8611,9 @@
   WT        YMGFRQNQKEGRCSHSLN
   MUT       YMGFRQNQKEGRLTFLKLRSKSASIMKVNLTFVKLYG
                         ^
-  peptide   none
+  peptide   EHLKSSDVRKL HLA-B*38:01 rank 0.097
 
-## IGI-SYN-SEQ-01-IND-0003  ERH G16fs*3 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=non ctx=clean
+## IGI-SYN-SEQ-01-IND-0003  ERH G16fs*3 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=weak ctx=clean
   window    chr14:69394846-69394891  somatic CTGCCT>C at 69394866 on hap0
   ref       ATTCGTAGTCAGCATAAGTTCTGCCTTCTGGCCTCTTGGTAGGCTG
   hap0      ATTCGTAGTCAGCATAAGTTCTGCCTTCTGGCCTCTTGGTAGGCTG
@@ -8623,9 +8624,9 @@
   WT        TILLVQPTKRPEGRTYADYESVNEC
   MUT       TILLVQPTKRPENLC
                         ^
-  peptide   QPTKRPENLC HLA-B*35:08 rank 12.985
+  peptide   QPTKRPENL HLA-B*35:08 rank 1.165
 
-## IGI-SYN-SEQ-01-IND-0004  TGFBR3 W163fs*16 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0004  TGFBR3 W163fs*16 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=strong ctx=clean
   window    chr1:91734836-91734877  somatic CA>C at 91734856 on hap0
   ref       CTCCATACTCTTTTCGGGCCCAATTTAACAGATGTTCATTTC
   hap0      CTCCATACTCTTTTCGGGCCCAATTTAACAGATGTTCATTTC
@@ -8636,9 +8637,9 @@
   WT        RNFPHGNEHLLNWARKEYGAVTSFT
   MUT       RNFPHGNEHLLNGPEKSMEQLLHSPNSR
                         ^
-  peptide   none
+  peptide   EHLLNGPEKSM HLA-B*38:01 rank 0.368
 
-## IGI-SYN-SEQ-01-IND-0005  VPS4A K83fs*30 frameshift  clone=A tier=A VAF=0.2154 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0005  VPS4A K83fs*30 frameshift  clone=A tier=A VAF=0.2154 expr=T10 bind=strong ctx=clean
   window    chr16:69316317-69316358  somatic GA>G at 69316337 on hap0
   ref       AGCAAAGAGAAACACGGCAAGAAGCCAGTCAAAGAGAACCAG
   hap0      AGCAAAGAGAAACACGGCAAGAAGCCAGTCAAAGAGAACCAG
@@ -8649,7 +8650,7 @@
   WT        KDYLRSKEKHGKKPVKENQSEGKGS
   MUT       KDYLRSKEKHGKSQSKRTRVRARAVTVTVKGIIRRKR
                         ^
-  peptide   none
+  peptide   RARAVTVTV HLA-C*12:03 rank 0.158
 
 ## IGI-SYN-SEQ-01-IND-0006  GPAT3 I51fs*1 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=non ctx=exon_edge
   window    chr4:83544522-83544567  somatic ACAATA>A at 83544542 on hap1
@@ -8664,7 +8665,7 @@
                         ^
   peptide   KTLEWATN HLA-C*12:03 rank 48.0
 
-## IGI-SYN-SEQ-01-IND-0007  SIM2 H83fs*12 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0007  SIM2 H83fs*12 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=non ctx=clean
   window    chr21:36709219-36709260  somatic CA>C at 36709239 on hap1
   ref       TCGCCAAGGAGCTGGGATCGCACTTGCTGCAGGTAGAGCGGC
   hap0      TCGCCAAGGAGCTGGGATCGCACTTGCTGCAGGTAGAGCGGC
@@ -8675,7 +8676,7 @@
   WT        GPLDGVAKELGSHLLQTLDGFVFVV
   MUT       GPLDGVAKELGSPCCRLWMDLFLW
                         ^
-  peptide   none
+  peptide   VAKELGSPC HLA-C*12:03 rank 2.915
 
 ## IGI-SYN-SEQ-01-IND-0008  OR6C76 S6fs*10 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=non ctx=clean
   window    chr12:55426248-55426293  somatic ATCAGT>A at 55426268 on hap1
@@ -8688,9 +8689,9 @@
   WT        MKNRTSVTDFILLGLTDN
   MUT       MKNRTDRFHPSGSDG
                  ^
-  peptide   DRFHPSGSDG HLA-B*38:01 rank 45.5
+  peptide   RTDRFHPSG HLA-A*01:01 rank 5.701
 
-## IGI-SYN-SEQ-01-IND-0009  TEX101 T162fs*26 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0009  TEX101 T162fs*26 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=clean
   window    chr19:43417948-43417989  somatic CA>C at 43417968 on hap1
   ref       TCTTCCCTGTCCCAATGGTACAACTCGATGCTATCAAGGAAA
   hap0      TCTTCCCTGTCCCAATGGTACAACTCGATGCTATCAAGGAAA
@@ -8701,9 +8702,9 @@
   WT        FSAPSLPCPNGTTRCYQGKLEITGG
   MUT       FSAPSLPCPNGTLDAIKENLRSLEVALSRLWRSKAVQ
                         ^
-  peptide   none
+  peptide   TLDAIKENL HLA-C*04:01 rank 0.243
 
-## IGI-SYN-SEQ-01-IND-0010  ATP7B T858fs*14 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0010  ATP7B T858fs*14 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T1 bind=weak ctx=exon_edge
   window    chr13:51950253-51950294  somatic TG>T at 51950273 on hap1
   ref       ATGAAACAAGCCATCTCACCTGTGATGAGGGACTCATCAGCC
   hap0      ATGAAACAAGCCATCTCACCTGTGATGAGGGACTCATCAGCC
@@ -8714,9 +8715,9 @@
   WT        LEGNTMADESLITGEAMPVTKKPGS
   MUT       LEGNTMADESLIKEKPCQSLRNPEAL
                         ^
-  peptide   none
+  peptide   IKEKPCQSL HLA-B*38:01 rank 1.134
 
-## IGI-SYN-SEQ-01-IND-0011  PLD5 T523fs*40 frameshift  clone=T tier=T_het VAF=0.2593 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0011  PLD5 T523fs*40 frameshift  clone=T tier=T_het VAF=0.2593 expr=T0 bind=strong ctx=clean
   window    chr1:242089876-242089917  somatic AG>A at 242089896 on hap1
   ref       CCGCCTGTGTCGTCTGTGGCAGTTTTGTTGGAGAGGGGTTTG
   hap0      CCGCCTGTGTCGTCTGTGGCAGTTTTGTTGGAGAGGGGTTTG
@@ -8727,7 +8728,7 @@
   WT        SSLFKLKPLSNKTATDDTGGKDPRN
   MUT       SSLFKLKPLSNKMPQTTQAERIPGTYNMMKKLTGQLC
                         ^
-  peptide   none
+  peptide   QAERIPGTY HLA-A*01:01 rank 0.135
 
 ## IGI-SYN-SEQ-01-IND-0012  OR8K1 A243fs*8 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=clean
   window    chr11:56346742-56346783  somatic AA>A at 56346762 on hap1
@@ -8740,9 +8741,9 @@
   WT        ILRMNSRKGRYKAFSTCSSHLTVVI
   MUT       ILRMNSRKGRYKPSPPVALI
                         ^
-  peptide   KPSPPVALI HLA-C*04:01 rank 0.413
+  peptide   YKPSPPVAL HLA-B*38:01 rank 0.327
 
-## IGI-SYN-SEQ-01-IND-0013  ZIC3 R30fs*7 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=non ctx=clean
+## IGI-SYN-SEQ-01-IND-0013  ZIC3 R30fs*7 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=strong ctx=clean
   window    chrX:137566759-137566800  somatic CG>C at 137566779 on hap1
   ref       GCCACCACGAGATGCCCAACCGTGAGCCGGCAGGCATGGGGC
   hap0      GCCACCACGAGATGCCCAACCGTGAGCCGGCAGGCATGGGGC
@@ -8753,9 +8754,9 @@
   WT        SFGAPRHHEMPNREPAGMGLNPFGD
   MUT       SFGAPRHHEMPNLSRQAWG
                         ^
-  peptide   MPNLSRQAWG HLA-B*35:08 rank 4.105
+  peptide   MPNLSRQAW HLA-B*35:08 rank 0.068
 
-## IGI-SYN-SEQ-01-IND-0014  AC004076.1 M63fs*18 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0014  AC004076.1 M63fs*18 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=strong ctx=exon_edge
   window    chr19:57475647-57475692  somatic GGCCAT>G at 57475667 on hap1
   ref       GTGACGGCCTTACCCAGAGAGGCCATAAGTGCAAAGTTCTCCAGCA
   hap0      GTGACGGCCTTACCCAGAGAGGCCATAAGTGCAAAGTTCTCCAGCA
@@ -8766,9 +8767,9 @@
   WT        LYRDVMLENFALMASLGIPQTMAAF
   MUT       LYRDVMLENFALLSGDTSDNGSFWIEIFAE
                         ^
-  peptide   none
+  peptide   DTSDNGSFW HLA-A*26:01 rank 0.386
 
-## IGI-SYN-SEQ-01-IND-0015  DNHD1 A942fs*35 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0015  DNHD1 A942fs*35 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=weak ctx=clean
   window    chr11:6533977-6534018  somatic TG>T at 6533997 on hap1
   ref       GCCCAAGCTGCAGCAGCTGATGGCAGCAGCATTGGCAGAGCT
   hap0      GCCCAAGCTGCAGCAGCTGATGGCAGCAGCATTGGCAGAGCT
@@ -8779,7 +8780,7 @@
   WT        RHAIMPKLQQLMAAALAELEGLLAK
   MUT       RHAIMPKLQQLMQQHWQSWKACLRRPSPVPLWTPHKI
                         ^
-  peptide   none
+  peptide   QHWQSWKACL HLA-B*38:01 rank 0.552
 
 ## IGI-SYN-SEQ-01-IND-0016  CCHCR1 A514fs*4 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T10 bind=non ctx=near_germline_het
   window    chr6:31148424-31148465  somatic GC>G at 31148444 on hap0
@@ -8792,7 +8793,7 @@
   WT        EARRRWQQQTASAEEQLRLVVNAVS
   MUT       EARRRWQQQTASPRSS
                         ^
-  peptide   QTASPRSS HLA-A*26:01 rank 22.237
+  peptide   RWQQQTASP HLA-C*04:01 rank 8.628
 
 ## IGI-SYN-SEQ-01-IND-0017  OR2S2 I39fs*10 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=non ctx=clean
   window    chr9:35957964-35958005  somatic TC>T at 35957984 on hap1
@@ -8805,7 +8806,7 @@
   WT        TFFVLILLMYLVILLGNGVLILVTI
   MUT       TFFVLILLMYLVSCWAMGSSSW
                         ^
-  peptide   VSCWAMGSSSW HLA-A*01:01 rank 8.256
+  peptide   WAMGSSSW HLA-B*35:08 rank 2.271
 
 ## IGI-SYN-SEQ-01-IND-0018  SLC25A42 G220fs*10 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=non ctx=exon_edge
   window    chr19:19110556-19110597  somatic CG>C at 19110576 on hap1
@@ -8818,9 +8819,9 @@
   WT        YETLKSLHREYSGRRQPYPFERMIF
   MUT       YETLKSLHREYSAAGSPTPSSA
                         ^
-  peptide   SAAGSPTPSSA HLA-C*12:03 rank 7.245
+  peptide   SAAGSPTPS HLA-C*12:03 rank 5.874
 
-## IGI-SYN-SEQ-01-IND-0019  APOL4 R125fs*41 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0019  APOL4 R125fs*41 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=clean
   window    chr22:36191732-36191776  somatic GAAGC>G at 36191752 on hap1
   ref       AATCTCATTTGCAATGACACGAAGCCTTTCTATGGACTCCTGAAT
   hap0      AATCTCATTTGCAATGACACGAAGCCTTTCTATGGACTCCTGAAT
@@ -8831,9 +8832,9 @@
   WT        PQIRWKIQESIERLRVIANEIEKVH
   MUT       PQIRWKIQESIESVSLQMRLKRSTEAASSPMWCLAPL
                         ^
-  peptide   none
+  peptide   ESIESVSLQM HLA-A*26:01 rank 0.114
 
-## IGI-SYN-SEQ-01-IND-0020  COX6B2 S74fs*26 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0020  COX6B2 S74fs*26 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=exon_edge
   window    chr19:55353744-55353786  somatic CAG>C at 55353764 on hap0
   ref       CGTTCTTGATCTGCTCGTTCCAGCTCTCCACCTGGGAAGCAGA
   hap0      CGTTCTTGATCTGCTCGTTCCAGCTCTCCACCTGGGAAGCAGA
@@ -8844,9 +8845,9 @@
   WT        VYHSLCPISWVESWNEQIKNGIFAG
   MUT       VYHSLCPISWVERERADQERDFRRQNLTAPARLPLKM
                         ^
-  peptide   none
+  peptide   APARLPLKM HLA-B*35:08 rank 0.267
 
-## IGI-SYN-SEQ-01-IND-0021  NEXMIF R640fs*30 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0021  NEXMIF R640fs*30 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=strong ctx=clean
   window    chrX:74742617-74742661  somatic TCTTT>T at 74742637 on hap0
   ref       GAAATTTCAATGGATGGGATTCTTTGAATCCTGTGCCTGTTGCCA
   hap0      GAAATTTCAATGGATGGGATTCTTTGAATCCTGTGCCTGTTGCCA
@@ -8857,7 +8858,7 @@
   WT        RKSKLGNRHRIQRIPSIEISASSKQ
   MUT       RKSKLGNRHRIQSHPLKFQQVVNRFHYVMIRGTLVII
                         ^
-  peptide   none
+  peptide   SHPLKFQQV HLA-B*38:01 rank 0.349
 
 ## IGI-SYN-SEQ-01-IND-0022  POLI P602fs*5 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=weak ctx=clean
   window    chr18:54294028-54294070  somatic CCG>C at 54294048 on hap0
@@ -8872,7 +8873,7 @@
                         ^
   peptide   SPCERNIRL HLA-C*04:01 rank 1.065
 
-## IGI-SYN-SEQ-01-IND-0023  TM4SF4 G188fs*49 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0023  TM4SF4 G188fs*49 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=strong ctx=clean
   window    chr3:149498862-149498907  somatic GGGGAC>G at 149498882 on hap1
   ref       GCCTCCTGGGGACCCTCTGTGGGGACTGCCAGTGTTGTGGCTGCTG
   hap0      GCCTCCTGGGGACCCTCTGTGGGGACTGCCAGTGTTGTGGCTGCTG
@@ -8883,9 +8884,9 @@
   WT        IQVVNGLLGTLCGDCQCCGCCGGDG
   MUT       IQVVNGLLGTLCVPVLWLLWGRWTRLNLRDELLRLYS
                         ^
-  peptide   none
+  peptide   ISFHKTSSL HLA-C*12:03 rank 0.04
 
-## IGI-SYN-SEQ-01-IND-0024  NT5C3B L219fs*34 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0024  NT5C3B L219fs*34 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T100 bind=weak ctx=clean
   window    chr17:41827514-41827559  somatic CTCAAG>C at 41827534 on hap0
   ref       AGGATGACATTGGTTTTGCCCTCAAGTTGCTGGAAGTAACCAGAGT
   hap0      AGGATGACATTGGTTTTGCCCTCAAGTTGCTGGAAGTAACCACAGT   <- germline differs
@@ -8896,7 +8897,7 @@
   WT        SSACENSGYFQQLEGKTNVILLGDS
   MUT       SSACENSGYFQQGQNQCHPAGRLYRGPHHGRWGSWCA
                         ^
-  peptide   none
+  peptide   QCHPAGRLY HLA-C*12:03 rank 0.868
 
 ## IGI-SYN-SEQ-01-IND-0025  ZNF284 L330fs*0 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=na ctx=clean
   window    chr19:44086444-44086489  somatic CACTTA>C at 44086464 on hap1
@@ -8922,9 +8923,9 @@
   WT        VGLFEDTNLCAIHAKRVTIMPKDIQ
   MUT       VGLFEDTNLCAITPSG
                         ^
-  peptide   NLCAITPSG HLA-B*38:01 rank 45.25
+  peptide   DTNLCAITP HLA-A*01:01 rank 22.877
 
-## IGI-SYN-SEQ-01-IND-0027  CT55 D95fs*26 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-01-IND-0027  CT55 D95fs*26 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=weak ctx=segdup
   window    chrX:135160528-135160573  somatic ACATCC>A at 135160548 on hap0
   ref       CATAAAGATGGCGAGGCACAACATCCACCTGTAAGATTTAGGAAAG
   hap0      CATAAAGATGGCGAGGCACAACATCCACCTGTAAGATTTAGGAAAG
@@ -8935,7 +8936,7 @@
   WT        DKPHYGLRAIKVDVVPRHLYGAGPS
   MUT       DKPHYGLRAIKVCASPSLWCWTLRLRNQSFNWMCYFY
                         ^
-  peptide   none
+  peptide   QSFNWMCYFY HLA-A*01:01 rank 1.016
 
 ## IGI-SYN-SEQ-01-IND-0028  MTMR10 K119fs*10 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=non ctx=clean
   window    chr15:30974409-30974451  somatic ACT>A at 30974429 on hap1
@@ -8948,9 +8949,9 @@
   WT        QIVTVNDHKRKQKVLGPNQKLKFNP
   MUT       QIVTVNDHKRKQNPRPQPETEI
                         ^
-  peptide   NPRPQPETEI HLA-B*35:08 rank 3.048
+  peptide   RPQPETEI HLA-C*04:01 rank 2.713
 
-## IGI-SYN-SEQ-01-IND-0029  OR1S2 F224fs*56 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-01-IND-0029  OR1S2 F224fs*56 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=segdup
   window    chr11:58203490-58203532  somatic AAA>A at 58203510 on hap1
   ref       TAGGAGAAGAAGATGAGTACAAAGGGGAAGATGATAACTGATA
   hap0      TAGGAGAAGAAGATGAGTACAAAGGGGAAGATGATAACTGATA
@@ -8961,7 +8962,7 @@
   WT        LFIVGLSVIIFPFVLIFFSYVCIIR
   MUT       LFIVGLSVIIFPCTHLLLLCLHHQSCPGSIIHTGKVE
                         ^
-  peptide   none
+  peptide   IHTGKVESL HLA-B*38:01 rank 0.019
 
 ## IGI-SYN-SEQ-01-IND-0030  TTC8 I74fs*3 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=weak ctx=clean
   window    chr14:88839505-88839546  somatic GA>G at 88839525 on hap1
@@ -8989,7 +8990,7 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-01-IND-0032  BCL11B E39fs*7 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T1 bind=non ctx=clean
+## IGI-SYN-SEQ-01-IND-0032  BCL11B E39fs*7 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T1 bind=weak ctx=clean
   window    chr14:99257761-99257802  somatic CT>C at 99257781 on hap1
   ref       AGCCCCAGGCCACTTGGCTCCTCTATCTCCAGACCCTCGTCT
   hap0      AGCCCCAGGCCACTTGGCTCCTCTATCTCCAGACCCTCGTCT
@@ -9000,7 +9001,7 @@
   WT        AAILEEDEGLEIEEPSGLGLMVGGP
   MUT       AAILEEDEGLEIGSQVAWG
                         ^
-  peptide   LEIGSQVAWG HLA-B*38:01 rank 15.69
+  peptide   LEIGSQVAW HLA-B*38:01 rank 1.12
 
 ## IGI-SYN-SEQ-01-IND-0033  AFF1 K921fs*4 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=non ctx=clean
   window    chr4:87126264-87126305  somatic CC>C at 87126284 on hap1
@@ -9013,9 +9014,9 @@
   WT        STKSNHKDSSIPKQRRVEGKGSRSS
   MUT       STKSNHKDSSIPSREE
                         ^
-  peptide   SSIPSREE HLA-C*12:03 rank 16.058
+  peptide   NHKDSSIPS HLA-B*38:01 rank 4.624
 
-## IGI-SYN-SEQ-01-IND-0034  CYP2A7 K376fs*22 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-01-IND-0034  CYP2A7 K376fs*22 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=weak ctx=segdup
   window    chr19:40877202-40877246  somatic CCTTT>C at 40877222 on hap0
   ref       AAAATCCCGAAACTTGGTGTCCTTTTTAACCCTGCGGGCCAAACT
   hap0      AAAATCCCGAAACTTGGTGTCCTTTTTAACCCTGCGGGCCAAACT
@@ -9026,9 +9027,9 @@
   WT        DVIPMSLARRVKKDTKFRDFFLPKG
   MUT       DVIPMSLARRVKTPSFGIFSSLRAPKCSLCWAPC
                         ^
-  peptide   none
+  peptide   TPSFGIFSSL HLA-B*35:08 rank 1.052
 
-## IGI-SYN-SEQ-01-IND-0035  NUP35 L200fs*5 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-01-IND-0035  NUP35 L200fs*5 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=weak ctx=clean
   window    chr2:183157479-183157521  somatic ATC>A at 183157499 on hap1
   ref       AATTTGCACAGTATGGGAATATCTTAAAACATGTGGTAAGGCT
   hap0      AATTTGCACAGTATGGGAATATCTTAAAACATGTGGTAAGGCT
@@ -9039,9 +9040,9 @@
   WT        YILLQFAQYGNILKHVMSNTGNWMH
   MUT       YILLQFAQYGNIKTCDV
                         ^
-  peptide   YGNIKTCDV HLA-C*12:03 rank 4.503
+  peptide   FAQYGNIKTC HLA-C*12:03 rank 1.615
 
-## IGI-SYN-SEQ-01-IND-0036  ZNF564 K139fs*49 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0036  ZNF564 K139fs*49 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T1 bind=strong ctx=clean
   window    chr19:12527670-12527711  somatic GT>G at 12527690 on hap0
   ref       ACACTGCTTACATTTATATGGTTTCTCTCCATATTCCTGATA
   hap0      ACACTGCTTACATTTATATGGTTTCTCTCCATATTCCTGATA
@@ -9052,9 +9053,9 @@
   WT        GHKPYDYQEYGEKPYKCKQCGKAFS
   MUT       GHKPYDYQEYGENHINVSSVGKPSVLVNPFEDMKELT
                         ^
-  peptide   none
+  peptide   KPSFLSQVF HLA-B*35:08 rank 0.062
 
-## IGI-SYN-SEQ-01-IND-0037  CCDC47 I31fs*26 frameshift  clone=B tier=B VAF=0.1346 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0037  CCDC47 I31fs*26 frameshift  clone=B tier=B VAF=0.1346 expr=T100 bind=weak ctx=clean
   window    chr17:63766060-63766104  somatic TACTA>T at 63766080 on hap0
   ref       AAGTCATTATCATCATACTCTACTATGTCCTCCTCATCCTCAAAA
   hap0      AAGTCATTATCATCATACTCTACTATGTCCTCCTCATCCTCAAAA
@@ -9065,9 +9066,9 @@
   WT        EAKFDDFEDEEDIVEYDDNDFAEFE
   MUT       EAKFDDFEDEEDKSMMIMTSLNLRMSWKTLLLNLLNG
                         ^
-  peptide   none
+  peptide   LRMSWKTLL HLA-B*38:01 rank 0.556
 
-## IGI-SYN-SEQ-01-IND-0038  MFAP5 L159fs*17 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0038  MFAP5 L159fs*17 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=weak ctx=clean
   window    chr12:8648117-8648158  somatic AG>A at 8648137 on hap1
   ref       CCACATTTTCACAGGGAGGAAGTCGGAAGTAATTGGAGCGAC
   hap0      CCACATTTTCACAGGGAGGAAGTCGGAAGTAATTGGAGCGAC
@@ -9078,9 +9079,9 @@
   WT        PPRRLRRSNYFRLPPCENVDLQRPN
   MUT       PPRRLRRSNYFRFLPVKMWICRDPMVCDH
                         ^
-  peptide   none
+  peptide   FRFLPVKMW HLA-B*38:01 rank 0.963
 
-## IGI-SYN-SEQ-01-IND-0039  LASP1 K121fs*172 frameshift  clone=A tier=A VAF=0.2154 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0039  LASP1 K121fs*172 frameshift  clone=A tier=A VAF=0.2154 expr=T100 bind=strong ctx=exon_edge
   window    chr17:38914307-38914348  somatic AA>A at 38914327 on hap0
   ref       TGCCTTCTGACCTTGCAGATAAAATACCATGAGGAGTTTGAG
   hap0      TGCCTTCTGACCTTGCAGATAAAATACCATGAGGAGTTTGAG
@@ -9091,7 +9092,7 @@
   WT        RIKKTQDQISNIKYHEEFEKSRMGP
   MUT       RIKKTQDQISNINTMRSLRRAAWALAGARAWSQSVGI
                         ^
-  peptide   none
+  peptide   EPAAPPSVF HLA-B*35:08 rank 0.017
 
 ## IGI-SYN-SEQ-01-IND-0040  DDO L147fs*7 frameshift  clone=A tier=A VAF=0.14 expr=T1 bind=non ctx=clean
   window    chr6:110404771-110404812  somatic GA>G at 110404791 on hap0
@@ -9104,9 +9105,9 @@
   WT        AFTTLKCECPAYLPWLEKRIKGSGG
   MUT       AFTTLKCECPAYPRGWRKG
                         ^
-  peptide   AYPRGWRKG HLA-C*04:01 rank 26.19
+  peptide   ECPAYPRGWRK HLA-A*26:01 rank 6.717
 
-## IGI-SYN-SEQ-01-IND-0041  RGP1 G88fs*15 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0041  RGP1 G88fs*15 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=strong ctx=exon_edge
   window    chr9:35750645-35750686  somatic GG>G at 35750665 on hap0
   ref       TTACCTTTTTCAGGTGAGAGGGGCCAGTGTATCCTTTCTACT
   hap0      TTACCTTTTTCAGGTGAGAGGGGCCAGTGTATCCTTTCTACT
@@ -9117,9 +9118,9 @@
   WT        SQTVFLPHRGERGQCILSTPPKILF
   MUT       SQTVFLPHRGERASVSFLLHRKFYSVT
                         ^
-  peptide   none
+  peptide   ERASVSFLL HLA-B*38:01 rank 0.079
 
-## IGI-SYN-SEQ-01-IND-0042  SMIM24 R84fs*77 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0042  SMIM24 R84fs*77 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=strong ctx=clean
   window    chr19:3474965-3475006  somatic CT>C at 3474985 on hap0
   ref       CCTTGGCCTCTTTCTTCTCTCTCTTGTCTTCACTGTAGGGAT
   hap0      CCTTGGCCTCTTTCTTCTCTCTCTTGTCTTCACTGTAGGGAT
@@ -9130,7 +9131,7 @@
   WT        ESNLYQDQSEDKREKKEAKEKEEKR
   MUT       ESNLYQDQSEDKERRKRPRRKKRRGRRRKRQQRKERA
                         ^
-  peptide   none
+  peptide   LPLPGSPPEM HLA-B*35:08 rank 0.157
 
 ## IGI-SYN-SEQ-01-IND-0043  HSPE1-MOB4 D166fs*5 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=strong ctx=clean
   window    chr2:197548346-197548390  somatic CTTGA>C at 197548366 on hap1
@@ -9145,7 +9146,7 @@
                         ^
   peptide   RHTLVLHVF HLA-B*38:01 rank 0.029
 
-## IGI-SYN-SEQ-01-IND-0044  ANXA10 L297fs*40 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0044  ANXA10 L297fs*40 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=clean
   window    chr4:168184642-168184686  somatic CCCTA>C at 168184662 on hap1
   ref       CAAAGAGCGATATGGAAAATCCCTATTTCATGATATCAGAGTAAG
   hap0      CAAAGAGCGATATGGAAAATCCCTATTTCATGATATCAGAGTAAG
@@ -9156,7 +9157,7 @@
   WT        IRKRYKERYGKSLFHDIRNFASGHY
   MUT       IRKRYKERYGKSFMISEILLQGIIRKHCLPSVLVMLR
                         ^
-  peptide   none
+  peptide   KHCLPSVLV HLA-B*38:01 rank 0.314
 
 ## IGI-SYN-SEQ-01-IND-0045  MYH3 Q1064fs*3 frameshift  clone=A tier=A VAF=0.2154 expr=T0 bind=weak ctx=clean
   window    chr17:10639077-10639121  somatic CTCTT>C at 10639097 on hap0
@@ -9171,7 +9172,7 @@
                         ^
   peptide   EGDLKLARPY HLA-A*01:01 rank 0.852
 
-## IGI-SYN-SEQ-01-IND-0046  GOLGA7B C33fs*22 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0046  GOLGA7B C33fs*22 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=weak ctx=clean
   window    chr10:97859519-97859563  somatic ATCTG>A at 97859539 on hap0
   ref       GAGACTACAGCGATGGGACCATCTGTCAGTTCCAGACCAAATTCC
   hap0      GAGACTACAGCGATGGGACCATCTGTCAGTTCCAGACCAAATTCC
@@ -9182,9 +9183,9 @@
   WT        VFIQRDYSDGTICQFQTKFPPELDS
   MUT       VFIQRDYSDGTISSRPNSPQSWTAGSSGSSLKRL
                         ^
-  peptide   none
+  peptide   SRPNSPQSW HLA-B*38:01 rank 0.624
 
-## IGI-SYN-SEQ-01-IND-0047  IRS1 S391fs*4 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-01-IND-0047  IRS1 S391fs*4 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=clean
   window    chr2:226797545-226797587  somatic GAC>G at 226797565 on hap0
   ref       ACTGGTGCTACTGGACGACAGACTGACCGGGCTGGTGGCCGAA
   hap0      ACTGGTGCTACTGGACGACAGACTGACCGGGCTGGTGGCCGAA
@@ -9195,9 +9196,9 @@
   WT        ASRCSPSATSPVSLSSSSTSGHGST
   MUT       ASRCSPSATSPVTVVQ
                         ^
-  peptide   ATSPVTVVQ HLA-A*01:01 rank 3.823
+  peptide   SATSPVTVV HLA-C*12:03 rank 0.037
 
-## IGI-SYN-SEQ-01-IND-0048  FBXL3 D118fs*17 frameshift  clone=A1 tier=A1 VAF=0.0646 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0048  FBXL3 D118fs*17 frameshift  clone=A1 tier=A1 VAF=0.0646 expr=T10 bind=strong ctx=exon_edge
   window    chr13:77018697-77018738  somatic GT>G at 77018717 on hap1
   ref       TCAGCTGATTCCTTGCTGCTGTCCACCTTAGAAAAGAAACAC
   hap0      TCAGCTGATTCCTTGCTGCTGTCCACCTTAGAAAAGAAACAC
@@ -9208,7 +9209,7 @@
   WT        HSNHLQYVSFKVDSSKESAEAACDI
   MUT       HSNHLQYVSFKVAAARNQLKQLVIYYRNL
                         ^
-  peptide   none
+  peptide   AARNQLKQL HLA-C*12:03 rank 0.2
 
 ## IGI-SYN-SEQ-01-IND-0049  TTK W65fs*1 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=non ctx=clean
   window    chr6:80007842-80007883  somatic TG>T at 80007862 on hap0
@@ -9223,7 +9224,7 @@
                         ^
   peptide   MMANNPEDC HLA-B*38:01 rank 31.0
 
-## IGI-SYN-SEQ-01-IND-0050  RPS6KA3 Y483fs*8 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0050  RPS6KA3 Y483fs*8 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=weak ctx=exon_edge
   window    chrX:20167724-20167765  somatic AT>A at 20167744 on hap0
   ref       CACATACTTTCCATCATCATATACCTATAAATTTCAACATCA
   hap0      CACATACTTTCCATCATCATATACCTATAAATTTCAACATCA
@@ -9234,9 +9235,9 @@
   WT        GQHPNIITLKDVYDDGKYVYVVTEL
   MUT       GQHPNIITLKDVMMMESMCM
                         ^
-  peptide   DVMMMESMCM HLA-A*26:01 rank 3.94
+  peptide   HPNIITLKDVM HLA-B*35:08 rank 0.797
 
-## IGI-SYN-SEQ-01-IND-0051  NT5C1B-RDH14 K482fs*24 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=near_germline_het
+## IGI-SYN-SEQ-01-IND-0051  NT5C1B-RDH14 K482fs*24 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=strong ctx=near_germline_het
   window    chr2:18576229-18576270  somatic TG>T at 18576249 on hap0
   ref       TTTGTCGAGCCCATGCTCCTTGGTAAAATGTTCAGACTCATC
   hap0      TTTGTCGAGCCCATGCTCCTTGGTAAAATGTTCAGACTCATC
@@ -9247,7 +9248,7 @@
   WT        AVLFSDESEHFTKEHGLDKFFQYDT
   MUT       AVLFSDESEHFTRSMGSTNSSSMIHYVKVSLLLRVP
                         ^
-  peptide   none
+  peptide   IHYVKVSLL HLA-B*38:01 rank 0.079
 
 ## IGI-SYN-SEQ-01-IND-0052  GRK7 Q405fs*10 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=non ctx=clean
   window    chr3:141807783-141807828  somatic GAAGCA>G at 141807803 on hap0
@@ -9260,7 +9261,7 @@
   WT        DYKEKVSKEDLKQRTLQDEVKFQHD
   MUT       DYKEKVSKEDLKNSARRGQIPA
                         ^
-  peptide   NSARRGQIPA HLA-A*01:01 rank 25.146
+  peptide   SARRGQIPA HLA-C*12:03 rank 3.726
 
 ## IGI-SYN-SEQ-01-IND-0053  CAPN13 H483fs*1 frameshift  clone=A tier=A VAF=0.14 expr=T1 bind=non ctx=exon_edge
   window    chr2:30742337-30742378  somatic TG>T at 30742357 on hap1
@@ -9286,9 +9287,9 @@
   WT        MSGRGKGGKGLGKGGAK
   MUT       MSGRRRKRLGEGWC
                 ^
-  peptide   RRKRLGEGWC HLA-B*38:01 rank 41.833
+  peptide   RRKRLGEGW HLA-B*38:01 rank 3.372
 
-## IGI-SYN-SEQ-01-IND-0055  AGXT L316fs*13 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0055  AGXT L316fs*13 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=exon_edge
   window    chr2:240878002-240878047  somatic GCGCTC>G at 240878022 on hap1
   ref       GAGCCAGGCCCCTCCTGCAGGCGCTCCGGCTTCCCACAGTCACCAC
   hap0      GAGCCAGGCCCCTCCTGCAGGCGCTCCGGCTTCCCACAGTCACCAC
@@ -9299,7 +9300,7 @@
   WT        ALGLQLFVKDPALRLPTVTTVAVPA
   MUT       ALGLQLFVKDPAASHSHHCGCTRWL
                         ^
-  peptide   none
+  peptide   FVKDPAASH HLA-A*26:01 rank 0.234
 
 ## IGI-SYN-SEQ-01-IND-0056  PRAMEF5 L311fs*0 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=segdup
   window    chr1:13262590-13262631  somatic CT>C at 13262610 on hap1
@@ -9314,7 +9315,7 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-01-IND-0057  LILRA2 E107fs*9 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=non ctx=segdup
+## IGI-SYN-SEQ-01-IND-0057  LILRA2 E107fs*9 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=segdup
   window    chr19:54574529-54574570  somatic GA>G at 54574549 on hap1
   ref       ACAGCCACAATCACTCATCAGAGTACAGTGACCCCCTGGAGC
   hap0      ACAGCCACAATCACTCATCAGAGTACAGTGACCCCCTGGAGC
@@ -9325,9 +9326,9 @@
   WT        YHCQYYSHNHSSEYSDPLELVVTGA
   MUT       YHCQYYSHNHSSGTVTPWSWW
                         ^
-  peptide   GTVTPWSWW HLA-A*26:01 rank 3.764
+  peptide   NHSSGTVTPW HLA-B*38:01 rank 0.099
 
-## IGI-SYN-SEQ-01-IND-0058  SPOCK1 D275fs*42 frameshift  clone=B tier=B VAF=0.1346 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0058  SPOCK1 D275fs*42 frameshift  clone=B tier=B VAF=0.1346 expr=T10 bind=strong ctx=clean
   window    chr5:136988506-136988547  somatic TC>T at 136988526 on hap0
   ref       TGATACAGGGCTCGTACTTATCCAGGTAGATGGCATTGATCT
   hap0      TGATACAGGGCTCGTACTTATCCAGGTAGATGGCATTGATCT
@@ -9338,9 +9339,9 @@
   WT        LLDPSEINAIYLDKYEPCIKPLFNS
   MUT       LLDPSEINAIYLISTSPVSSLFSTRVTPSRMASFLTM
                         ^
-  peptide   none
+  peptide   STSPVSSLF HLA-A*26:01 rank 0.041
 
-## IGI-SYN-SEQ-01-IND-0059  ITPKB Q550fs*71 frameshift  clone=T tier=T_het VAF=0.2593 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0059  ITPKB Q550fs*71 frameshift  clone=T tier=T_het VAF=0.2593 expr=T10 bind=strong ctx=clean
   window    chr1:226735789-226735831  somatic TTG>T at 226735809 on hap1
   ref       AGGAAAGGCTTGTCCGGATCTTGGGGTAGCAGCTCCGGACTTG
   hap0      AGGAAAGGCTTGTCCTGATCTTGGGGTAGCAGCTCCGGACTTG   <- germline differs
@@ -9351,9 +9352,9 @@
   WT        DSDALPSPELLPQDPDKPFLRKACS
   MUT       DSDALPSPELLPRSGQAFPEEGLQPQQHTCCHHYRHG
                         ^
-  peptide   none
+  peptide   QPAPEETVL HLA-B*35:08 rank 0.039
 
-## IGI-SYN-SEQ-01-IND-0060  GALR3 V41fs*26 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0060  GALR3 V41fs*26 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=clean
   window    chr22:37823507-37823549  somatic GTG>G at 37823527 on hap0
   ref       GCAATGGGCTGGTGCTGGCAGTGCTCCTGCAGCCTGGCCCGAG
   hap0      GCAATGGGCTGGTGCTGGCAGTGCTCCTGCAGCCTGGCCCGAG
@@ -9364,9 +9365,9 @@
   WT        LLGTVGNGLVLAVLLQPGPSAWQEP
   MUT       LLGTVGNGLVLAAPAAWPECLAGAWQHHGPVHPQPGG
                         ^
-  peptide   none
+  peptide   APAAWPECL HLA-B*35:08 rank 0.497
 
-## IGI-SYN-SEQ-01-IND-0061  NIPAL1 I246fs*14 frameshift  clone=A tier=A VAF=0.14 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0061  NIPAL1 I246fs*14 frameshift  clone=A tier=A VAF=0.14 expr=T1 bind=weak ctx=clean
   window    chr4:48035655-48035700  somatic ATTGGA>A at 48035675 on hap1
   ref       ATATTTCAATCTGTTCCTTGATTGGAGCGTTTTCAGTTTCTTCTGT
   hap0      ATATTTCAATCTGTTCCTTGATTGGAGCGTTTTCAGTTTCTTCTGT
@@ -9377,9 +9378,9 @@
   WT        TNILVYISICSLIGAFSVSSVKGLG
   MUT       TNILVYISICSLSVFSFFCERPGNCH
                         ^
-  peptide   none
+  peptide   ISICSLSVF HLA-C*12:03 rank 1.087
 
-## IGI-SYN-SEQ-01-IND-0062  NDNF H219fs*12 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0062  NDNF H219fs*12 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=weak ctx=clean
   window    chr4:121037294-121037335  somatic GT>G at 121037314 on hap1
   ref       GCACAGAGACTTTTGAAATTGTGCTCTTTGTTGATGACCACA
   hap0      GCACAGAGACTTTTGAAATTGTGCTCTTTGTTGATGACCACA
@@ -9390,7 +9391,7 @@
   WT        QPIQYCVVINKEHNFKSLCAVEAKL
   MUT       QPIQYCVVINKEPISKVSVQWKQN
                         ^
-  peptide   none
+  peptide   EPISKVSVQW HLA-B*35:08 rank 0.775
 
 ## IGI-SYN-SEQ-01-IND-0063  OR5H6 L284fs*0 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=segdup
   window    chr3:98265161-98265205  somatic TTTAT>T at 98265181 on hap0
@@ -9405,7 +9406,7 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-01-IND-0064  TLR4 V700fs*33 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0064  TLR4 V700fs*33 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=strong ctx=clean
   window    chr9:117714205-117714246  somatic GG>G at 117714225 on hap0
   ref       GTAAAGAATTTAGAAGAAGGGGTGCCTCCATTTCAGCTCTGC
   hap0      GTAAAGAATTTAGAAGAAGGGGTGCCTCCATTTCAGCTCTGC
@@ -9416,7 +9417,7 @@
   WT        VRNELVKNLEEGVPPFQLCLHYRDF
   MUT       VRNELVKNLEEGCLHFSSAFTTETLFPVWPLLPTSSM
                         ^
-  peptide   none
+  peptide   WPLLPTSSM HLA-B*35:08 rank 0.076
 
 ## IGI-SYN-SEQ-01-IND-0065  ST8SIA1 M97fs*0 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=na ctx=clean
   window    chr12:22287222-22287263  somatic TT>T at 22287242 on hap1
@@ -9455,9 +9456,9 @@
   WT        RDLDEVSKQELCPRRLISDYEMRPQ
   MUT       RDLDEVSKQELCRDLFLTTR
                         ^
-  peptide   ELCRDLFLTTR HLA-A*26:01 rank 17.544
+  peptide   QELCRDLFL HLA-B*38:01 rank 3.679
 
-## IGI-SYN-SEQ-01-IND-0068  RGS3 L570fs*17 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0068  RGS3 L570fs*17 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=non ctx=clean
   window    chr9:113517553-113517594  somatic CC>C at 113517573 on hap1
   ref       TGTAATCCTGCCCGGACCCTCCTGCTGTCAGAGGAGCTGCTG
   hap0      TGTAATCCTGCCCGGACCCTCCTGCTGTCAGAGGAGCTGCTG
@@ -9468,9 +9469,9 @@
   WT        QPLDLCNPARTLLLSEELLLYEGRN
   MUT       QPLDLCNPARTLCCQRSCCCMKGGTRLPR
                         ^
-  peptide   none
+  peptide   NPARTLCCQ HLA-B*35:08 rank 8.048
 
-## IGI-SYN-SEQ-01-IND-0069  KCNN2 S311fs*68 frameshift  clone=B tier=B VAF=0.1346 expr=T0 bind=na ctx=repeat_other
+## IGI-SYN-SEQ-01-IND-0069  KCNN2 S311fs*68 frameshift  clone=B tier=B VAF=0.1346 expr=T0 bind=weak ctx=repeat_other
   window    chr5:114363049-114363093  somatic GAGCG>G at 114363069 on hap0
   ref       GGAGGCGGCGGCGGTGGCGGGAGCGGGCACGGCAGCAGCAGTGGC
   hap0      GGAGGCGGCGGCGGTGGCGGGAGCGGGCACGGCAGCAGCAGTGGC
@@ -9481,9 +9482,9 @@
   WT        GGSTGGGGGGGGSGHGSSSGTKSSK
   MUT       GGSTGGGGGGGGGTAAAVAPSPAKRKTRTSATSWATG
                         ^
-  peptide   none
+  peptide   SACSASWSW HLA-B*35:08 rank 1.282
 
-## IGI-SYN-SEQ-01-IND-0070  NBPF15 E265fs*51 frameshift  clone=T tier=T_het VAF=0.2593 expr=T10 bind=na ctx=segdup
+## IGI-SYN-SEQ-01-IND-0070  NBPF15 E265fs*51 frameshift  clone=T tier=T_het VAF=0.2593 expr=T10 bind=weak ctx=segdup
   window    chr1:144433780-144433824  somatic TCTTC>T at 144433800 on hap1
   ref       ACACTGGCCCTTTTTCTTCCTCTTCCTCATCATCACTTTCATTTT
   hap0      ACACTGGCCCTTTTTCTTCCTCTTCCTCATCATCACTTTCATTTT
@@ -9494,9 +9495,9 @@
   WT        VHIIPENESDDEEEEEKGPVSPRNL
   MUT       VHIIPENESDDERKKKGQCLPGICRSLKRRKSPRSPG
                         ^
-  peptide   none
+  peptide   SPRSPGMKV HLA-C*04:01 rank 0.879
 
-## IGI-SYN-SEQ-01-IND-0071  RPF1 L210fs*12 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0071  RPF1 L210fs*12 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=weak ctx=exon_edge
   window    chr1:84495363-84495407  somatic TTTGA>T at 84495383 on hap0
   ref       TTATGAACAGATGGACTTATTTTGAGTCACTTGCCAAATGGCCCA
   hap0      TTATGAACAGATGGACTTATTTTGAGTCACTTGCCAAATGGCCCA
@@ -9507,7 +9508,7 @@
   WT        INEDRKTPNGLILSHLPNGPTAHFK
   MUT       INEDRKTPNGLIVTCQMAQLLILK
                         ^
-  peptide   none
+  peptide   TPNGLIVTC HLA-B*35:08 rank 0.898
 
 ## IGI-SYN-SEQ-01-IND-0072  LTO1 A10fs*5 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=non ctx=clean
   window    chr11:69675189-69675231  somatic TGG>T at 69675209 on hap1
@@ -9522,7 +9523,7 @@
                      ^
   peptide   IFDDRDGG HLA-C*04:01 rank 10.795
 
-## IGI-SYN-SEQ-01-IND-0073  CCDC177 Q375fs*12 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0073  CCDC177 Q375fs*12 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=weak ctx=clean
   window    chr14:69572476-69572520  somatic CGCTG>C at 69572496 on hap1
   ref       CCCGCTCCTCGCGCTCCCGCCGCTGCTTGGCGTGCACGCGCTGCA
   hap0      CCCGCTCCTCGCGCTCCCGCCGCTGCTTGGCGTGCACGCGCTGCA
@@ -9533,9 +9534,9 @@
   WT        HGQWELQRVHAKQRREREEREKQRA
   MUT       HGQWELQRVHAKGGSARSGRSSAP
                         ^
-  peptide   none
+  peptide   SARSGRSSA HLA-C*12:03 rank 1.41
 
-## IGI-SYN-SEQ-01-IND-0074  KLHDC4 V301fs*46 frameshift  clone=A tier=A VAF=0.2154 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0074  KLHDC4 V301fs*46 frameshift  clone=A tier=A VAF=0.2154 expr=T10 bind=strong ctx=clean
   window    chr16:87711356-87711397  somatic CA>C at 87711376 on hap0
   ref       TGGTGATTCGGGGCCATGGCCACGGAAAAGCCAGACCGTGGG
   hap0      TGGTGATTCGGGGCCATGGCCACGGAAAAGCCAGACCGTGGG
@@ -9546,9 +9547,9 @@
   WT        SGVKPTPRSGFSVAMAPNHQTLFFG
   MUT       SGVKPTPRSGFSGPWPRITRHCSSGVSVTRKRRRACR
                         ^
-  peptide   none
+  peptide   RHCSSGVSV HLA-B*38:01 rank 0.243
 
-## IGI-SYN-SEQ-01-IND-0075  CDC45 K471fs*21 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0075  CDC45 K471fs*21 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=non ctx=clean
   window    chr22:19514999-19515040  somatic AA>A at 19515019 on hap0
   ref       CATCCCTAAGCCTGCTCAGCAAACACCTGCTCAAGTCCTTTG
   hap0      CATCCCTAAGCCTGCTCAGCAAACACCTGCTCAAGTCCTTTG
@@ -9559,9 +9560,9 @@
   WT        LFSRPASLSLLSKHLLKSFVCSTKN
   MUT       LFSRPASLSLLSNTCSSPLCVRQRTGAANCCPW
                         ^
-  peptide   none
+  peptide   NTCSSPLCV HLA-A*01:01 rank 3.625
 
-## IGI-SYN-SEQ-01-IND-0076  RNF225 Q38fs*230 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=repeat_other
+## IGI-SYN-SEQ-01-IND-0076  RNF225 Q38fs*230 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=strong ctx=repeat_other
   window    chr19:58396181-58396226  somatic CAGGAG>C at 58396201 on hap1
   ref       CCCCAAGCAGAGGGGAAGACCAGGAGGAGGAGGAGGAGGAGGAAGG
   hap0      CCCCAAGCAGAGGGGAAGACCAGGAGGAGGAGGAGGAGGAGGAAGG
@@ -9572,9 +9573,9 @@
   WT        LSAPRSPSRGEDQEEEEEEEGDGSP
   MUT       LSAPRSPSRGEDRGGGGGRGRQPRLRPYPAPRLPGGV
                         ^
-  peptide   none
+  peptide   ASAPGPPAV HLA-C*12:03 rank 0.105
 
-## IGI-SYN-SEQ-01-IND-0077  SPAG9 I773fs*8 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T10 bind=non ctx=clean
+## IGI-SYN-SEQ-01-IND-0077  SPAG9 I773fs*8 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T10 bind=strong ctx=clean
   window    chr17:50993819-50993863  somatic CATCA>C at 50993839 on hap0
   ref       GATGTTGCCAGGTTGAACAGCATCAATAATAAGAACTTTTGTAGC
   hap0      GATGTTGCCAGGTTGAACAGCATCAATAATAAGAACTTTTGTAGC
@@ -9585,9 +9586,9 @@
   WT        CTSTHSATKVLIIDAVQPGNILDSF
   MUT       CTSTHSATKVLIMLFNLATS
                         ^
-  peptide   MLFNLATS HLA-C*12:03 rank 34.6
+  peptide   HSATKVLIM HLA-C*12:03 rank 0.092
 
-## IGI-SYN-SEQ-01-IND-0078  LUC7L R298fs*53 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0078  LUC7L R298fs*53 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=clean
   window    chr16:190027-190069  somatic GTC>G at 190047 on hap1
   ref       ACGGCTGCGGTGGCGCCGATGTCTATCTCGGGACCGGGACCGG
   hap0      ACGGCTGCGGTGGCGCCGATGTCTATCTCGGGACCGGGACCGG
@@ -9598,9 +9599,9 @@
   WT        ERRKLSRSRSRDRHRRHRSRSRSHS
   MUT       ERRKLSRSRSRDTSAPPQPFPEPQPGTSSGFPGPKCE
                         ^
-  peptide   none
+  peptide   DTSAPPQPF HLA-A*26:01 rank 0.085
 
-## IGI-SYN-SEQ-01-IND-0079  RNF10 K540fs*50 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0079  RNF10 K540fs*50 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=strong ctx=clean
   window    chr12:120563874-120563915  somatic AG>A at 120563894 on hap0
   ref       CAGCCTGGAGAGGAGCCCCGAGAAGATCTCAGCAACTGTGGT
   hap0      CAGCCTGGAGAGGAGCCCCGAGAAGATCTCAGCAACTGTGGT
@@ -9611,7 +9612,7 @@
   WT        VREYGSLERSPEKISATVVEIAGYS
   MUT       VREYGSLERSPERSQQLWWRLLATPCLRMFDSVTDIS
                         ^
-  peptide   none
+  peptide   MFDSVTDISL HLA-C*04:01 rank 0.073
 
 ## IGI-SYN-SEQ-01-IND-0080  ZNF512 I182fs*2 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=weak ctx=clean
   window    chr2:27600755-27600799  somatic CCATA>C at 27600775 on hap0
@@ -9626,7 +9627,7 @@
                         ^
   peptide   QAVGRKTRV HLA-C*12:03 rank 0.503
 
-## IGI-SYN-SEQ-01-IND-0081  RANGRF R65fs*32 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0081  RANGRF R65fs*32 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T10 bind=strong ctx=exon_edge
   window    chr17:8289050-8289090  somatic G>GCCGAC at 8289070 on hap0
   ref       GTACGGGGCGAAGCGGCTGCGCGGTGAGGGAATGGCCCCCG
   hap0      GTACGGGGCGAAGCGGCTGCGCGGTGAGGGAATGGCCCCCG
@@ -9637,9 +9638,9 @@
   WT        ELQAHVRGEAAARYHFEDVGGVQGA
   MUT       ELQAHVRGEAAAPTGTTLRMLVACRGLGLSMWSLFSL
                         ^
-  peptide   none
+  peptide   AAAPTGTTL HLA-C*12:03 rank 0.025
 
-## IGI-SYN-SEQ-01-IND-0082  CT45A7 Y141fs*34 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=segdup
+## IGI-SYN-SEQ-01-IND-0082  CT45A7 Y141fs*34 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=non ctx=segdup
   window    chrX:135830792-135830832  somatic T>TCCTAG at 135830812 on hap1
   ref       GCATTTCGAAGATTTTTTCATATTCTGAAGATGTTGAAAAA
   hap0      GCATTTCGAAGATTTTTTCATATTCTGAAGATGTTGAA   <- germline differs
@@ -9650,9 +9651,9 @@
   WT        KLVKELRCVGQKYEKIFEMLEGVQG
   MUT       KLVKELRCVGQKSRMKKSSKCLKECKDLLQSGSDFLN
                         ^
-  peptide   none
+  peptide   DLLQSGSDF HLA-A*26:01 rank 2.008
 
-## IGI-SYN-SEQ-01-IND-0083  RND2 W101fs*30 frameshift  clone=A tier=A VAF=0.2154 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0083  RND2 W101fs*30 frameshift  clone=A tier=A VAF=0.2154 expr=T1 bind=weak ctx=exon_edge
   window    chr17:43027272-43027312  somatic G>GAG at 43027292 on hap0
   ref       CTGGACAGTGTTCTCAAGAAGGTGGGAGCCTGGGGAAATAG
   hap0      CTGGACAGTGTTCTCAAGAAGGTGGGAGCCTGGGGAAATAG
@@ -9663,9 +9664,9 @@
   WT        SRPETLDSVLKKWQGETQEFCPNAK
   MUT       SRPETLDSVLKKSGKERLKSSAPMPRLCWLAVNWTCG
                         ^
-  peptide   none
+  peptide   KSSAPMPRL HLA-C*12:03 rank 0.764
 
-## IGI-SYN-SEQ-01-IND-0084  SFRP4 Q286fs*96 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0084  SFRP4 Q286fs*96 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=strong ctx=exon_edge
   window    chr7:37907643-37907683  somatic T>TTATTG at 37907663 on hap0
   ref       CCTGCAGCCTCTCTTCCCACTGCTGAAAAGCAATTTGTAAA
   hap0      CCTGCAGCCTCTCTTCCCACTGCTGAAAAGCAATTTGTAAA
@@ -9676,9 +9677,9 @@
   WT        EKWRDQLSKRSIQWEERLQEQRRTV
   MUT       EKWRDQLSKRSIPISGKRGCRNSGEQFRTRRKQPGAP
                         ^
-  peptide   none
+  peptide   AWDSLCKAM HLA-C*04:01 rank 0.121
 
-## IGI-SYN-SEQ-01-IND-0085  ARPC5 L133fs*7 frameshift  clone=A tier=A VAF=0.1037 expr=T100 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0085  ARPC5 L133fs*7 frameshift  clone=A tier=A VAF=0.1037 expr=T100 bind=strong ctx=exon_edge
   window    chr1:183627572-183627612  somatic T>TACGTA at 183627592 on hap1
   ref       CCTACTCCTCCAGCAGCAAGTGCCTAAAAACAAACCAAGAT
   hap0      CCTACTCCTCCAGCAGCAAGTGCCTAAAAACAAACCAAGAT
@@ -9689,9 +9690,9 @@
   WT        SSAMLLQWHEKALAAGGVGSIVRVL
   MUT       SSAMLLQWHEKATYLLLEE
                         ^
-  peptide   KATYLLLEE HLA-C*12:03 rank 19.189
+  peptide   WHEKATYLL HLA-B*38:01 rank 0.01
 
-## IGI-SYN-SEQ-01-IND-0086  CRTAC1 G406fs*57 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0086  CRTAC1 G406fs*57 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=exon_edge
   window    chr10:97895965-97896005  somatic C>CAATG at 97895985 on hap1
   ref       CGAAGTCGGTCACCACACCCCCTACAAACAATGCAGATTTC
   hap0      CGAAGTCGGTCACCACACCCCCTACAAACAATGCAGATTTC
@@ -9702,9 +9703,9 @@
   WT        PGDALEPEGRGTGGVVTDFDGDGML
   MUT       PGDALEPEGRGTALGCGDRLRRRRDAGPHLVPWRVHG
                         ^
-  peptide   none
+  peptide   VHGSAAVRL HLA-B*38:01 rank 0.034
 
-## IGI-SYN-SEQ-01-IND-0087  KRT73 I458fs*73 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0087  KRT73 I458fs*73 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=strong ctx=exon_edge
   window    chr12:52608430-52608470  somatic C>CGAGAC at 52608450 on hap0
   ref       GGCCATGGAGCTGTTGATGACCGCTGCAGAGGAGGGAGGGA
   hap0      GGCCATGGAGCTGTTGATGACCGCTGCAGAGGAGGGAGGGA
@@ -9715,9 +9716,9 @@
   WT        SGEYTNSVSISVINSSMAGMAGTGA
   MUT       SGEYTNSVSISVSSSTAPWPGWQAQGLALDSAMLAPT
                         ^
-  peptide   none
+  peptide   APTATGPAL HLA-B*35:08 rank 0.131
 
-## IGI-SYN-SEQ-01-IND-0088  CROCC2 I1369fs*27 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0088  CROCC2 I1369fs*27 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=weak ctx=clean
   window    chr2:240966338-240966378  somatic G>GGATGG at 240966358 on hap1
   ref       ATGGATGTGGCCACCGTGCAGGACATCCTGCGGGACTTTGT
   hap0      ATGGATGTGGCCACCGTGCAGGACGTCCTGCGGGACTTTGT   <- germline differs
@@ -9728,9 +9729,9 @@
   WT        SSELMDVATVQDILRDFVQKLREAQ
   MUT       SSELMDVATVQDGTSCGTLCRSSGKPSGSGMTPASRW
                         ^
-  peptide   none
+  peptide   SGKPSGSGM HLA-C*12:03 rank 1.221
 
-## IGI-SYN-SEQ-01-IND-0089  ZNF615 A372fs*9 frameshift  clone=A tier=A VAF=0.14 expr=T1 bind=weak ctx=near_germline_het
+## IGI-SYN-SEQ-01-IND-0089  ZNF615 A372fs*9 frameshift  clone=A tier=A VAF=0.14 expr=T1 bind=strong ctx=near_germline_het
   window    chr19:51993976-51994016  somatic A>ATGGA at 51993996 on hap1
   ref       GTATGAGTTCGATGATGTGCAGTAAGACGCCTCTTCTCAAT
   hap0      GTATGAGTTCGATGATGTGCAATAAGACGCCTCTTCTCAAT   <- germline differs
@@ -9741,9 +9742,9 @@
   WT        CGKGFIEKRRLTAHHRTHTGEKPFI
   MUT       CGKGFIEKRRLTPCTSSNSYW
                         ^
-  peptide   TPCTSSNSYW HLA-B*35:08 rank 0.937
+  peptide   TPCTSSNSY HLA-B*35:08 rank 0.035
 
-## IGI-SYN-SEQ-01-IND-0090  TTC36 R189fs*22 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0090  TTC36 R189fs*22 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=exon_edge
   window    chr11:118530889-118530929  somatic G>GCACAC at 118530909 on hap0
   ref       GCTGCGCCGCCCCCGTGACAGCCGCTGAGCGCCGCGGACCC
   hap0      GCTGCGCCGCCCCCGTGACAGCCGCTGAGCGCCGCGGACCC
@@ -9754,7 +9755,7 @@
   WT        DMMGQLRRPRDSR
   MUT       DMMGQLRRPRDSTPAERRGPGRPRARGRDWALNQ
                         ^
-  peptide   none
+  peptide   RARGRDWAL HLA-C*12:03 rank 0.44
 
 ## IGI-SYN-SEQ-01-IND-0091  KPNB1 F474fs*6 frameshift  clone=B tier=B VAF=0.1346 expr=T100 bind=non ctx=exon_edge
   window    chr17:47669847-47669887  somatic T>TGGGC at 47669867 on hap0
@@ -9767,9 +9768,9 @@
   WT        AEPRVASNVCWAFSSLAEAAYEAAD
   MUT       AEPRVASNVCWAGFLQSG
                         ^
-  peptide   CWAGFLQSG HLA-A*26:01 rank 46.0
+  peptide   RVASNVCWAGF HLA-A*26:01 rank 4.885
 
-## IGI-SYN-SEQ-01-IND-0092  C1QA A93fs*189 frameshift  clone=B tier=B VAF=0.0875 expr=T100 bind=na ctx=near_germline_het
+## IGI-SYN-SEQ-01-IND-0092  C1QA A93fs*189 frameshift  clone=B tier=B VAF=0.0875 expr=T100 bind=strong ctx=near_germline_het
   window    chr1:22638924-22638964  somatic G>GTG at 22638944 on hap1
   ref       AGGGCCCAGCGGCCCCCTCGGAGCCCGTGGCATCCCGGGAA
   hap0      AGGGCCCAGCGGCCCCCTCGGGGCCCGTGGCATCCCGGGAA   <- germline differs
@@ -9780,9 +9781,9 @@
   WT        KVGYPGPSGPLGARGIPGIKGTKGS
   MUT       KVGYPGPSGPLGEPVASRELKAPRAAQETSRTSRGQP
                         ^
-  peptide   none
+  peptide   TPADSSALY HLA-B*35:08 rank 0.006
 
-## IGI-SYN-SEQ-01-IND-0093  TMEM214 H167fs*2 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0093  TMEM214 H167fs*2 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=weak ctx=exon_edge
   window    chr2:27035263-27035303  somatic A>AACGG at 27035283 on hap0
   ref       CACGCTGAGCCAGCATACTCATGGTAAGTCCTTCCAGCTTC
   hap0      CACGCTGAGCCAGCATACTCATGGTAAGTCCTTCCAGCTTC
@@ -9793,9 +9794,9 @@
   WT        APLSEPTLSQHTHDYPYSLVSRELR
   MUT       APLSEPTLSQHTQR
                         ^
-  peptide   EPTLSQHTQR HLA-A*26:01 rank 3.92
+  peptide   EPTLSQHTQ HLA-B*35:08 rank 1.979
 
-## IGI-SYN-SEQ-01-IND-0094  LRRC2 C165fs*3 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=weak ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0094  LRRC2 C165fs*3 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=strong ctx=exon_edge
   window    chr3:46532888-46532928  somatic A>AAGCGC at 46532908 on hap0
   ref       TCTTTCAGGTTCTTCAAACAACCTGTCAGCAGAAAAAGTTA
   hap0      TCTTTCAGGTTCTTCAAACAACCTGTCAGCAGAAAAAGTTG   <- germline differs
@@ -9806,9 +9807,9 @@
   WT        KNQISHLPAEIGCLKNLKELNVGFN
   MUT       KNQISHLPAEIGRFV
                         ^
-  peptide   SHLPAEIGRFV HLA-B*38:01 rank 0.699
+  peptide   SHLPAEIGRF HLA-B*38:01 rank 0.05
 
-## IGI-SYN-SEQ-01-IND-0095  EVI5 E300fs*43 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0095  EVI5 E300fs*43 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=strong ctx=exon_edge
   window    chr1:92695433-92695473  somatic C>CCGTA at 92695453 on hap0
   ref       AAAGAGCTCTGGAAGATGCTCCTAAAGAGAAGAAAATAATT
   hap0      AAAGAGCTCTGGAAGATGCTCCTAAAGAGAAGAAAATAATT
@@ -9819,9 +9820,9 @@
   WT        GLCMYQFECMIQEHLPELFVHFQSQ
   MUT       GLCMYQFECMIQYGASSRALCTFSISEFSYLNVCIIL
                         ^
-  peptide   none
+  peptide   FSISEFSYL HLA-C*12:03 rank 0.078
 
-## IGI-SYN-SEQ-01-IND-0096  ADSS1 N316fs*17 frameshift  clone=B tier=B VAF=0.0875 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0096  ADSS1 N316fs*17 frameshift  clone=B tier=B VAF=0.0875 expr=T1 bind=weak ctx=exon_edge
   window    chr14:104741981-104742021  somatic A>AACCTC at 104742001 on hap0
   ref       CTTCCCCACCGAGCAGATCAACGTGAGTCCCCAGCCCCTCG
   hap0      CTTCCCCACCGAGCAGATCAACGTGAGTCCCCAGCCCCTCG
@@ -9832,9 +9833,9 @@
   WT        RVGIGAFPTEQINEIGGLLQTRGHE
   MUT       RVGIGAFPTEQIKPPRLEACCRPAATSGE
                         ^
-  peptide   none
+  peptide   FPTEQIKPPRL HLA-B*35:08 rank 1.273
 
-## IGI-SYN-SEQ-01-IND-0097  LRCH3 G367fs*13 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0097  LRCH3 G367fs*13 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=weak ctx=exon_edge
   window    chr3:197832293-197832333  somatic C>CATGAC at 197832313 on hap1
   ref       AGTTTGGTAGTAACAAACGGCGGAGGTAAACATAATTCCGG
   hap0      AGTTTGGTAGTAACAAACGGCGGAGGTAAACATAATTCCGG
@@ -9845,9 +9846,9 @@
   WT        QENRGSLVVTNGGVEHDLDQIDYID
   MUT       QENRGSLVVTNGMTEWNMIWIRLTT
                         ^
-  peptide   none
+  peptide   VVTNGMTEW HLA-A*26:01 rank 1.16
 
-## IGI-SYN-SEQ-01-IND-0098  TC2N F389fs*4 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=non ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0098  TC2N F389fs*4 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=homopolymer
   window    chr14:91785338-91785378  somatic A>AAGGGC at 91785358 on hap1
   ref       ACATTCCCACCTTCACGAAAAAACCTAAAAAATTAGAAATA
   hap0      ACATTCCCACCTTCACGAAAAAACCTAAAAAATTAGAAATA
@@ -9858,9 +9859,9 @@
   WT        YLPSSSTPLTLSFFVKVGMFSSGEL
   MUT       YLPSSSTPLTLSCPFS
                         ^
-  peptide   TPLTLSCPFS HLA-B*35:08 rank 12.108
+  peptide   TPLTLSCPF HLA-B*35:08 rank 0.314
 
-## IGI-SYN-SEQ-01-IND-0099  FXYD3 G53fs*10 frameshift  clone=T tier=T_het VAF=0.35 expr=T1000 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0099  FXYD3 G53fs*10 frameshift  clone=T tier=T_het VAF=0.35 expr=T1000 bind=strong ctx=exon_edge
   window    chr19:35119231-35119271  somatic G>GTTTCA at 35119251 on hap0
   ref       ATGCCAGCCTTCCTGTCCCGGGTGAGCTGCGCACCCTGCCT
   hap0      ATGCCAGCCTTCCTGTCCCGGGTGAGCTGCGCACCCTGCCT
@@ -9871,9 +9872,9 @@
   WT        LSAQRDASLPVPGQRSDMQKVTLGL
   MUT       LSAQRDASLPVPVSASALTCRR
                         ^
-  peptide   VSASALTCRR HLA-A*01:01 rank 14.589
+  peptide   LPVPVSASAL HLA-B*35:08 rank 0.419
 
-## IGI-SYN-SEQ-01-IND-0100  PHF1 R472fs*23 frameshift  clone=A tier=A VAF=0.2154 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0100  PHF1 R472fs*23 frameshift  clone=A tier=A VAF=0.2154 expr=T10 bind=weak ctx=exon_edge
   window    chr6:33415650-33415690  somatic G>GCGGAT at 33415670 on hap0
   ref       GGACAGTGGACCCCCAGACAGGTGAGATTCTGTCTTCTATT
   hap0      GGACAGTGGACCCCCAGACAGGTGAGATTCTGTCTTCTATT
@@ -9884,9 +9885,9 @@
   WT        TAGTSGDSGPPDRSPLELHIGFPTD
   MUT       TAGTSGDSGPPDSGCHPWNFTLVSPQTSLKVPPTR
                         ^
-  peptide   none
+  peptide   CHPWNFTL HLA-B*38:01 rank 0.897
 
-## IGI-SYN-SEQ-01-IND-0101  SNRPG L19fs*16 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0101  SNRPG L19fs*16 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=strong ctx=exon_edge
   window    chr2:70288172-70288212  somatic A>AA at 70288192 on hap0
   ref       GTCTGCCACCATTTAATTTCACTATTAAAAAGAGAAAAAGA
   hap0      GTCTGCCACCATTTAATTTCACTATTAAAAAGAGAAAAAGA
@@ -9897,7 +9898,7 @@
   WT        PELKKFMDKKLSLKLNGGRHVQGIL
   MUT       PELKKFMDKKLSFEIKWWQTCPRNIAGI
                         ^
-  peptide   none
+  peptide   FMDKKLSF HLA-C*04:01 rank 0.069
 
 ## IGI-SYN-SEQ-01-IND-0102  LRRIQ1 D152fs*5 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=exon_edge
   window    chr12:85046116-85046156  somatic A>ACC at 85046136 on hap0
@@ -9910,9 +9911,9 @@
   WT        PHDLPMDEHVLPDDADINFGYCEVE
   MUT       PHDLPMDEHVLPPMMLI
                         ^
-  peptide   EHVLPPMMLI HLA-B*38:01 rank 0.242
+  peptide   EHVLPPMML HLA-B*38:01 rank 0.009
 
-## IGI-SYN-SEQ-01-IND-0103  VPS26A G220fs*15 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0103  VPS26A G220fs*15 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=strong ctx=exon_edge
   window    chr10:69162492-69162532  somatic G>GCTGC at 69162512 on hap1
   ref       AAAAAGAGATCACAGGAATTGGTAAGTTGAAAAGAGTATGT
   hap0      AAAAAGAGATCACAGGAATTGGTAAGTTGAAAAGAGTATGT
@@ -9923,9 +9924,9 @@
   WT        ELQLIKKEITGIGPSTTTETETIAK
   MUT       ELQLIKKEITGIAATQYHNRNRNNRQI
                         ^
-  peptide   none
+  peptide   EITGIAATQY HLA-A*26:01 rank 0.026
 
-## IGI-SYN-SEQ-01-IND-0104  FSTL4 N394fs*92 frameshift  clone=A tier=A VAF=0.2154 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0104  FSTL4 N394fs*92 frameshift  clone=A tier=A VAF=0.2154 expr=T0 bind=strong ctx=exon_edge
   window    chr5:133225263-133225303  somatic G>GCCCTT at 133225283 on hap0
   ref       ATGTGGAGTTCGCTCCCATTGGCTGCAGACAGGACAGTGCT
   hap0      ATGTGGAGTTCGCTCCCATTGGCTGCAGACAGGACAGTGCT
@@ -9936,7 +9937,7 @@
   WT        STQMSKQLSLLANGSELHISSVRYE
   MUT       STQMSKQLSLLARAMGANSTSAVFGMKTQGHTPALPK
                         ^
-  peptide   none
+  peptide   GHTPALPKM HLA-B*38:01 rank 0.061
 
 ## IGI-SYN-SEQ-01-IND-0105  AIMP1 I37fs*7 frameshift  clone=B tier=B VAF=0.0875 expr=T100 bind=strong ctx=exon_edge
   window    chr4:106325096-106325136  somatic C>CAACTC at 106325116 on hap1
@@ -9962,9 +9963,9 @@
   WT        RKFFGSLPDSWASGHSVPVVTVVRA
   MUT       RKFFGSLPDSWARHVGILCLW
                         ^
-  peptide   RHVGILCLW HLA-B*38:01 rank 0.389
+  peptide   LPDSWARHV HLA-C*04:01 rank 0.384
 
-## IGI-SYN-SEQ-01-IND-0107  KCNA7 F186fs*6 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0107  KCNA7 F186fs*6 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=exon_edge
   window    chr19:49070858-49070898  somatic A>AACAGG at 49070878 on hap1
   ref       GCCATTCAGCGGAGCGGGGAACTGCAGGGAGGAAAGTGTTC
   hap0      GCCATTCAGCGGAGCGGGGAACTGCAGGGAGGAAAGTGTTC
@@ -9975,9 +9976,9 @@
   WT        GTGLAAAAAAGPFPAPLNGSSQMPG
   MUT       GTGLAAAAAAGPPVSPLR
                         ^
-  peptide   AGPPVSPLR HLA-C*04:01 rank 5.987
+  peptide   AAGPPVSPL HLA-C*12:03 rank 0.314
 
-## IGI-SYN-SEQ-01-IND-0108  TEX11 L82fs*13 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0108  TEX11 L82fs*13 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=exon_edge
   window    chrX:70860916-70860956  somatic A>ATGGT at 70860936 on hap1
   ref       ACTTGCAAGCAACATAATGTACTGCAAAACAGTAATTAGAC
   hap0      ACTTGCAAGCAACATAATGTACTGCAAAACAGTAATTAGAC
@@ -9988,7 +9989,7 @@
   WT        GGWLVNEEQKIRLHYVACKLLSMCE
   MUT       GGWLVNEEQKIRYHTLCCLQVAEYV
                         ^
-  peptide   none
+  peptide   LVNEEQKIRY HLA-A*01:01 rank 0.31
 
 ## IGI-SYN-SEQ-01-IND-0109  FBXO39 K342fs*4 frameshift  clone=B tier=B VAF=0.1346 expr=T0 bind=strong ctx=exon_edge
   window    chr17:6780871-6780911  somatic G>GC at 6780891 on hap0
@@ -10003,7 +10004,7 @@
                         ^
   peptide   RHTLQQINL HLA-B*38:01 rank 0.041
 
-## IGI-SYN-SEQ-01-IND-0110  RPL22 Q41fs*10 frameshift  clone=B tier=B VAF=0.0875 expr=T1000 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0110  RPL22 Q41fs*10 frameshift  clone=B tier=B VAF=0.0875 expr=T1000 bind=strong ctx=exon_edge
   window    chr1:6193030-6193070  somatic T>TGATCG at 6193050 on hap0
   ref       TGATCCTTTCTTGCAAAAACTGCTCCTGTAGAAATCATTAA
   hap0      TGATCCTTTCTTGCAAAAACTGCTCCTGTAGAAATCATTAA
@@ -10014,9 +10015,9 @@
   WT        VEDGIMDAANFEQFLQERIKVNGKA
   MUT       VEDGIMDAANFEPISFCKKGSK
                         ^
-  peptide   EPISFCKKGSK HLA-B*35:08 rank 15.827
+  peptide   AANFEPISF HLA-C*12:03 rank 0.199
 
-## IGI-SYN-SEQ-01-IND-0111  DPYSL4 E207fs*50 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0111  DPYSL4 E207fs*50 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=strong ctx=exon_edge
   window    chr10:132197079-132197119  somatic G>GTGTCC at 132197099 on hap0
   ref       AGAACGGGGACATCGTGGAGGAGGTGCCGTGGGGCAGGGCT
   hap0      AGAACGGGGACATCGTGGAGGAGGTGCCGTGGGGCAGGGCT
@@ -10027,9 +10028,9 @@
   WT        AQVHAENGDIVEEEQKRLLELGITG
   MUT       AQVHAENGDIVEVSRSRSGCWSSASLAPRATCSATPR
                         ^
-  peptide   none
+  peptide   SATPRRWRL HLA-C*12:03 rank 0.089
 
-## IGI-SYN-SEQ-01-IND-0112  TNNI1 E5fs*36 frameshift  clone=T tier=T_het VAF=0.2593 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0112  TNNI1 E5fs*36 frameshift  clone=T tier=T_het VAF=0.2593 expr=T0 bind=strong ctx=exon_edge
   window    chr1:201417097-201417137  somatic T>TAAGC at 201417117 on hap1
   ref       TACCCCAAATATCACTTACCTCGCTTCAGGCATCCATCACA
   hap0      TACCCCAAATATCACTTACCTCGCTTCAGGCATCCATCACA
@@ -10040,7 +10041,7 @@
   WT        MPEVERKPKITASRKLL
   MUT       MPEVGLEKTQDHCLPQTLAEEPDAGQGQG
                 ^
-  peptide   none
+  peptide   DHCLPQTL HLA-B*38:01 rank 0.174
 
 ## IGI-SYN-SEQ-01-IND-0113  NSMAF K130fs*7 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=weak ctx=exon_edge
   window    chr8:58623758-58623798  somatic G>GGAAC at 58623778 on hap0
@@ -10053,7 +10054,7 @@
   WT        HNVVAPYKIERGKMEYVFELDVPGK
   MUT       HNVVAPYKIERGFQNGICF
                         ^
-  peptide   ERGFQNGICF HLA-B*38:01 rank 1.745
+  peptide   APYKIERGF HLA-B*35:08 rank 0.583
 
 ## IGI-SYN-SEQ-01-IND-0114  BAK1 E24fs*4 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=non ctx=exon_edge
   window    chr6:33575908-33575948  somatic T>TGC at 33575928 on hap1
@@ -10066,9 +10067,9 @@
   WT        QECGEPALPSASEEQVAQDTEEVFR
   MUT       QECGEPALPSASGRSR
                         ^
-  peptide   LPSASGRSR HLA-B*35:08 rank 4.147
+  peptide   EPALPSASG HLA-B*35:08 rank 3.568
 
-## IGI-SYN-SEQ-01-IND-0115  ODF3L2 S44fs*78 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0115  ODF3L2 S44fs*78 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=exon_edge
   window    chr19:472480-472520  somatic G>GCTCCA at 472500 on hap1
   ref       ACATACAAGCCTGGCCCCGAGCCTGCAGCCCAAAGCCCTCA
   hap0      ACATACAAGCCTGGCCCCGAGCCTGCAGCCCAAAGCCCTCA
@@ -10079,9 +10080,9 @@
   WT        RKSCGTATLENGSGPGLYVLPSTVG
   MUT       RKSCGTATLENGGARGQACMSCRPPWASSTTTAPGWP
                         ^
-  peptide   none
+  peptide   SWTPKSHAL HLA-C*04:01 rank 0.206
 
-## IGI-SYN-SEQ-01-IND-0116  CYP3A7 A343fs*6 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=weak ctx=segdup
+## IGI-SYN-SEQ-01-IND-0116  CYP3A7 A343fs*6 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=segdup
   window    chr7:99709240-99709280  somatic G>GTCGA at 99709260 on hap1
   ref       CAGTATCATAGGTGGGTGGTGCCTGAAAAGAAAGAAACAGA
   hap0      CAGTATCATAGGTGGGTGGTGCCTGAAAAGAAAGAAACAGA
@@ -10092,9 +10093,9 @@
   WT        VQKEIDTVLPNKAPPTYDTVLQLEY
   MUT       VQKEIDTVLPNKVDTTHL
                         ^
-  peptide   LPNKVDTTHL HLA-B*35:08 rank 0.668
+  peptide   LPNKVDTTH HLA-B*35:08 rank 0.324
 
-## IGI-SYN-SEQ-01-IND-0117  POLR3F K191fs*18 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0117  POLR3F K191fs*18 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=weak ctx=exon_edge
   window    chr20:18480159-18480199  somatic A>AGCCA at 18480179 on hap0
   ref       GTTTTAAATTCCTACAGTCCAAGGTGAGGTATGATTGAGGA
   hap0      GTTTTAAATTCCTACAGTCCAAGGTGAGGTATGATTGAGGA
@@ -10105,9 +10106,9 @@
   WT        VLNQQCFKFLQSKAETARESKQNPM
   MUT       VLNQQCFKFLQSSQGRNSTRKQTEPNDTKK
                         ^
-  peptide   none
+  peptide   QTEPNDTKK HLA-A*01:01 rank 0.975
 
-## IGI-SYN-SEQ-01-IND-0118  G3BP2 S353fs*38 frameshift  clone=T tier=T_het VAF=0.35 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0118  G3BP2 S353fs*38 frameshift  clone=T tier=T_het VAF=0.35 expr=T100 bind=strong ctx=exon_edge
   window    chr4:75646435-75646475  somatic A>AGCGGT at 75646455 on hap1
   ref       AGTTCCACAACGTTTCCAAAACCTGTGAAAATATACATTAC
   hap0      AGTTCCACAACGTTTCCAAAACCTGTGAAAATATACATTAC
@@ -10118,9 +10119,9 @@
   WT        DIDENELKEFFMSFGNVVELRINTK
   MUT       DIDENELKEFFMRPLLETLWNFASIPRVLGESFQILV
                         ^
-  peptide   none
+  peptide   FASIPRVL HLA-C*12:03 rank 0.026
 
-## IGI-SYN-SEQ-01-IND-0119  ST14 Q802fs*24 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0119  ST14 Q802fs*24 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=strong ctx=exon_edge
   window    chr11:130209557-130209597  somatic A>ATCTTG at 130209577 on hap1
   ref       CGGCGGCGTGGACTCCTGCCAGGTGGCCCCCGGGGCAGGAG
   hap0      CGGCGGCGTGGACTCCTGCCAGGTGGCCCCCGGGGCAGGAG
@@ -10131,9 +10132,9 @@
   WT        CVGFLSGGVDSCQGDSGGPLSSVEA
   MUT       CVGFLSGGVDSCHLGVIPGDPCPAWRRMGGSSRPVW
                         ^
-  peptide   none
+  peptide   IPGDPCPAW HLA-B*35:08 rank 0.266
 
-## IGI-SYN-SEQ-01-IND-0120  ANKLE1 T311fs*27 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=na ctx=near_germline_het
+## IGI-SYN-SEQ-01-IND-0120  ANKLE1 T311fs*27 frameshift  clone=T tier=T_het VAF=0.35 expr=T1 bind=strong ctx=near_germline_het
   window    chr19:17283673-17283713  somatic C>CAAAAG at 17283693 on hap1
   ref       TCATAGCCCCCCACGGACACCAACCCCTGGAGCTTCTGACT
   hap0      TCATAGCCCCCCACGGACACCACCCCCTGGAGCTTCTGACT   <- germline differs
@@ -10144,9 +10145,9 @@
   WT        DRSPAHSPPRTPTPGASDCHCLWEH
   MUT       DRSPAHSPPRTPKEPLELLTATACGSTRHPLIVTWPR
                         ^
-  peptide   none
+  peptide   TRHPLIVTW HLA-B*38:01 rank 0.196
 
-## IGI-SYN-SEQ-01-IND-0121  DIMT1 L54fs*2 frameshift  clone=A tier=A VAF=0.2154 expr=T10 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0121  DIMT1 L54fs*2 frameshift  clone=A tier=A VAF=0.2154 expr=T10 bind=weak ctx=exon_edge
   window    chr5:62402100-62402140  somatic A>ATGGCC at 62402120 on hap0
   ref       ACATCAGTTGGTCTTAAGGCAGCCTAAAAGCAAGCACAAAC
   hap0      ACATCAGTTGGTCTTAAGGCAGCCTAAAAGCAAGCACAAAC
@@ -10157,9 +10158,9 @@
   WT        PLIINSIIDKAALRPTDVVLEVGPG
   MUT       PLIINSIIDKAAMP
                         ^
-  peptide   SIIDKAAMP HLA-A*26:01 rank 12.348
+  peptide   NSIIDKAAM HLA-B*35:08 rank 1.718
 
-## IGI-SYN-SEQ-01-IND-0122  HSPA12A N429fs*25 frameshift  clone=A tier=A VAF=0.14 expr=T1 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0122  HSPA12A N429fs*25 frameshift  clone=A tier=A VAF=0.14 expr=T1 bind=strong ctx=exon_edge
   window    chr10:116676482-116676522  somatic A>ATAGT at 116676502 on hap0
   ref       GACCACTTCACAAAATCCACACTGCAGGAGCATAGCATGGA
   hap0      GACCACTTCACAAAATCCACACTGCAGGAGCATAGCATGGA
@@ -10170,9 +10171,9 @@
   WT        RGHSVEHALRKSNVDFVKWSSQGML
   MUT       RGHSVEHALRKSKLCGFCEVVLAGDAADESRCHERPF
                         ^
-  peptide   none
+  peptide   EHALRKSKL HLA-B*38:01 rank 0.222
 
-## IGI-SYN-SEQ-01-IND-0123  MUC16 P13382fs*35 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0123  MUC16 P13382fs*35 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=strong ctx=exon_edge
   window    chr19:8891976-8892016  somatic G>GGCTTC at 8891996 on hap1
   ref       GGCTGCCCCATCCTTCTCAGGCCTAGGGAGGGCAGATGAAG
   hap0      GGCTGCCCCATCCTTCTCAGGCCTAGGGAGGGCAGATGAAG
@@ -10183,7 +10184,7 @@
   WT        SLYSGCRLTLLRPEKDGAATRVDAV
   MUT       SLYSGCRLTLLREALRRMGQPPEWMLSAPIVLTPKAL
                         ^
-  peptide   none
+  peptide   RRMGQPPEW HLA-B*38:01 rank 0.481
 
 ## IGI-SYN-SEQ-01-IND-0124  KCTD3 V437fs*5 frameshift  clone=A tier=A VAF=0.1037 expr=T10 bind=non ctx=exon_edge
   window    chr1:215604281-215604321  somatic A>ATGTG at 215604301 on hap0
@@ -10196,9 +10197,9 @@
   WT        TKIMLSEKHLVSVCADNNHVRTWTV
   MUT       TKIMLSEKHLVSCGLCR
                         ^
-  peptide   HLVSCGLCR HLA-A*26:01 rank 15.811
+  peptide   KHLVSCGL HLA-B*38:01 rank 2.713
 
-## IGI-SYN-SEQ-01-IND-0125  HHEX Q197fs*8 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0125  HHEX Q197fs*8 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=weak ctx=exon_edge
   window    chr10:92692731-92692771  somatic A>ACAAA at 92692751 on hap0
   ref       TAAATGGAGGAGACTAAAACAGGTATGGACATGGTTCTGTT
   hap0      TAAATGGAGGAGACTAAAACAGGTATGGACATGGTTCTGTT
@@ -10209,9 +10210,9 @@
   WT        FQNRRAKWRRLKQENPQSNKKEELE
   MUT       FQNRRAKWRRLKHKGEPSKQ
                         ^
-  peptide   KHKGEPSKQ HLA-B*38:01 rank 11.468
+  peptide   RAKWRRLKH HLA-C*12:03 rank 1.664
 
-## IGI-SYN-SEQ-01-IND-0126  HPS3 S388fs*28 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0126  HPS3 S388fs*28 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=strong ctx=exon_edge
   window    chr3:149145525-149145565  somatic A>ACCCAC at 149145545 on hap1
   ref       AATTTTTGCACGTCATTACAAGGTACTGTTAGAGGGTCACT
   hap0      AATTTTTGCACGTCATTACAAGGTACTGTTAGAGGGTCACT
@@ -10222,7 +10223,7 @@
   WT        AVLTPQFLHVITSNNLQCFTVRCSA
   MUT       AVLTPQFLHVITTHVTTCSVSLCGAVRRQLVRRTRTW
                         ^
-  peptide   none
+  peptide   THVTTCSVSL HLA-B*38:01 rank 0.123
 
 ## IGI-SYN-SEQ-01-IND-0127  LRRC37A F1141fs*0 frameshift  clone=B tier=B VAF=0.1346 expr=T0 bind=na ctx=segdup
   window    chr17:46330676-46330716  somatic C>CGTAAT at 46330696 on hap0
@@ -10237,7 +10238,7 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-01-IND-0128  ADH4 V195fs*13 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0128  ADH4 V195fs*13 frameshift  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=exon_edge
   window    chr4:99131743-99131783  somatic A>ATGTGG at 99131763 on hap1
   ref       CACAAGTCGAACCAGGGGTGACCTGCAAGCAGGAAAATTAT
   hap0      CACAAGTCGAACCAGGGGTGACCTGCAAGCAGGAAAATTAT
@@ -10248,9 +10249,9 @@
   WT        STGYGAAINNAKVTPGSTCAVFGLG
   MUT       STGYGAAINNAKATSPLVRLVLSLA
                         ^
-  peptide   none
+  peptide   ATSPLVRLV HLA-C*12:03 rank 0.14
 
-## IGI-SYN-SEQ-01-IND-0129  KIF11 K376fs*8 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0129  KIF11 K376fs*8 frameshift  clone=B tier=B VAF=0.0875 expr=T10 bind=weak ctx=exon_edge
   window    chr10:92616811-92616851  somatic A>ACTTTG at 92616831 on hap0
   ref       CACCAAAAAAGCTCTTATTAAGGTAACTGTGAATTTTTGTA
   hap0      CACCAAAAAAGCTCTTATTAAGGTAACTGTGAATTTTTGTA
@@ -10261,9 +10262,9 @@
   WT        EVNQKLTKKALIKEYTEEIERLKRD
   MUT       EVNQKLTKKALINFGSIRRR
                         ^
-  peptide   INFGSIRRR HLA-A*26:01 rank 9.681
+  peptide   LTKKALINF HLA-A*26:01 rank 0.745
 
-## IGI-SYN-SEQ-01-IND-0130  ABCB7 K511fs*13 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0130  ABCB7 K511fs*13 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=exon_edge
   window    chrX:75069114-75069154  somatic T>TTTCG at 75069134 on hap0
   ref       ATAGCCTCACTATTGTGCTTTTCCTGAAATTGGAGATGAAG
   hap0      ATAGCCTCACTATTGTGCTTTTCCTGAAATTGGAGATGAAG
@@ -10274,9 +10275,9 @@
   WT        KKVAIVGGSGSGKSTIVRLLFRFYE
   MUT       KKVAIVGGSGSGTKKHNSEAIISLL
                         ^
-  peptide   none
+  peptide   KHNSEAIISL HLA-B*38:01 rank 0.078
 
-## IGI-SYN-SEQ-01-IND-0131  RBM28 C378fs*24 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0131  RBM28 C378fs*24 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=exon_edge
   window    chr7:128325870-128325910  somatic A>ATTCT at 128325890 on hap0
   ref       ATGAACTGGGCAAATGCACAACCTGCACAAGGAGACACAAT
   hap0      ATGAACTGGGCAAATGCACAACCTGCACAAGGAGACACAAT
@@ -10287,9 +10288,9 @@
   WT        IVLHPDTEHSKGCAFAQFMTQEAAQ
   MUT       IVLHPDTEHSKGELCICPVHDSRSSSEMPSSCFSRE
                         ^
-  peptide   none
+  peptide   EHSKGELCI HLA-B*38:01 rank 0.037
 
-## IGI-SYN-SEQ-01-IND-0132  ATF1 T171fs*38 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0132  ATF1 T171fs*38 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=strong ctx=exon_edge
   window    chr12:50814170-50814210  somatic A>AGCCA at 50814190 on hap0
   ref       CAGCAATCAGGTGGTCGTACAAAGTAAGTATGCTTTCTGTC
   hap0      CAGCAATCAGGTGGTCGTACAAAGTAAGTATGCTTTCTGTC
@@ -10300,9 +10301,9 @@
   WT        QILVPSNQVVVQTASGDMQTYQIRT
   MUT       QILVPSNQVVVQPNCIRRYANISDPNYTFSYFSATNC
                         ^
-  peptide   none
+  peptide   ISDPNYTFSY HLA-A*01:01 rank 0.004
 
-## IGI-SYN-SEQ-01-IND-0133  RSPO4 K90fs*137 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0133  RSPO4 K90fs*137 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=strong ctx=exon_edge
   window    chr20:967294-967334  somatic T>TACCGC at 967314 on hap0
   ref       TCTCACAAGTGGCCCCACATTCTGTAATAGAGCCAGGGACA
   hap0      TCTCACAAGTGGCCCCACATTCTGTAATAGAGCCAGGGACA
@@ -10313,7 +10314,7 @@
   WT        FGIRGQEVNRCKKCGATCESCFSQD
   MUT       FGIRGQEVNRCKSGNVGPLVRAASARTSASGARGSFT
                         ^
-  peptide   none
+  peptide   SASGARGSF HLA-C*12:03 rank 0.223
 
 ## IGI-SYN-SEQ-01-IND-0134  MISP3 E357fs*8 frameshift  clone=B tier=B VAF=0.0875 expr=T1 bind=non ctx=exon_edge
   window    chr19:14074443-14074483  somatic G>GAG at 14074463 on hap1
@@ -10326,9 +10327,9 @@
   WT        PRRKVSENGLEQEERKP
   MUT       PRRKVSENGLEQRRSANLEV
                         ^
-  peptide   QRRSANLEV HLA-B*38:01 rank 3.822
+  peptide   VSENGLEQR HLA-A*01:01 rank 3.603
 
-## IGI-SYN-SEQ-01-IND-0135  LYPD6 L171fs*54 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0135  LYPD6 L171fs*54 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=strong ctx=exon_edge
   window    chr2:149470824-149470864  somatic G>GCGTG at 149470844 on hap0
   ref       TGGTTGTGGTTAGGGCTCATGTTATAGTGGCTCAGTGGCTC
   hap0      TGGTTGTGGTTAGGGCTCATGTTATAGTGGCTCAGTGGCTC
@@ -10339,9 +10340,9 @@
   WT        IVSCLWLWLGLML
   MUT       IVSCLWLWLGLMRVIVAQWLHVLIAIHGDLDGPQTCM
                         ^
-  peptide   none
+  peptide   SSQPSIATY HLA-C*12:03 rank 0.057
 
-## IGI-SYN-SEQ-01-IND-0136  GTF2E2 A184fs*14 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0136  GTF2E2 A184fs*14 frameshift  clone=T tier=T_LOH VAF=0.5385 expr=T10 bind=strong ctx=exon_edge
   window    chr8:30607130-30607170  somatic C>CGGAC at 30607150 on hap1
   ref       TAGTATCTGGTCCCCCAAAGCCTTAAAGATAGATAAAATAA
   hap0      TAGTATCTGGTCCCCCAAAGCCTTAAAGATAGATAAAATAA
@@ -10352,9 +10353,9 @@
   WT        EEALPNSQKAVKALGDQILFVNRPD
   MUT       EEALPNSQKAVKVRFGGPDTICKSSR
                         ^
-  peptide   none
+  peptide   VRFGGPDTI HLA-B*38:01 rank 0.153
 
-## IGI-SYN-SEQ-01-IND-0137  ZFP91-CNTF A66fs*57 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=na ctx=near_germline_het
+## IGI-SYN-SEQ-01-IND-0137  ZFP91-CNTF A66fs*57 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=strong ctx=near_germline_het
   window    chr11:58579456-58579496  somatic C>CGTGC at 58579476 on hap0
   ref       GCCGCTGCGGCCGCCGCCGCCGCAGCTGTGTCCCGCCGGAG
   hap0      GCCGCTGCGGCCGCCGCCGCCGCAACTGTGTCCCGCCGGAG   <- germline differs
@@ -10365,9 +10366,9 @@
   WT        RDRGRAAAAAAAAAVSRRRKAEYPR
   MUT       RDRGRAAAAAAAVRSCVPPEEGRVSPPAEEQPQRQAS
                         ^
-  peptide   none
+  peptide   RAAAPGREV HLA-C*12:03 rank 0.062
 
-## IGI-SYN-SEQ-01-IND-0138  RPS9 V137fs*116 frameshift  clone=A tier=A VAF=0.14 expr=T100 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0138  RPS9 V137fs*116 frameshift  clone=A tier=A VAF=0.14 expr=T100 bind=strong ctx=exon_edge
   window    chr19:54206442-54206482  somatic G>GGCGC at 54206462 on hap0
   ref       GATCCGCCAGCGCCATATCAGGTACCACCTCGGATGGGCAC
   hap0      GATCCGCCAGCGCCATATCAGGTACCACCTCGGATGGGCAC
@@ -10378,9 +10379,9 @@
   WT        HARVLIRQRHIRVRKQVVNIPSFIV
   MUT       HARVLIRQRHIRRGPQAGGEHPVLHCPPGFPEAHRLL
                         ^
-  peptide   none
+  peptide   LPNKQDQRF HLA-B*35:08 rank 0.034
 
-## IGI-SYN-SEQ-01-IND-0139  CDC42BPA R1010fs*35 frameshift  clone=T tier=T_het VAF=0.2593 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0139  CDC42BPA R1010fs*35 frameshift  clone=T tier=T_het VAF=0.2593 expr=T10 bind=strong ctx=exon_edge
   window    chr1:227040215-227040255  somatic C>CCCAT at 227040235 on hap1
   ref       CAAAAAACTGGTGAGTCTTGCGCTGCAAAACAAATTGATAA
   hap0      CAAAAAACTGGTGAGTCTTGCGCTGCAAAACAAATTGATAA
@@ -10391,9 +10392,9 @@
   WT        KGCPGSTGFPPKRKTHQFFVKSFTT
   MUT       KGCPGSTGFPPKHGQDSPVFCKIFYYSYQVSSVYLLD
                         ^
-  peptide   none
+  peptide   YSYQVSSVY HLA-C*12:03 rank 0.008
 
-## IGI-SYN-SEQ-01-IND-0140  EMC7 K79fs*10 frameshift  clone=B tier=B VAF=0.0875 expr=T100 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0140  EMC7 K79fs*10 frameshift  clone=B tier=B VAF=0.0875 expr=T100 bind=weak ctx=exon_edge
   window    chr15:34095994-34096034  somatic C>CTACG at 34096014 on hap1
   ref       ACCACAAAACTCCCATCTGTCCTGGAAAAATGAAAATCATG
   hap0      ACCACAAAACTCCCATCTGTCCTGGAAAAATGAAAATCATG
@@ -10404,7 +10405,7 @@
   WT        VLVDGEEHVGFLKTDGSFVVHDIPS
   MUT       VLVDGEEHVGFLNVDRWEFCGS
                         ^
-  peptide   NVDRWEFCGS HLA-A*01:01 rank 34.111
+  peptide   EHVGFLNVDRW HLA-B*38:01 rank 0.64
 
 ## IGI-SYN-SEQ-01-IND-0141  STC1 S28del inframe_deletion  clone=T tier=T_LOH VAF=0.5385 expr=T10 bind=strong ctx=clean
   window    chr8:23854401-23854462  somatic CCACTCGGGATTTCCTGGGGCT>C at 23854421 on hap1
@@ -10939,7 +10940,7 @@
                         ^
   peptide   NPDPDLRERY HLA-B*35:08 rank 0.021
 
-## IGI-SYN-SEQ-01-IND-0182  NMRK1 A60ins inframe_insertion  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0182  NMRK1 A60ins inframe_insertion  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=exon_edge
   window    chr9:75070015-75070055  somatic T>TAACGTTTCGGCGAACGTCTTAAAGTACGGC at 75070035 on hap0
   ref       ATTTTTTCCATGTTAAGTGCTTCAAGCACTTCAAACAAACA
   hap0      ATTTTTTCCATGTTAAGTGCTTCAAGCACTTCAAACAAACA
@@ -10950,7 +10951,7 @@
   WT        DKNGFLQYDVLEALNMEKMMSAISC
   MUT       DKNGFLQYDVLEPYFKTFAETLALN
                         ^
-  peptide   EPYFKTFAETL HLA-B*35:08 rank 3.346
+  peptide   QYDVLEPYF HLA-C*04:01 rank 0.016
 
 ## IGI-SYN-SEQ-01-IND-0183  VAV1 W467ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T10 bind=strong ctx=exon_edge
   window    chr19:6829898-6829938  somatic G>GATGACAGCCGTG at 6829918 on hap0
@@ -10978,7 +10979,7 @@
                         ^
   peptide   QHWLLDPSGF HLA-B*38:01 rank 0.191
 
-## IGI-SYN-SEQ-01-IND-0185  UPK3B C264ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T0 bind=non ctx=segdup
+## IGI-SYN-SEQ-01-IND-0185  UPK3B C264ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=segdup
   window    chr7:76515140-76515180  somatic G>GGGACCGGTCATTTTTTCACATACGGATTCC at 76515160 on hap0
   ref       AGGCCGCCACACTGCCGGTGGGCTGCAAGCCTGGCCTGGAC
   hap0      AGGCCGCCACACTGCCGGTGGGCTGCGAGCCTGGCCTGGAC   <- germline differs
@@ -10989,7 +10990,7 @@
   WT        IPPREAATLPVGCKPGLDPLPSLSP
   MUT       IPPREAATLPVGTGHFFTYGFRCKP
                         ^
-  peptide   GTGHFFTYGFR HLA-A*26:01 rank 30.867
+  peptide   LPVGTGHFF HLA-B*35:08 rank 0.026
 
 ## IGI-SYN-SEQ-01-IND-0186  ANKRD30A E837ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T0 bind=non ctx=segdup
   window    chr10:37177731-37177771  somatic T>TGGATTCAAGGATTGAAAAATC at 37177751 on hap0
@@ -11002,9 +11003,9 @@
   WT        HQKEIDKINGKLEGSPVKDGLLKAN
   MUT       HQKEIDKINGKLDSRIEKSEGSPVK
                         ^
-  peptide   KLDSRIEKS HLA-C*04:01 rank 7.646
+  peptide   SEGSPVKDGL HLA-B*38:01 rank 5.242
 
-## IGI-SYN-SEQ-01-IND-0187  ERMAP E204ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0187  ERMAP E204ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T10 bind=non ctx=exon_edge
   window    chr1:42837165-42837205  somatic A>ATACCTAATTAAG at 42837185 on hap0
   ref       TCTTTCAGACCATGCTAAAGAAAAAGGTAATGATATAAAAG
   hap0      TCTTTCAGACCATGCTAAAGAAAAAGGTAATGATATAAAAG
@@ -11015,7 +11016,7 @@
   WT        TEVDNLLSDHAKEKGKLHKAVKKLR
   MUT       TEVDNLLSDHAKDT
                         ^
-  peptide   none
+  peptide   LSDHAKDT HLA-A*01:01 rank 13.147
 
 ## IGI-SYN-SEQ-01-IND-0188  RHOBTB3 C73ins inframe_insertion  clone=A tier=A VAF=0.2154 expr=T10 bind=weak ctx=exon_edge
   window    chr5:95732054-95732094  somatic G>GGGTGATAGTTAACGG at 95732074 on hap0
@@ -11028,9 +11029,9 @@
   WT        SAFGNVKLVVHDCPVWDIFDSDWYT
   MUT       SAFGNVKLVVHDWVIVNGPVWDIFD
                         ^
-  peptide   WVIVNGPVW HLA-A*26:01 rank 1.97
+  peptide   NVKLVVHDW HLA-A*26:01 rank 1.229
 
-## IGI-SYN-SEQ-01-IND-0189  IZUMO3 I199ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0189  IZUMO3 I199ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T0 bind=non ctx=clean
   window    chr9:24543332-24543372  somatic G>GAGTGATTAGGCGGAAGGGTGC at 24543352 on hap0
   ref       TTCATTTTCCTCCGATGAAAGATGCAAAAATGGAATCTAGA
   hap0      TTCATTTTCCTCCGATGAAAGATGCAAAAATGGAATCTAGA
@@ -11041,9 +11042,9 @@
   WT        ILGSAVLLFHFCIFHRRKMKAIRRS
   MUT       ILGSAVLLFHFCMHPSA
                         ^
-  peptide   none
+  peptide   FHFCMHPSA HLA-B*38:01 rank 2.962
 
-## IGI-SYN-SEQ-01-IND-0190  PPY A3ins inframe_insertion  clone=B tier=B VAF=0.1346 expr=T0 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0190  PPY A3ins inframe_insertion  clone=B tier=B VAF=0.1346 expr=T0 bind=strong ctx=exon_edge
   window    chr17:43941627-43941667  somatic G>GGCCCAGAGGCACTCATTATGCTGAGACATC at 43941647 on hap0
   ref       GGGAGAGGCAGAGGCGTGCGGCAGCCATCTGAGGAGCAAGC
   hap0      GGGAGAGGCAGAGGCGTGCGGCAGCCATCTGAGGAGCAAGC
@@ -11054,9 +11055,9 @@
   WT        MAAARLCLSLLLLST
   MUT       MAGCLSIMSASGPAR
               ^
-  peptide   GCLSIMSASGP HLA-A*26:01 rank 85.0
+  peptide   MSASGPARL HLA-C*12:03 rank 0.391
 
-## IGI-SYN-SEQ-01-IND-0191  SLC6A13 T507ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T0 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0191  SLC6A13 T507ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T0 bind=weak ctx=exon_edge
   window    chr12:221522-221562  somatic G>GACTAGCCTGGTGCACAAAGGCCATATAATT at 221542 on hap0
   ref       TTATCAGGGAGAAGAGAAAGGTGGCCTGAGGGGGAGAGCAG
   hap0      TTATCAGGGAGAAGAGAAAGGTGGCCTGAGGGGGAGAGCAG
@@ -11067,9 +11068,9 @@
   WT        CWLFLTPAVCTATFLFSLIKYTPLT
   MUT       CWLFLTPAVCTAKLYGLCAPG
                         ^
-  peptide   none
+  peptide   TPAVCTAKLY HLA-B*35:08 rank 0.666
 
-## IGI-SYN-SEQ-01-IND-0192  ZNF80 G255ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T0 bind=non ctx=near_germline_het
+## IGI-SYN-SEQ-01-IND-0192  ZNF80 G255ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=near_germline_het
   window    chr3:114236292-114236332  somatic C>CAGATTCACCTCGGGGCTGTGGCCCCCTCAC at 114236312 on hap0
   ref       GGCAAAAGCAGAGTGGTAGCCAAAGTCCTTTCTATGTTCAA
   hap0      GGCAAAAGCAGAGTGGTAGCCAAAGGCCTTTCTATGTTCAA   <- germline differs
@@ -11080,9 +11081,9 @@
   WT        KPYECLEHRKDFGYHSAFAQQSKIH
   MUT       KPYECLEHRKDFVRGPQPRGESGYH
                         ^
-  peptide   VRGPQPRGESG HLA-B*35:08 rank 19.956
+  peptide   GPQPRGESGY HLA-B*35:08 rank 0.377
 
-## IGI-SYN-SEQ-01-IND-0193  ESRRB L314ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T0 bind=weak ctx=clean
+## IGI-SYN-SEQ-01-IND-0193  ESRRB L314ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=clean
   window    chr14:76491514-76491554  somatic C>CTGCTGGCACTAGGTACGGCCC at 76491534 on hap0
   ref       CCTGGGCATCGTGTACCGCTCGCTGCCCTATGACGACAAGC
   hap0      CCTGGGCATCGTGTACCGCTCGCTGCCCTACGACGACAAGC   <- germline differs
@@ -11093,9 +11094,9 @@
   WT        MEILILGIVYRSLPYDDKLVYAEDY
   MUT       MEILILGIVYRSAGTRYGPLPYDDK
                         ^
-  peptide   SAGTRYGPLPY HLA-A*01:01 rank 1.502
+  peptide   GPLPYDDKLVY HLA-B*35:08 rank 0.292
 
-## IGI-SYN-SEQ-01-IND-0194  MX1 T477ins inframe_insertion  clone=T tier=T_het VAF=0.35 expr=T100 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0194  MX1 T477ins inframe_insertion  clone=T tier=T_het VAF=0.35 expr=T100 bind=strong ctx=exon_edge
   window    chr21:41449269-41449309  somatic G>GTATGTCTATTGGGACGACGACCGCATAAAC at 41449289 on hap0
   ref       CTGTGGATATGCTACACACCGTGACGGGTGAGTGCTCAGTT
   hap0      CTGTGGATATGCTACACACCGTGACGGGTGAGTGCTCAGTT
@@ -11106,7 +11107,7 @@
   WT        LEEPAVDMLHTVTDMVRLAFTDVSI
   MUT       LEEPAVDMLHTVCLLGRRPHKLTDM
                         ^
-  peptide   CLLGRRPHKL HLA-C*04:01 rank 21.786
+  peptide   LTDMVRLAF HLA-A*01:01 rank 0.168
 
 ## IGI-SYN-SEQ-01-IND-0195  SDHC R7ins inframe_insertion  clone=B tier=B VAF=0.0648 expr=T100 bind=na ctx=exon_edge
   window    chr1:161314402-161314442  somatic T>TTTAAATCACGCCTCACCTACTAGTGAGTTC at 161314422 on hap1
@@ -11121,7 +11122,7 @@
                   ^
   peptide   none
 
-## IGI-SYN-SEQ-01-IND-0196  STMN3 M40ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T10 bind=na ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0196  STMN3 M40ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T10 bind=non ctx=exon_edge
   window    chr20:63643911-63643951  somatic T>TCATACTCCTAATGGT at 63643931 on hap1
   ref       CCAGCTGCTTCACCTCCATGTCTGCAGGGCAAGACCAGAGT
   hap0      CCAGCTGCTTCACCTCCATGTCTGCAGGGCAAGACCAGAGT
@@ -11132,9 +11133,9 @@
   WT        QPHPNTVYQYGDMEVKQLDKRASGQ
   MUT       QPHPNTVYQYGDH
                         ^
-  peptide   none
+  peptide   NTVYQYGDH HLA-A*26:01 rank 7.513
 
-## IGI-SYN-SEQ-01-IND-0197  SMIM1 R36ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T1 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0197  SMIM1 R36ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T1 bind=weak ctx=exon_edge
   window    chr1:3775458-3775498  somatic C>CTTCCCACAT at 3775478 on hap0
   ref       ACAGAAGAGGCCTCACGCTGCCGCAGGTGAGGGGCCTGAGG
   hap0      ACAGAAGAGGCCTCACGCTGCCGCAGGTGAGGGGCCTGAGG
@@ -11145,7 +11146,7 @@
   WT        GAVSSTEEASRCRRISQRLCTGKLG
   MUT       GAVSSTEEASRCFPHRRISQRLCTG
                         ^
-  peptide   FPHRRISQRL HLA-B*35:08 rank 2.036
+  peptide   STEEASRCF HLA-A*01:01 rank 0.61
 
 ## IGI-SYN-SEQ-01-IND-0198  HDAC9 S6ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T1 bind=non ctx=exon_edge
   window    chr7:18496298-18496338  somatic A>ATTTCACGCGACT at 18496318 on hap1
@@ -11160,7 +11161,7 @@
                  ^
   peptide   MIISRDCSV HLA-C*12:03 rank 3.516
 
-## IGI-SYN-SEQ-01-IND-0199  GJC1 S4ins inframe_insertion  clone=A tier=A VAF=0.2154 expr=T1 bind=non ctx=clean
+## IGI-SYN-SEQ-01-IND-0199  GJC1 S4ins inframe_insertion  clone=A tier=A VAF=0.2154 expr=T1 bind=strong ctx=clean
   window    chr17:44805786-44805826  somatic G>GTCAGGCATACCCCACAGAAGC at 44805806 on hap0
   ref       TCTAGCAGGCGAGTCAGGAAGCTCCAACTCATGGTGATTGA
   hap0      TCTAGCAGGCGAGTCAGGAAGCTCCAACTCATGGTGATTGA
@@ -11171,9 +11172,9 @@
   WT        MSWSFLTRLLEEIHNH
   MUT       MSWRLLWGMPDFLTRL
                ^
-  peptide   WRLLWGMPDFL HLA-B*38:01 rank 3.065
+  peptide   MPDFLTRLL HLA-B*35:08 rank 0.063
 
-## IGI-SYN-SEQ-01-IND-0200  AC008758.6 E7ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T0 bind=non ctx=clean
+## IGI-SYN-SEQ-01-IND-0200  AC008758.6 E7ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=clean
   window    chr19:12466814-12466854  somatic T>TAAAGTATTGTATGAACCCCAAGTGGTGCAC at 12466834 on hap0
   ref       TGAAGTTCACAGCCACATCCTCAAAGACCACTGAGTCCTGA
   hap0      TGAAGTTCACAGCCACATCCTCAAAGACCACTGAGTCCTGA
@@ -11184,7 +11185,7 @@
   WT        MDSVVFEDVAVNFTQEEWA
   MUT       MDSVVFGAPLGVHTIL
                   ^
-  peptide   FGAPLGVHTIL HLA-B*35:08 rank 2.071
+  peptide   APLGVHTIL HLA-B*35:08 rank 0.437
 
 ## IGI-SYN-SEQ-01-IND-0201  PML S571ins inframe_insertion  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=strong ctx=exon_edge
   window    chr15:74034509-74034549  somatic C>CGCCTCA at 74034529 on hap0
@@ -11212,7 +11213,7 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-01-IND-0203  PRAM1 R483ins inframe_insertion  clone=T tier=T_het VAF=0.35 expr=T1 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0203  PRAM1 R483ins inframe_insertion  clone=T tier=T_het VAF=0.35 expr=T1 bind=strong ctx=clean
   window    chr19:8498256-8498296  somatic G>GGAGTATGTCTAGGAGTACGAG at 8498276 on hap0
   ref       TGGAGCCCAGCGGCCGAGCGGGTCCTCCGTAGATCTGTGGG
   hap0      TGGAGCCCAGCGGCCGAGCGGGTCCTCCGTAGATCTGTGGG
@@ -11223,7 +11224,7 @@
   WT        RPSAASIDLRRTRSAAGLHFQDRQP
   MUT       RPSAASIDLRRTSYS
                         ^
-  peptide   none
+  peptide   SIDLRRTSY HLA-A*01:01 rank 0.101
 
 ## IGI-SYN-SEQ-01-IND-0204  OR2H1 W313ins inframe_insertion  clone=B tier=B VAF=0.1346 expr=T0 bind=na ctx=exon_edge
   window    chr6:29462687-29462727  somatic G>GACGAAGTGTCGC at 29462707 on hap0
@@ -11238,7 +11239,7 @@
                         ^
   peptide   none
 
-## IGI-SYN-SEQ-01-IND-0205  HIP1 K270ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T10 bind=non ctx=exon_edge
+## IGI-SYN-SEQ-01-IND-0205  HIP1 K270ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T10 bind=strong ctx=exon_edge
   window    chr7:75563238-75563278  somatic T>TGACATAGGAAAGCCCCCAGCGCGACATTAC at 75563258 on hap1
   ref       TGGAGCGGTAGAACAGATCTTTCAACCTAGGGGTGGAGAAG
   hap0      TGGAGCGGTAGAACAGATCTTTCAACCTAGGGGTGGAGAAG
@@ -11249,9 +11250,9 @@
   WT        HRDRFMEQFTKLKDLFYRSSNLQYF
   MUT       HRDRFMEQFTKLSNVALGAFLCQDL
                         ^
-  peptide   SNVALGAFLC HLA-B*38:01 rank 35.727
+  peptide   FTKLSNVAL HLA-C*12:03 rank 0.194
 
-## IGI-SYN-SEQ-01-IND-0206  NOS1 A829ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T0 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0206  NOS1 A829ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T0 bind=non ctx=clean
   window    chr12:117258424-117258464  somatic A>ACCGGGCATCTTGGACGGGCTTTACATATTG at 117258444 on hap0
   ref       TGCCTCATTTCCATCAAAGCACAGCCGAATTTCTGGAAGCC
   hap0      TGCCTCATTTCCATCAAAGCACAGCCGAATTTCTGGAAGCC
@@ -11262,9 +11263,9 @@
   WT        GDPPENGEKFGCALMEMRHPNSVQE
   MUT       GDPPENGEKFGCNM
                         ^
-  peptide   none
+  peptide   NGEKFGCNM HLA-C*04:01 rank 7.533
 
-## IGI-SYN-SEQ-01-IND-0207  HLA-DQB1 K44ins inframe_insertion  clone=T tier=T_LOH VAF=0.5385 expr=T100 bind=non ctx=near_germline_het
+## IGI-SYN-SEQ-01-IND-0207  HLA-DQB1 K44ins inframe_insertion  clone=T tier=T_LOH VAF=0.5385 expr=T100 bind=strong ctx=near_germline_het
   window    chr6:32665028-32665068  somatic A>ACTGTAGAATAGCGTCCGTGGA at 32665048 on hap0
   ref       GTGAAGTAGCACATGCCCTTAAACTGGAACACGAAATCCTC
   hap0      GTGAAGTAGCACATGCCCTTAAACTGGTACACGAAATCCTC   <- germline differs
@@ -11275,9 +11276,9 @@
   WT        GRDSPEDFVFQFKGMCYFTNGTERV
   MUT       GRDSPEDFVFQFPRTLFYSKGMCYF
                         ^
-  peptide   FQFPRTLFYS HLA-C*12:03 rank 2.711
+  peptide   FVFQFPRTL HLA-C*12:03 rank 0.006
 
-## IGI-SYN-SEQ-01-IND-0208  ZDHHC21 V8ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T10 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0208  ZDHHC21 V8ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T10 bind=non ctx=clean
   window    chr9:14674299-14674339  somatic C>CCAAACGTCTGGATCAATACCCACTAAAGCA at 14674319 on hap1
   ref       CCAACCATGTGGGTCAACAACAAAGTGAATCCGGAGACCCA
   hap0      CCAACCATGTGGGTCAACAACAAAGTGAATCCGGAGACCCA
@@ -11288,9 +11289,9 @@
   WT        MGLRIHFVVDPHGWCCMGLI
   MUT       MGLRIHFCFSGY
                    ^
-  peptide   none
+  peptide   RIHFCFSGY HLA-A*26:01 rank 2.215
 
-## IGI-SYN-SEQ-01-IND-0209  GMPR2 G90ins inframe_insertion  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=non ctx=clean
+## IGI-SYN-SEQ-01-IND-0209  GMPR2 G90ins inframe_insertion  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=strong ctx=clean
   window    chr14:24235775-24235815  somatic C>CCATCGTGTCTTTAGCTATTCTGTTTCCTAA at 24235795 on hap1
   ref       CGTTCAGTGGCAAGAGTTTGCTGGCCAGAATCCTGACTGTC
   hap0      CGTTCAGTGGCAAGAGTTTGCTGGCCAGAATCCTGACTGTC
@@ -11301,9 +11302,9 @@
   WT        KHYSLVQWQEFAGQNPDCLEHLAAS
   MUT       KHYSLVQWQEFAIVSLAILFPNGQN
                         ^
-  peptide   AIVSLAILFPN HLA-A*26:01 rank 85.0
+  peptide   FAIVSLAIL HLA-C*12:03 rank 0.212
 
-## IGI-SYN-SEQ-01-IND-0210  MRPL37 L417ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T100 bind=na ctx=clean
+## IGI-SYN-SEQ-01-IND-0210  MRPL37 L417ins inframe_insertion  clone=A tier=A VAF=0.14 expr=T100 bind=non ctx=clean
   window    chr1:54218204-54218244  somatic C>CCGGCTCTAACTCTAGGGGGTGAGGGCTACC at 54218224 on hap0
   ref       GACATTCAGAAAGTTTTTAGCTCTATATTTGCATGGTGCTG
   hap0      GACATTCAGAAAGTTTTTAGCTCTATATTTGCATGGTGCTG
@@ -11314,9 +11315,9 @@
   WT        GFKPETFRKFLALYLHGAA
   MUT       GFKPETFRKFLAGSNSRG
                         ^
-  peptide   none
+  peptide   ETFRKFLAG HLA-A*26:01 rank 6.135
 
-## IGI-SYN-SEQ-01-IND-0211  LARP4B K735fs*17 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0211  LARP4B K735fs*17 frameshift  clone=A tier=A VAF=0.14 expr=T10 bind=strong ctx=homopolymer
   window    chr10:812924-812965  somatic GG>G at 812944 on hap0
   ref       TTTCACTGAGGAGACTTGGGGGGAGTGCTCTGCTCTCGGCTG
   hap0      TTTCACTGAGGAGACTTGGGGGGAGTGCTCTGCTCTCGGCTG
@@ -11327,9 +11328,9 @@
   WT        GKRLSREQSTPPKSPQ
   MUT       GKRLSREQSTPPSLLSENRTSGRGRRALC
                         ^
-  peptide   none
+  peptide   EQSTPPSLL HLA-B*38:01 rank 0.23
 
-## IGI-SYN-SEQ-01-IND-0212  PHGR1 H59fs*25 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0212  PHGR1 H59fs*25 frameshift  clone=T tier=T_het VAF=0.35 expr=T0 bind=strong ctx=homopolymer
   window    chr15:40356205-40356250  somatic CCCCCA>C at 40356225 on hap0
   ref       CCAGGGCCCTGCGGGCCACCCCCCCACCATGGTCCAGGGCCCTGCG
   hap0      CCAGGGCCCTGCGGGCCACCCCCCCACCATGGTCCAGGGCCCTGCG
@@ -11340,9 +11341,9 @@
   WT        PGHGPGPCGPPPHHGPGPCGPPPGH
   MUT       PGHGPGPCGPPPWSRALRASPWPWPRSPTPWSTSLRK
                         ^
-  peptide   none
+  peptide   SPTPWSTSL HLA-B*35:08 rank 0.059
 
-## IGI-SYN-SEQ-01-IND-0213  DTX4 G510ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T10 bind=non ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0213  DTX4 G510ins inframe_insertion  clone=B tier=B VAF=0.0875 expr=T10 bind=strong ctx=homopolymer
   window    chr11:59195340-59195380  somatic C>CAAGGTCTTGGGTGCATTCGTTTCGCTAGCT at 59195360 on hap0
   ref       ATCATCTACAGCATCCCCCCCGGCATTCAGGTGAGCCTTTC
   hap0      ATCATCTACAGCATCCCCCCCGGCATTCAGGTGAGCCTTTC
@@ -11353,7 +11354,7 @@
   WT        CKTIRIIYSIPPGIQGPEHPNPGKS
   MUT       CKTIRIIYSIPPKVLGAFVSLAGIQ
                         ^
-  peptide   KVLGAFVSLA HLA-A*26:01 rank 24.567
+  peptide   YSIPPKVL HLA-C*12:03 rank 0.071
 
 ## IGI-SYN-SEQ-01-IND-0214  RNF170 E99del inframe_deletion  clone=A tier=A VAF=0.2154 expr=T10 bind=strong ctx=homopolymer
   window    chr8:42869992-42870053  somatic AGATGTCCACAGTTGGTCTCCA>A at 42870012 on hap1
@@ -11368,7 +11369,7 @@
                         ^
   peptide   LHQASFPVF HLA-B*38:01 rank 0.043
 
-## IGI-SYN-SEQ-01-IND-0215  SLC25A47 P146fs*25 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0215  SLC25A47 P146fs*25 frameshift  clone=A tier=A VAF=0.14 expr=T0 bind=strong ctx=homopolymer
   window    chr14:100328811-100328853  somatic CCC>C at 100328831 on hap1
   ref       CCTCGGGGCCGTTGGCTGTGCCCCCCATGTGTCCTGTGCCCCC
   hap0      CCTCGGGGCCGTTGGCTGTGCCCCCCATGTGTCCTGTGCCCCC
@@ -11379,7 +11380,7 @@
   WT        RRLSASGPLAVPPMCPVPPACPEPK
   MUT       RRLSASGPLAVPHVSCAPSLPRAQVPRATALPGHGSP
                         ^
-  peptide   none
+  peptide   PHVSCAPSL HLA-B*38:01 rank 0.35
 
 ## IGI-SYN-SEQ-01-IND-0216  KRTAP5-1 S189del inframe_deletion  clone=A1 tier=A1 VAF=0.042 expr=T0 bind=na ctx=homopolymer
   window    chr11:1584649-1584704  somatic TTGGATCCCCCACAAG>T at 1584669 on hap1
@@ -11431,9 +11432,9 @@
   WT        NTEDSAFPAARGETHKPLKPALKRG
   MUT       NTEDSAFPAARGRPTSP
                         ^
-  peptide   AARGRPTSP HLA-C*12:03 rank 3.556
+  peptide   SAFPAARGR HLA-A*26:01 rank 2.401
 
-## IGI-SYN-SEQ-01-IND-0220  TROAP P774fs*17 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0220  TROAP P774fs*17 frameshift  clone=T tier=T_het VAF=0.35 expr=T10 bind=weak ctx=homopolymer
   window    chr12:49331580-49331625  somatic CCCCAG>C at 49331600 on hap0
   ref       TTCCAGTTGGTTCTGCTGCCCCCCAGGGCTCTCCATGATGAGACAA
   hap0      TTCCAGTTGGTTCTGCTGCCCCCCAGGGCTCTCCATGATGAGACAA
@@ -11444,7 +11445,7 @@
   WT        DALCFIPVGSAAPQGSP
   MUT       DALCFIPVGSAARLSMMRQPLLPCRTSSF
                         ^
-  peptide   none
+  peptide   IPVGSAARL HLA-B*35:08 rank 0.502
 
 ## IGI-SYN-SEQ-01-IND-0221  RUNDC3B L9del inframe_deletion  clone=A tier=A VAF=0.14 expr=T0 bind=non ctx=homopolymer
   window    chr7:87628825-87628895  somatic GGCCTGAGCGGGATCCGCGGCGGTGGCGGCG>G at 87628845 on hap1
@@ -11459,7 +11460,7 @@
                     ^
   peptide   RSLGGGGKKSL HLA-C*12:03 rank 6.478
 
-## IGI-SYN-SEQ-01-IND-0222  SVBP E8fs*22 frameshift  clone=B tier=B VAF=0.0875 expr=T100 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0222  SVBP E8fs*22 frameshift  clone=B tier=B VAF=0.0875 expr=T100 bind=non ctx=homopolymer
   window    chr1:42816499-42816543  somatic TTTTC>T at 42816519 on hap1
   ref       CAGATTCTTTAACTTTGGTTTTTTCTTTACGTGCAGGTGGATCCA
   hap0      CAGATTCTTTAACTTTGGTTTTTTCTTTACGTGCAGGTGGATCCA
@@ -11470,7 +11471,7 @@
   WT        MDPPARKEKTKVKESVSRVE
   MUT       MDPPARKKPKLKNLSAELRRPNRNQPSRS
                    ^
-  peptide   none
+  peptide   KLKNLSAEL HLA-C*04:01 rank 2.718
 
 ## IGI-SYN-SEQ-01-IND-0223  AL021997.2 K14del inframe_deletion  clone=B tier=B VAF=0.0875 expr=T0 bind=strong ctx=homopolymer
   window    chr6:28272673-28272722  somatic AAAAATACTT>A at 28272693 on hap0
@@ -11524,7 +11525,7 @@
                         ^
   peptide   EAEEDEQQRK HLA-A*01:01 rank 5.692
 
-## IGI-SYN-SEQ-01-IND-0227  OR2Y1 F250fs*15 frameshift  clone=B tier=B VAF=0.1346 expr=T0 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0227  OR2Y1 F250fs*15 frameshift  clone=B tier=B VAF=0.1346 expr=T0 bind=strong ctx=homopolymer
   window    chr5:180739290-180739335  somatic AAAAGG>A at 180739310 on hap0
   ref       TGTAGATGGCTGAGCCATAAAAAAGGAAAACTACTAGGAGGTGGGA
   hap0      TGTAGATGGCTGAGCCATAAAAAAGGAAAACTACTAGGAGGTGGGA
@@ -11535,9 +11536,9 @@
   WT        GTCGSHLLVVFLFYGSAIYTYLQSI
   MUT       GTCGSHLLVVFLWLSHLHISPIHPQLF
                         ^
-  peptide   none
+  peptide   LHISPIHPQL HLA-B*38:01 rank 0.057
 
-## IGI-SYN-SEQ-01-IND-0228  CHCHD10 Q95ins inframe_insertion  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=non ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0228  CHCHD10 Q95ins inframe_insertion  clone=A1 tier=A1 VAF=0.042 expr=T100 bind=strong ctx=homopolymer
   window    chr22:23766234-23766274  somatic G>GAGTACCTTCAACTTTTTCCATAGTAATTCT at 23766254 on hap0
   ref       GGGCCCCATCTGCAGGGGCTGGGGGGCAGCGGGGGTGGGGG
   hap0      GGGCCCCATCTGCAGGGGCTGGGGGGCAGCGGGGGTGGGGG
@@ -11548,9 +11549,9 @@
   WT        PAVQQAPTPAAPQPLQMGPCAYEIR
   MUT       PAVQQAPTPAAPRITMEKVEGTQPL
                         ^
-  peptide   RITMEKVEGT HLA-A*26:01 rank 38.0
+  peptide   TPAAPRITM HLA-B*35:08 rank 0.046
 
-## IGI-SYN-SEQ-01-IND-0229  TMTC3 P368fs*21 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0229  TMTC3 P368fs*21 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=homopolymer
   window    chr12:88172625-88172666  somatic TT>T at 88172645 on hap0
   ref       TTCCTGCATCGAACCTTTTTTTTCCAGTTGGATTTGTTGTTG
   hap0      TTCCTGCATCGAACCTTTTTTTTCCAGTTGGATTTGTTGTTG
@@ -11561,7 +11562,7 @@
   WT        ALPFIPASNLFFPVGFVVAERVLYV
   MUT       ALPFIPASNLFFQLDLLLPSEYYMFPAWGSVFW
                         ^
-  peptide   none
+  peptide   QLDLLLPSEY HLA-A*01:01 rank 0.097
 
 ## IGI-SYN-SEQ-01-IND-0230  KRTAP5-1 G88del inframe_deletion  clone=T tier=T_het VAF=0.35 expr=T0 bind=non ctx=homopolymer
   window    chr11:1584967-1585010  somatic CCCC>C at 1584987 on hap0
@@ -11732,7 +11733,7 @@
                         ^
   peptide   YRWRKNKSW HLA-B*38:01 rank 1.231
 
-## IGI-SYN-SEQ-01-IND-0243  C14orf93 A193fs*82 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=na ctx=homopolymer
+## IGI-SYN-SEQ-01-IND-0243  C14orf93 A193fs*82 frameshift  clone=A1 tier=A1 VAF=0.042 expr=T10 bind=strong ctx=homopolymer
   window    chr14:22998424-22998468  somatic CCGCC>C at 22998444 on hap0
   ref       CACAGGATTGAGCAGGGGGGCCGCCTCGCTGGCAGCCAGCGTGCA
   hap0      CACAGGATTGAGCAGGGGGGCCGCCTCGCTGGCAGCCAGCGTGCA
@@ -11743,7 +11744,7 @@
   WT        MRLPGCTLAASEAAPLLNPLVDDYV
   MUT       MRLPGCTLAASEPPCSILWWMITWPLRVQYSEFWSLL
                         ^
-  peptide   none
+  peptide   ITWPLRVQY HLA-C*12:03 rank 0.098
 
 ## IGI-SYN-SEQ-01-IND-0244  TTLL10 V249del inframe_deletion  clone=B tier=B VAF=0.0875 expr=T0 bind=weak ctx=homopolymer
   window    chr1:1180828-1180874  somatic GGGTCCA>G at 1180848 on hap1
@@ -11782,7 +11783,7 @@
   WT        FGPFSVSCEAEKRKSDYIIRTLKVK
   MUT       FGPFSVSCEAEKGNLII
                         ^
-  peptide   EAEKGNLII HLA-B*35:08 rank 4.207
+  peptide   CEAEKGNLI HLA-B*38:01 rank 2.498
 
 ## IGI-SYN-SEQ-01-IND-0247  OR5A1 F105del inframe_deletion  clone=B tier=B VAF=0.0875 expr=T0 bind=weak ctx=homopolymer
   window    chr11:59443458-59443507  somatic TTTTTTTTCT>T at 59443478 on hap1

@@ -81,7 +81,17 @@ def check(rows, fa):
             fail(f"{r['event_id']}: rank {rank} labelled {r['binding_tier']}, expected {want}")
             break
 
-    # 8. a wild-type counterpart must differ from the mutant peptide and be the same length
+    # 8. consequences that produce a neo-ORF must carry a peptide; a large gap means the peptide window
+    #    is collapsing rather than the biology being uninformative
+    for cons, floor in (("frameshift", 0.75), ("stop_loss", 0.5), ("inframe_insertion", 0.75)):
+        sub = [r for r in rows if r["consequence"] == cons]
+        if len(sub) >= 10:
+            frac = sum(1 for r in sub if r["best_peptide"]) / len(sub)
+            if frac < floor:
+                fail(f"only {frac:.0%} of {cons} events carry a peptide (expected at least {floor:.0%}); "
+                     f"the peptide window may not be overlapping the changed residues")
+
+    # 9. a wild-type counterpart must differ from the mutant peptide and be the same length
     for r in rows:
         wt, mut = r.get("wt_peptide"), r.get("best_peptide")
         if wt and mut and (wt == mut or len(wt) != len(mut)):
