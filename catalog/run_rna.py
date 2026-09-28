@@ -21,6 +21,7 @@ import yaml
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog import fusion_core
+from igi_catalog.readnames import shuffle_and_rename
 from igi_catalog.rna import RnaBuilder
 from igi_catalog.simulate import clone_weights
 from igi_catalog.transcriptome import TranscriptomeBuilder
@@ -144,6 +145,7 @@ def main():
     print(f"  designed classes: {len(designed)} source transcripts -> {len(rb.records)} total records",
           flush=True)
 
+    rb.assign_record_ids()
     plan, realised = rb.coverage_plan(a.pairs, a.read_len, n_bins=a.bins)
     print(f"  {len(plan)} abundance bins, coverage {min(c for _i, c, _r in plan):.3f}-"
           f"{max(c for _i, c, _r in plan):.1f}x, ~{realised:,} pairs", flush=True)
@@ -159,28 +161,24 @@ def main():
             pieces.append((f"{pre}1.fq", f"{pre}2.fq"))
         os.remove(fa)
 
-    # concatenate and shuffle, so reads are not grouped by clone or ordered by position
+    # concatenate, then shuffle and rename in one disk-based pass so peak memory does not scale with
+    # the library, and write the map from each read name back to the record it came from
     r1 = os.path.join(a.out, f"{a.dataset}_chr1to6_rna_R1.fastq.gz")
     r2 = os.path.join(a.out, f"{a.dataset}_chr1to6_rna_R2.fastq.gz")
+    rmap = os.path.join(a.out, f"{a.dataset}_chr1to6_rna_readmap.tsv.gz")
     cat1 = os.path.join(work, "all_1.fq")
     cat2 = os.path.join(work, "all_2.fq")
     for idx, out in ((0, cat1), (1, cat2)):
         with open(out, "w") as fh:
             subprocess.run(["cat"] + [p[idx] for p in pieces], stdout=fh, check=True)
-    shuf = os.path.join(work, "shuf.tsv")
-    # shuf has no portable temp-dir flag here, so TMPDIR steers its spill files onto scratch
-    env_sh = dict(os.environ, TMPDIR=work)
-    subprocess.run(
-        f"paste <(paste - - - - < {cat1}) <(paste - - - - < {cat2}) "
-        f"| shuf --random-source=<(yes {a.seed}) > {shuf}",
-        shell=True, check=True, executable="/bin/bash", env=env_sh)
-    for col, out in ((1, r1), (5, r2)):
-        subprocess.run(
-            f"cut -f{col}-{col + 3} {shuf} | tr '\\t' '\\n' | gzip -c > {out}",
-            shell=True, check=True, executable="/bin/bash")
+    n_reads = shuffle_and_rename(cat1, cat2, r1, r2, rmap, work, seed=a.seed)
+    print(f"  {n_reads:,} pairs written, names Illumina-style, map in {os.path.basename(rmap)}", flush=True)
+
+    rb.attach_counts(rmap, a.read_len)
     rb.write_manifest(os.path.join(a.out, f"{a.dataset}_chr1to6_rna_transcripts.tsv"))
     meta = {"dataset": a.dataset, "chroms": sorted(chroms), "pairs_target": a.pairs,
-            "pairs_realised": realised, "records": len(rb.records), "bins": len(plan),
+            "pairs_planned": realised, "pairs_written": n_reads, "records": len(rb.records),
+            "bins": len(plan), "read_map": rmap,
             "r1": r1, "r2": r2, "runtime_s": round(time.time() - t0)}
     with open(os.path.join(a.out, f"{a.dataset}_chr1to6_rna.json"), "w") as fh:
         json.dump(meta, fh, indent=2)
@@ -188,7 +186,7 @@ def main():
         for f in p:
             if os.path.exists(f):
                 os.remove(f)
-    for f in (cat1, cat2, shuf):
+    for f in (cat1, cat2):
         if os.path.exists(f):
             os.remove(f)
     print(f"  wrote {r1} ({os.path.getsize(r1) / 1e6:.0f} MB)", flush=True)

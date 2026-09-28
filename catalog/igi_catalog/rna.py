@@ -31,16 +31,29 @@ def haplotype_split(clones, clone, chrom, pos, ase=None, mutant_hap=None):
     if total == 0:
         return (0.0, 0.0)
     frac = (a / total, b / total)
-    if ase and ase in ASE_FRACTION and mutant_hap in (0, 1) and frac[mutant_hap] > 0:
-        m = ASE_FRACTION[ase]
-        frac = (m, 1 - m) if mutant_hap == 0 else (1 - m, m)
-    return frac
+    # An allelic-expression setting redistributes between haplotypes that exist. It can never give
+    # expression to a haplotype with no copies, and "balanced" means "no override" rather than "50/50",
+    # so a gene in a one-haplotype region keeps the copy-number split.
+    if ase in (None, "", "balanced") or mutant_hap not in (0, 1):
+        return frac
+    if frac[0] <= 0 or frac[1] <= 0:
+        return frac
+    m = ASE_FRACTION.get(ase)
+    if m is None:
+        return frac
+    return (m, 1 - m) if mutant_hap == 0 else (1 - m, m)
 
 
-def dosage(clones, clone, chrom, pos, baseline_ploidy=2):
-    """Overall expression scaling from total copy number at a locus."""
+def dosage(clones, clone, chrom, pos):
+    """Expression scaling from local copy number, relative to this clone's own baseline ploidy.
+
+    Total RNA per cell does not scale with whole-genome doubling, so the reference point is the clone's
+    own ploidy rather than a fixed 2. Only departures from that baseline, gains and losses, change a
+    gene's expression.
+    """
     a, b, _ = clones.cn(clone, chrom, pos)
-    return (a + b) / baseline_ploidy if baseline_ploidy else 1.0
+    base = sum(clones.base)
+    return (a + b) / base if base else 1.0
 
 
 class RnaBuilder:
@@ -54,15 +67,26 @@ class RnaBuilder:
         self.events_by_gene = defaultdict(list)
 
     def index_events(self, events_rows):
-        """Remember each gene's allelic-expression setting and the haplotype its mutation sits on."""
+        """Index allelic-expression settings by gene and by the clone that acquired the event.
+
+        A gene can carry several events that disagree; the one with the highest expected VAF wins, since
+        that is the allele most of the tumour's RNA would come from. The setting applies only in clones
+        descended from the clone that acquired it.
+        """
+        best = {}
         for r in events_rows:
             g = r.get("gene")
             if not g:
                 continue
             self.events_by_gene[g].append(r)
             ase = r.get("allelic_expression")
-            if ase and g not in self.ase_by_gene:
-                self.ase_by_gene[g] = (ase, int(r.get("haplotype", 0)))
+            if not ase:
+                continue
+            vaf = float(r.get("expected_vaf_tumor") or 0)
+            key = g
+            if key not in best or vaf > best[key][0]:
+                best[key] = (vaf, ase, int(r.get("haplotype", 0) or 0), r.get("clone", "T"))
+        self.ase_by_gene = {g: (v[1], v[2], v[3]) for g, v in best.items()}
 
     def add_transcripts(self, transcripts, events_by_chrom):
         """Reference transcripts, rebuilt on both haplotypes of every clone."""
@@ -71,13 +95,15 @@ class RnaBuilder:
             if base < self.min_tpm and t.gene_name not in self.events_by_gene:
                 continue
             mid = (t.start + t.end) // 2
-            ase, mut_hap = self.ase_by_gene.get(t.gene_name, (None, None))
+            ase, mut_hap, ase_clone = self.ase_by_gene.get(t.gene_name, (None, None, None))
             for src, w in self.weights.items():
                 clone = "T" if src == "NORMAL" else src
                 if src == "NORMAL":
                     split, dose = (0.5, 0.5), 1.0
                 else:
-                    split = haplotype_split(self.env.clones, clone, t.chrom, mid, ase, mut_hap)
+                    carries = ase_clone is not None and self.env.clones.is_descendant(clone, ase_clone)
+                    split = haplotype_split(self.env.clones, clone, t.chrom, mid,
+                                            ase if carries else None, mut_hap)
                     dose = dosage(self.env.clones, clone, t.chrom, mid)
                 for hap in (0, 1):
                     share = split[hap]
@@ -165,25 +191,51 @@ class RnaBuilder:
             pairs += cov * bp / (2 * read_len)
         return plan, int(pairs)
 
+    def assign_record_ids(self):
+        """Give every record a stable id, reproducible from the seed rather than from `hash()`."""
+        for i, r in enumerate(sorted(self.records, key=lambda x: (x["id"], x["clone"], x["hap"]))):
+            r["rec"] = f"r{i:09d}"
+
     def write_bin(self, recs, path):
+        """FASTA for one abundance bin. Record names are stable ids, not descriptions, so nothing about
+        the source can be read off a read; the manifest maps the id back to clone, haplotype and gene."""
         with open(path, "w") as fh:
-            for i, r in enumerate(recs):
-                # names are opaque: an aligner must not be able to read the truth off a read name
-                fh.write(f">r{abs(hash((r['id'], i))) % (10 ** 12):012d}\n")
+            for r in recs:
+                fh.write(f">{r['rec']}\n")
                 s = r["sequence"]
                 for j in range(0, len(s), 60):
                     fh.write(s[j:j + 60] + "\n")
         return path
 
+    def attach_counts(self, read_map_path, read_len):
+        """Record how many pairs each transcript actually produced, alongside how many were planned.
+
+        Fragment ends cost reads on short molecules, so the realised count is below the plan and the gap
+        widens as abundance falls. Consumers of the truth bundle should use the observed column.
+        """
+        import gzip
+        from collections import Counter
+        counts = Counter()
+        with gzip.open(read_map_path, "rt") as fh:
+            next(fh, None)
+            for line in fh:
+                parts = line.rstrip("\n").split("\t")
+                if len(parts) > 1:
+                    counts[parts[1]] += 1
+        for r in self.records:
+            r["planned_pairs"] = r.get("bin_coverage", 0) * len(r["sequence"]) / (2 * read_len)
+            r["observed_pairs"] = counts.get(r.get("rec", ""), 0)
+
     def write_manifest(self, path):
-        cols = ["id", "source", "gene", "clone", "hap", "length", "abundance",
-                "ideal_coverage", "bin", "bin_coverage"]
+        cols = ["rec", "id", "source", "gene", "clone", "hap", "length", "abundance",
+                "ideal_coverage", "bin", "bin_coverage", "planned_pairs", "observed_pairs"]
         with open(path, "w") as fh:
             fh.write("\t".join(cols) + "\n")
             for r in self.records:
                 fh.write("\t".join(str(x) for x in [
-                    r["id"], r["source"], r.get("gene", ""), r["clone"], r["hap"],
+                    r.get("rec", ""), r["id"], r["source"], r.get("gene", ""), r["clone"], r["hap"],
                     len(r["sequence"]), f"{r['abundance']:.8g}",
                     f"{r.get('coverage', 0):.8g}", r.get("bin", ""),
-                    f"{r.get('bin_coverage', 0):.8g}"]) + "\n")
+                    f"{r.get('bin_coverage', 0):.8g}",
+                    f"{r.get('planned_pairs', 0):.1f}", r.get("observed_pairs", "")]) + "\n")
         return path
