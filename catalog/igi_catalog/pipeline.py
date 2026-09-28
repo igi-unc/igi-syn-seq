@@ -47,18 +47,28 @@ def source_plan(clones, purity, chrom, pos, tumor=True):
     by the same mean local copy number.
     """
     if not tumor:
-        return [("NORMAL", 0, 0.5), ("NORMAL", 1, 0.5)]
+        return [("NORMAL", 0, "all", 0.5), ("NORMAL", 1, "all", 0.5)]
     raw = []
     for src, frac in clones.excl.items():
         if frac <= 0:
             continue
         a, b, _ = clones.cn(src, chrom, pos)
         for hap, cn in enumerate((a, b)):
-            if cn:
-                raw.append((src, hap, purity * frac * cn))
-    raw += [("NORMAL", 0, (1.0 - purity) * 1.0), ("NORMAL", 1, (1.0 - purity) * 1.0)]
-    total = sum(w for _s, _h, w in raw) or 1.0
-    return [(s, h, w / total) for s, h, w in raw]
+            if not cn:
+                continue
+            if src == "T":
+                # truncal variants predate the copy-number changes, so they sit on every copy
+                raw.append((src, hap, "all", purity * frac * cn))
+                continue
+            # a variant acquired in a subclone sits on one copy of its haplotype; the remaining copies
+            # carry only the truncal variants. Emitting both keeps multiplicity right under WGD, where a
+            # haplotype has more than one copy.
+            raw.append((src, hap, "all", purity * frac * 1))
+            if cn > 1:
+                raw.append((src, hap, "truncal", purity * frac * (cn - 1)))
+    raw += [("NORMAL", 0, "all", (1.0 - purity)), ("NORMAL", 1, "all", (1.0 - purity))]
+    total = sum(w for _s, _h, _k, w in raw) or 1.0
+    return [(s, h, k, w / total) for s, h, k, w in raw]
 
 
 def cn_profile(clones, chrom, pos):
@@ -90,15 +100,16 @@ class WesBuilder:
                 mid = (start1 + end1) // 2
                 prof = cn_profile(self.env.clones, chrom, mid) if tumor else ("normal",)
                 pid = self._profile_id(prof)
-                for src, hap, w in source_plan(self.env.clones, self.purity, chrom, mid, tumor=tumor):
-                    key = (src, hap, pid)
+                for src, hap, kind, w in source_plan(self.env.clones, self.purity, chrom, mid, tumor=tumor):
+                    key = (src, hap, kind, pid)
                     if key not in handles:
                         path = os.path.join(self.workdir,
-                                            f"{'tumor' if tumor else 'normal'}_{src}_hap{hap}_cn{pid}.fa")
+                                            f"{'tumor' if tumor else 'normal'}_{src}_hap{hap}_{kind}_cn{pid}.fa")
                         handles[key] = (path, open(path, "w"))
                         weights[key] = w
                     use = [] if src == "NORMAL" else evs
-                    clone = "T" if src == "NORMAL" else src
+                    # passing clone "T" keeps only truncal events, which is exactly the reference copy
+                    clone = "T" if (src == "NORMAL" or kind == "truncal") else src
                     seq, _stats = haplotype_sequence(self.env.genome, self.env.germline, use,
                                                      self.env.clones, chrom, hap, clone, start1, end1,
                                                      strict=False)
@@ -130,10 +141,10 @@ class WesBuilder:
         """Run ART per source at coverage proportional to its weight; returns the FASTQ pieces."""
         pieces = []
         for i, (key, (path, weight)) in enumerate(sorted(sources.items())):
-            src, hap, pid = key
+            src, hap, kind, pid = key
             # weights sum to 1 within a copy-number profile, so every locus receives `depth` in total
             cov = max(1, round(depth * weight))
-            pre = os.path.join(self.workdir, f"{os.path.basename(out_prefix)}_{src}_h{hap}_cn{pid}_")
+            pre = os.path.join(self.workdir, f"{os.path.basename(out_prefix)}_{src}_h{hap}_{kind}_cn{pid}_")
             cmd = art_cmd.format(args=(f"-ss HS25 -i {path} -p -l {read_len} -f {cov} -m 350 -s 60 "
                                        f"-rs {seed + i} -na -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)

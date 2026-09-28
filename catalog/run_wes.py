@@ -44,7 +44,7 @@ def main():
     print(f"[{a.dataset} {a.chrom} {a.library}] {n_iv} intervals, {len(sources)} sources, "
           f"{time.time() - t0:.0f}s", flush=True)
     for key, (path, w) in sorted(sources.items()):
-        print(f"    {key[0]} hap{key[1]} cn-profile {key[2]}: weight {w:.4f}  "
+        print(f"    {key[0]} hap{key[1]} {key[2]} cn-profile {key[3]}: weight {w:.4f}  "
               f"{os.path.getsize(path) / 1e6:.1f} MB", flush=True)
 
     t1 = time.time()
@@ -56,7 +56,7 @@ def main():
     r2 = os.path.join(a.out, f"{a.dataset}_{a.chrom}_{a.library}_R2.fastq.gz")
     concat_fastqs(pieces, r1, r2)
     meta = {"dataset": a.dataset, "chrom": a.chrom, "library": a.library, "depth": a.depth,
-            "intervals": n_iv, "sources": {f"{k[0]}_hap{k[1]}_cn{k[2]}": w for k, (_p, w) in sources.items()},
+            "intervals": n_iv, "sources": {f"{k[0]}_hap{k[1]}_{k[2]}_cn{k[3]}": w for k, (_p, w) in sources.items()},
             "coverage_per_source": [{"source": s, "hap": h, "coverage": c} for _r1, _r2, s, h, c in pieces],
             "r1": r1, "r2": r2, "runtime_s": round(time.time() - t0)}
     with open(os.path.join(a.out, f"{a.dataset}_{a.chrom}_{a.library}.json"), "w") as fh:
