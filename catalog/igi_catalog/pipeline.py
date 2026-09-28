@@ -38,30 +38,32 @@ def merged_capture(bed_path, chroms, pad=100, gap=200):
 
 
 def source_plan(clones, purity, chrom, pos, tumor=True):
-    """(source, haplotype, weight) triples for one locus.
+    """(source, haplotype, weight) triples for one locus, weights summing to 1.
 
-    For the tumour library the weight of a clone is split across its haplotypes by copy number, so an
-    amplified haplotype contributes proportionally more reads. For the normal library only the germline
-    haplotypes contribute, equally.
+    Read depth follows the number of copies present, not the number of cells: a clone contributes in
+    proportion to its exclusive cell fraction times the absolute copy number of that haplotype at this
+    locus. An amplified haplotype therefore contributes proportionally more reads and a lost one none,
+    and the resulting allele fractions match the expected VAF computed by the clone model, which divides
+    by the same mean local copy number.
     """
     if not tumor:
         return [("NORMAL", 0, 0.5), ("NORMAL", 1, 0.5)]
-    w = clone_weights(clones, purity)
-    plan = []
-    for src, weight in w.items():
-        if weight <= 0:
-            continue
-        if src == "NORMAL":
-            plan += [("NORMAL", 0, weight * 0.5), ("NORMAL", 1, weight * 0.5)]
+    raw = []
+    for src, frac in clones.excl.items():
+        if frac <= 0:
             continue
         a, b, _ = clones.cn(src, chrom, pos)
-        total = a + b
-        if total == 0:
-            continue
         for hap, cn in enumerate((a, b)):
             if cn:
-                plan.append((src, hap, weight * cn / total))
-    return plan
+                raw.append((src, hap, purity * frac * cn))
+    raw += [("NORMAL", 0, (1.0 - purity) * 1.0), ("NORMAL", 1, (1.0 - purity) * 1.0)]
+    total = sum(w for _s, _h, w in raw) or 1.0
+    return [(s, h, w / total) for s, h, w in raw]
+
+
+def cn_profile(clones, chrom, pos):
+    """A hashable copy-number state at a locus, used to group intervals that share a coverage plan."""
+    return tuple(sorted((c, clones.cn(c, chrom, pos)[0], clones.cn(c, chrom, pos)[1]) for c in clones.clones))
 
 
 class WesBuilder:
@@ -80,17 +82,21 @@ class WesBuilder:
         Returns {(source, hap): (path, weight)} with weights averaged over intervals.
         """
         handles = {}
-        weight_sum = defaultdict(float)
+        weights = {}
         n = 0
         for chrom, ivs in sorted(capture.items()):
             evs = self.events.get(chrom, [])
             for start1, end1 in ivs:
                 mid = (start1 + end1) // 2
+                prof = cn_profile(self.env.clones, chrom, mid) if tumor else ("normal",)
+                pid = self._profile_id(prof)
                 for src, hap, w in source_plan(self.env.clones, self.purity, chrom, mid, tumor=tumor):
-                    key = (src, hap)
+                    key = (src, hap, pid)
                     if key not in handles:
-                        path = os.path.join(self.workdir, f"{'tumor' if tumor else 'normal'}_{src}_hap{hap}.fa")
+                        path = os.path.join(self.workdir,
+                                            f"{'tumor' if tumor else 'normal'}_{src}_hap{hap}_cn{pid}.fa")
                         handles[key] = (path, open(path, "w"))
+                        weights[key] = w
                     use = [] if src == "NORMAL" else evs
                     clone = "T" if src == "NORMAL" else src
                     seq, _stats = haplotype_sequence(self.env.genome, self.env.germline, use,
@@ -102,18 +108,23 @@ class WesBuilder:
                     fh.write(f">{chrom}_{start1}_{end1}_{src}_hap{hap}\n")
                     for i in range(0, len(seq), 60):
                         fh.write(seq[i:i + 60] + "\n")
-                    weight_sum[key] += w
                 n += 1
                 if max_intervals and n >= max_intervals:
                     break
             if max_intervals and n >= max_intervals:
                 break
         out = {}
-        total = sum(weight_sum.values()) or 1.0
         for key, (path, fh) in handles.items():
             fh.close()
-            out[key] = (path, weight_sum[key] / total)
+            out[key] = (path, weights[key])      # per-interval weight for this copy-number profile
         return out, n
+
+    def _profile_id(self, prof):
+        if not hasattr(self, "_profiles"):
+            self._profiles = {}
+        if prof not in self._profiles:
+            self._profiles[prof] = len(self._profiles)
+        return self._profiles[prof]
 
     def simulate(self, sources, art_cmd, depth, out_prefix, read_len=150, seed=1):
         """Run ART per source at coverage proportional to its weight; returns the FASTQ pieces."""
