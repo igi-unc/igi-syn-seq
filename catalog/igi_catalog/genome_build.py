@@ -68,7 +68,7 @@ def germline_edits(germline, chrom, hap, start1, end1):
     return es
 
 
-def somatic_edits(events, clones, chrom, hap, clone, start1=None, end1=None):
+def somatic_edits(events, clones, chrom, hap, clone, start1=None, end1=None, only_pre_cna=False):
     """Designed somatic small-variant edits visible in `clone` on haplotype `hap`.
 
     An event is present in a clone when that clone is a descendant of the clone the event arose in.
@@ -81,6 +81,8 @@ def somatic_edits(events, clones, chrom, hap, clone, start1=None, end1=None):
             continue
         if start1 is not None and (e["pos"] < start1 or e["pos"] + len(e["ref"]) - 1 > end1):
             continue          # outside the region being built, not a failure
+        if only_pre_cna and e.get("timing") != "pre_cna":
+            continue          # this copy predates the event, so it does not carry it
         es.add(e["pos"], e["ref"], e["alt"], e["event_id"])
     return es
 
@@ -95,12 +97,13 @@ def read_events(tsv):
             by_chrom[row["chrom"]].append({
                 "event_id": row["event_id"], "chrom": row["chrom"], "pos": int(row["pos"]),
                 "ref": row["ref"], "alt": row["alt"], "haplotype": int(row["haplotype"]),
-                "clone": row["clone"],
+                "clone": row["clone"], "timing": row.get("timing", "pre_cna"),
             })
     return by_chrom
 
 
-def haplotype_sequence(genome, germline, events, clones, chrom, hap, clone, start1=1, end1=None, strict=True):
+def haplotype_sequence(genome, germline, events, clones, chrom, hap, clone, start1=1, end1=None, strict=True,
+                       only_pre_cna=False):
     """Reference sequence for one chromosome region with germline and somatic edits applied.
 
     Returns (sequence, stats dict).
@@ -108,7 +111,7 @@ def haplotype_sequence(genome, germline, events, clones, chrom, hap, clone, star
     end1 = end1 or genome.lengths[chrom]
     seq = genome.seq(chrom, start1 - 1, end1)
     g = germline_edits(germline, chrom, hap, start1, end1)
-    s = somatic_edits(events, clones, chrom, hap, clone, start1, end1)
+    s = somatic_edits(events, clones, chrom, hap, clone, start1, end1, only_pre_cna)
     # germline and somatic edits are both in reference coordinates, so they must be applied in a single
     # pass; applying one set first would shift the coordinates the other set refers to
     merged = EditSet(chrom)

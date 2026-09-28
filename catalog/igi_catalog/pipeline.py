@@ -56,16 +56,13 @@ def source_plan(clones, purity, chrom, pos, tumor=True):
         for hap, cn in enumerate((a, b)):
             if not cn:
                 continue
-            if src == "T":
-                # truncal variants predate the copy-number changes, so they sit on every copy
-                raw.append((src, hap, "all", purity * frac * cn))
-                continue
-            # a variant acquired in a subclone sits on one copy of its haplotype; the remaining copies
-            # carry only the truncal variants. Emitting both keeps multiplicity right under WGD, where a
-            # haplotype has more than one copy.
+            # One copy of the haplotype carries everything this clone has: truncal variants from before
+            # and after the copy-number changes, plus the clone's own. The remaining copies existed
+            # before those later events, so they carry only the pre-CNA truncal variants. This is what
+            # keeps multiplicity right under whole-genome doubling, where a haplotype has several copies.
             raw.append((src, hap, "all", purity * frac * 1))
             if cn > 1:
-                raw.append((src, hap, "truncal", purity * frac * (cn - 1)))
+                raw.append((src, hap, "pre_cna", purity * frac * (cn - 1)))
     raw += [("NORMAL", 0, "all", (1.0 - purity)), ("NORMAL", 1, "all", (1.0 - purity))]
     total = sum(w for _s, _h, _k, w in raw) or 1.0
     return [(s, h, k, w / total) for s, h, k, w in raw]
@@ -108,11 +105,12 @@ class WesBuilder:
                         handles[key] = (path, open(path, "w"))
                         weights[key] = w
                     use = [] if src == "NORMAL" else evs
-                    # passing clone "T" keeps only truncal events, which is exactly the reference copy
-                    clone = "T" if (src == "NORMAL" or kind == "truncal") else src
+                    # a pre-CNA copy carries only truncal events that predate the copy-number changes
+                    clone = "T" if (src == "NORMAL" or kind == "pre_cna") else src
+                    pre_only = (kind == "pre_cna")
                     seq, _stats = haplotype_sequence(self.env.genome, self.env.germline, use,
                                                      self.env.clones, chrom, hap, clone, start1, end1,
-                                                     strict=False)
+                                                     strict=False, only_pre_cna=pre_only)
                     if len(seq) < 100:
                         continue
                     fh = handles[key][1]
