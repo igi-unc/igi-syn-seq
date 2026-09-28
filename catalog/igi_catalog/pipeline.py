@@ -129,10 +129,11 @@ class WesBuilder:
     def simulate(self, sources, art_cmd, depth, out_prefix, read_len=150, seed=1):
         """Run ART per source at coverage proportional to its weight; returns the FASTQ pieces."""
         pieces = []
-        for i, ((src, hap), (path, weight)) in enumerate(sorted(sources.items())):
-            # weights sum to 1 across sources, so a source is simulated at its share of the total depth
+        for i, (key, (path, weight)) in enumerate(sorted(sources.items())):
+            src, hap, pid = key
+            # weights sum to 1 within a copy-number profile, so every locus receives `depth` in total
             cov = max(1, round(depth * weight))
-            pre = os.path.join(self.workdir, f"{os.path.basename(out_prefix)}_{src}_h{hap}_")
+            pre = os.path.join(self.workdir, f"{os.path.basename(out_prefix)}_{src}_h{hap}_cn{pid}_")
             cmd = art_cmd.format(args=(f"-ss HS25 -i {path} -p -l {read_len} -f {cov} -m 350 -s 60 "
                                        f"-rs {seed + i} -na -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
