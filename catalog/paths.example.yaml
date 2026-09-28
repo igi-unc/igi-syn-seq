@@ -17,3 +17,4 @@ cta_gene_list: /path/to/cta.gene_list
 erv_loci: /path/to/curated_erv_loci.tsv
 erv_all_loci: /path/to/Hsap38.txt
 pan_normal_quant: /path/to/pan_normal_and_mtec_exp.95th_perc.quant.sf
+art_cmd: "singularity exec -B /data /path/art.sif art_illumina {args}"
