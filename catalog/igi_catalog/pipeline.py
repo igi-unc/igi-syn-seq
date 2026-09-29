@@ -140,13 +140,15 @@ class WesBuilder:
         pieces = []
         for i, (key, (path, weight)) in enumerate(sorted(sources.items())):
             src, hap, kind, pid = key
-            # weights sum to 1 within a copy-number profile, so every locus receives `depth` in total
-            cov = max(1, round(depth * weight))
+            # weights sum to 1 within a copy-number profile, so every locus receives `depth` in total.
+            # ART accepts fractional fold-coverage, and rounding to an integer distorts the smallest
+            # clones most: a 2.33x target became 2x, which is a 14% shortfall on the deepest subclone.
+            cov = max(0.01, depth * weight)
             pre = os.path.join(self.workdir, f"{os.path.basename(out_prefix)}_{src}_h{hap}_{kind}_cn{pid}_")
-            cmd = art_cmd.format(args=(f"-ss HS25 -i {path} -p -l {read_len} -f {cov} -m 350 -s 60 "
+            cmd = art_cmd.format(args=(f"-ss HS25 -i {path} -p -l {read_len} -f {cov:.5f} -m 350 -s 60 "
                                        f"-rs {seed + i} -na -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
-            pieces.append((f"{pre}1.fq", f"{pre}2.fq", src, hap, cov))
+            pieces.append((f"{pre}1.fq", f"{pre}2.fq", src, hap, round(cov, 5)))
         return pieces
 
 

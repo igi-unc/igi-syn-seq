@@ -26,7 +26,11 @@ def load_gene_list(path):
 
 
 def load_pan_normal(quant_sf):
-    """Transcript -> normal-tissue 95th-percentile TPM from the LENS pan-normal reference."""
+    """Name -> normal-tissue 95th-percentile TPM from the LENS pan-normal reference.
+
+    The table carries transcripts and ERV loci alike (31,292 `Hsap38.*` entries), so one lookup serves
+    cancer-testis antigens and ERVs both.
+    """
     out = {}
     op = gzip.open if str(quant_sf).endswith(".gz") else open
     with op(quant_sf, "rt") as fh:
@@ -37,7 +41,13 @@ def load_pan_normal(quant_sf):
             return out
         for line in fh:
             f = line.rstrip("\n").split("\t")
-            out[f[i_name].split("|")[0].split(".")[0]] = float(f[i_tpm])
+            name = f[i_name].split("|")[0]
+            tpm = float(f[i_tpm])
+            out[name] = tpm
+            # transcripts carry a version suffix that callers strip; ERV locus ids are dotted throughout
+            # and must not be truncated, so only ENST/ENSG-style names get an alias
+            if name.startswith(("ENST", "ENSG")) and "." in name:
+                out.setdefault(name.split(".")[0], tpm)
     return out
 
 
@@ -145,6 +155,7 @@ class ExpressedClassDesigner:
         self.rng.shuffle(loci)
         n_spec = n // 3
         n_assoc = n // 3
+        n_spec_made = n_assoc_made = 0
         made = 0
         for row in loci:
             if made >= n:
@@ -154,12 +165,22 @@ class ExpressedClassDesigner:
                 continue
             start, end = int(row["start"]), int(row["end"])
             prot = row.get("protein") or ""
-            if made < n_spec:
-                status, normal_tpm = "tumor_specific", 0.0
-            elif made < n_spec + n_assoc:
-                status, normal_tpm = "tumor_associated", round(self.rng.uniform(0.5, 4.0), 2)
+            # status follows the measured pan-normal level of this locus, not the loop index
+            normal_tpm = self.pan_normal.get(row.get("ID", ""))
+            if normal_tpm is None:
+                continue                      # no measurement: cannot classify it honestly
+            normal_tpm = round(normal_tpm, 3)
+            if normal_tpm <= 0.05:
+                status = "tumor_specific" if n_spec_made < n_spec else "unexpressed_negative"
+                if status == "tumor_specific":
+                    n_spec_made += 1
+            elif normal_tpm <= 5.0:
+                if n_assoc_made >= n_assoc:
+                    continue
+                status = "tumor_associated"
+                n_assoc_made += 1
             else:
-                status, normal_tpm = "unexpressed_negative", round(self.rng.uniform(0.0, 0.5), 2)
+                continue                      # too highly expressed in normals to serve any tier
             rank = allele = pep = None
             tier, n_lt2 = "na", 0
             orf_source = "annotated"
@@ -179,7 +200,7 @@ class ExpressedClassDesigner:
                 "repeat_family": row.get("Repbase", ""), "orf_aa_length": row.get("AA_length", ""),
                 "has_annotated_orf": orf_source == "annotated", "orf_source": orf_source,
                 "orf_aa": len(prot) if prot else 0,
-                "normal_panel_tpm": normal_tpm,
+                "normal_panel_tpm": normal_tpm, "normal_panel_source": "pan_normal_95th_percentile",
                 "target_tumor_tpm": 0.0 if status == "unexpressed_negative" else round(self.rng.uniform(5, 120), 2),
                 "best_rank_el": rank, "best_allele": allele, "best_peptide": pep,
                 "binding_tier": tier, "n_peptides_rank_lt2": n_lt2,
@@ -266,7 +287,12 @@ class ExpressedClassDesigner:
                 "mechanism": mech, "gene": t.gene_name, "transcript": t.tid, "chrom": t.chrom,
                 "exon_index": i + 1, "exon_start": exon_s, "exon_end": exon_e,
                 "causal_variant": (f"{causal['chrom']}:{causal['pos']}{causal['ref']}>{causal['alt']}" if causal else ""),
-                "normal_panel_junction_tpm": 0.0 if specific else round(self.rng.uniform(0.5, 5.0), 2),
+                # A junction created by a somatic splice-site change cannot be present in normals. An
+                # isoform switch is an existing minor isoform, so its normal level is a small share of the
+                # gene's own normal expression rather than an invented number.
+                "normal_panel_junction_tpm": 0.0 if specific else round(
+                    0.08 * self.pan_normal.get(t.tid.split(".")[0], 0.0), 3),
+                "normal_panel_source": "none_by_construction" if specific else "0.08x gene pan-normal TPM",
                 "target_tumor_junction_tpm": round(self.rng.uniform(5, 80), 2),
                 "gene_tpm": round(self.env.expr.gene(t.gene_id), 3),
                 "expression_tier": Expression.tier(self.env.expr.gene(t.gene_id)),
