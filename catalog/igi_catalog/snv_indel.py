@@ -142,18 +142,22 @@ class SnvIndelDesigner:
 
     @staticmethod
     def _aa_change(wt, mut, k, cons):
+        """Protein-level description. `k` can sit at or past the end of the wild-type protein for
+        stop-loss, so every index is guarded rather than assumed to be inside both strings."""
         if k is None:
             return ""
+        w = wt[k] if wt and k < len(wt) else "?"
+        m = mut[k] if mut and k < len(mut) else "?"
         if cons == "missense":
-            return f"{wt[k]}{k + 1}{mut[k]}"
+            return f"{w}{k + 1}{m}"
         if cons == "nonsense":
-            return f"{wt[k]}{k + 1}*"
+            return f"{w}{k + 1}*"
         if cons == "synonymous":
-            return f"{wt[k] if k < len(wt) else '?'}{k + 1}="
+            return f"{w}{k + 1}="
         if cons == "frameshift":
-            return f"{wt[k] if k < len(wt) else '?'}{k + 1}fs*{max(0, len(mut) - k)}"
+            return f"{w}{k + 1}fs*{max(0, len(mut) - k)}"
         if cons in ("inframe_insertion", "inframe_deletion"):
-            return f"{wt[k] if k < len(wt) else '?'}{k + 1}{'ins' if cons.endswith('insertion') else 'del'}"
+            return f"{w}{k + 1}{'ins' if cons.endswith('insertion') else 'del'}"
         if cons == "stop_loss":
             return f"*{len(wt) + 1}ext*{max(0, len(mut) - len(wt))}"
         if cons == "start_loss":

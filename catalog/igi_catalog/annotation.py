@@ -144,6 +144,11 @@ class CodingModel:
                 cons = "start_loss" if mprot[:1] != "M" else "synonymous"
             elif k >= len(wprot) and len(mprot) == len(wprot): cons = "synonymous"
             elif len(mprot) < len(wprot): cons = "nonsense"
+            elif len(mprot) > len(wprot):
+                # a substitution outside the stop codon cannot lengthen the protein; this means the
+                # transcript's reading frame does not close cleanly, so the candidate is unusable rather
+                # than mislabelled as missense
+                return None, None, "frame_unresolved"
             else: cons = "missense"
         elif d % 3 == 0: cons = "inframe_insertion" if d > 0 else "inframe_deletion"
         else: cons = "frameshift"
