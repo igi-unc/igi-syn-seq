@@ -161,7 +161,9 @@ class TranscriptomeBuilder:
         rec = TranscriptRecord(
             id=f"{event['event_id']}|{t.tid}|{mech}", source="splice_isoform", gene=t.gene_name,
             chrom=t.chrom, hap=int(event.get("haplotype", 0)), clone=event.get("clone", "T"),
-            sequence=seq, tpm=float(event.get("target_tumor_junction_tpm", 0) or 0))
+            sequence=seq, tpm=float(event.get("target_tumor_junction_tpm", 0) or 0),
+            # an isoform switch moves expression within the gene rather than adding to it
+            reconcile="redistribute", reconcile_gene=t.gene_name)
         self.records.append(rec)
         return rec
 
@@ -179,7 +181,10 @@ class TranscriptomeBuilder:
             id=f"{event['event_id']}|{event['gene_5p']}-{event['gene_3p']}", source="fusion",
             gene=f"{event['gene_5p']}-{event['gene_3p']}", chrom=event["chrom_5p"],
             hap=int(event.get("haplotype", 0)), clone=event.get("clone", "T"),
-            sequence=seq, tpm=max(1.0, tpm * 0.3))
+            sequence=seq, tpm=max(1.0, tpm * 0.3),
+            # the fusion transcript is transcribed from the 5' partner's promoter, so its share comes
+            # off that gene rather than being added on top of full wild-type expression
+            reconcile="redistribute", reconcile_gene=event["gene_5p"])
         self.records.append(rec)
         return rec
 
@@ -195,7 +200,8 @@ class TranscriptomeBuilder:
             id=f"{event['event_id']}|{event.get('locus_id') or chrom + ':' + str(s)}", source="erv",
             gene=event.get("locus_id", ""), chrom=chrom, hap=int(event.get("haplotype", 0)),
             clone=event.get("clone", "T"), sequence=seq,
-            tpm=float(event.get("target_tumor_tpm", 0) or 0))
+            tpm=float(event.get("target_tumor_tpm", 0) or 0),
+            reconcile="add")      # a locus in its own right, not one of a gene's transcripts
         self.records.append(rec)
         return rec
 

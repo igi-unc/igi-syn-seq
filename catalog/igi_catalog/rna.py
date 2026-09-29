@@ -123,16 +123,22 @@ class RnaBuilder:
                         "abundance": base * dose * share * w,
                     })
 
-    def add_designed(self, records):
+    def add_designed(self, records, events_by_chrom=None):
         """Fusion, ERV, splice-isoform, CTA and viral transcripts.
 
         A transcript belonging to a clone is expressed by that clone and every clone descended from it,
         so a truncal fusion appears in all tumour cells rather than only in the truncal population.
+
+        A record may carry a `transcript` instead of a fixed `sequence`, in which case the sequence is
+        built inside the clone and haplotype loop with that clone's germline and somatic edits applied.
+        A cancer-testis antigen built from bare reference exons carries none of the variants designed
+        into it, so its reads would contradict the truth table.
         """
         for rec in records:
             origin = rec.get("clone", "T")
             tpm = float(rec.get("tpm") or 0)
-            if tpm <= 0 or not rec.get("sequence"):
+            t = rec.get("transcript")
+            if tpm <= 0 or not (rec.get("sequence") or t is not None):
                 continue
             for src, w in self.weights.items():
                 if src == "NORMAL":
@@ -146,11 +152,87 @@ class RnaBuilder:
                 else:
                     share = 1.0
                 hap = int(rec.get("hap", 0) or 0)
+                seq = rec.get("sequence")
+                if t is not None:
+                    es = EditSet(t.chrom)
+                    es.edits += germline_edits(self.env.germline, t.chrom, hap, t.start, t.end).edits
+                    if src != "NORMAL":
+                        es.edits += somatic_edits((events_by_chrom or {}).get(t.chrom, []),
+                                                  self.env.clones, t.chrom, hap,
+                                                  "T" if src == "NORMAL" else src,
+                                                  t.start, t.end).edits
+                    seq = exon_sequence(self.env.genome, t, es)
+                if not seq or len(seq) < 150:
+                    continue
                 self.records.append({
-                    "id": f"{rec['id']}|{src}", "clone": src, "hap": hap,
+                    "id": f"{rec['id']}|{src}|hap{hap}", "clone": src, "hap": hap,
                     "source": rec.get("source", "designed"), "gene": rec.get("gene", ""),
-                    "sequence": rec["sequence"], "abundance": tpm * share * w,
+                    "sequence": seq, "abundance": tpm * share * w,
+                    "reconcile": rec.get("reconcile", "add"),
+                    "reconcile_gene": rec.get("reconcile_gene") or rec.get("gene", ""),
+                    "normal_gene_tpm": rec.get("normal_gene_tpm"),
                 })
+
+    def reconcile_designed(self, log=print):
+        """Make a designed transcript take its abundance from its gene instead of adding to it.
+
+        Designed records were appended while the gene's reference transcripts stayed at full baseline, so
+        a gene with a designed splice isoform expressed more in total than the same gene without one, and
+        a cancer-testis antigen was emitted twice: once as the designed record at its tumour tier and
+        once as the gene's own reference transcript at the cohort baseline, including in the normal
+        fraction, which defeats the tumour specificity the class exists to test.
+
+        Three behaviours, declared per record:
+
+        `replace`     the designed record is the gene's tumour expression, so the reference transcripts
+                      of that gene drop to zero in tumour clones and to the gene's normal-tissue level in
+                      the normal fraction. Cancer-testis antigens.
+        `redistribute` the designed record takes a share of the gene's existing budget, so the reference
+                      transcripts scale down by that amount and the gene's total is unchanged. Splice
+                      isoforms and the 5' partner of a fusion.
+        `add`         a locus of its own rather than a gene's transcript, so nothing is taken away.
+                      Endogenous retroviruses and viral transcripts.
+        """
+        ref, des = defaultdict(list), defaultdict(list)
+        for r in self.records:
+            if r["source"] == "reference":
+                ref[(r.get("gene") or "", r["clone"])].append(r)
+            else:
+                # a fusion's display gene is "A-B", which matches no reference gene; the share comes off
+                # the 5' partner, so grouping uses the gene the record declares it draws from
+                des[(r.get("reconcile_gene") or r.get("gene") or "", r["clone"])].append(r)
+        stats = defaultdict(int)
+        for key, drecs in des.items():
+            gene, clone = key
+            if not gene:
+                continue
+            refs = ref.get(key)
+            if not refs:
+                continue
+            have = sum(r["abundance"] for r in refs)
+            if have <= 0:
+                continue
+            replace = [d for d in drecs if d.get("reconcile") == "replace"]
+            redistribute = sum(d["abundance"] for d in drecs if d.get("reconcile") == "redistribute")
+            if replace:
+                if clone == "NORMAL":
+                    # keep the gene at what normal tissue really shows, not at the cohort tumour median
+                    normal = max((d.get("normal_gene_tpm") or 0) for d in replace)
+                    factor = min(1.0, float(normal) / have) if normal else 0.0
+                else:
+                    factor = 0.0
+                stats[f"replace/{clone}"] += 1
+            elif redistribute > 0:
+                factor = max(0.0, (have - redistribute) / have)
+                stats[f"redistribute/{clone}"] += 1
+            else:
+                continue
+            for r in refs:
+                r["abundance"] *= factor
+        if stats:
+            log("  reconciled designed transcripts against their genes: "
+                + ", ".join(f"{k} x{v}" for k, v in sorted(stats.items())))
+        return dict(stats)
 
     # ------------------------------------------------------------------ depth
     def coverage_plan(self, target_pairs, read_len, n_bins=60):

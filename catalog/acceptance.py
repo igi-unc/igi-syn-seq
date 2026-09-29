@@ -324,7 +324,7 @@ def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, 
             {"catalog": present, "placed": len(placed), "placeable_on_chrom": expected})
 
 
-def check_rna(rep, manifest):
+def check_rna(rep, manifest, expected_sources=None):
     """RNA depth must track abundance, cover both haplotypes and include the designed classes."""
     recs = [r for r in rows(manifest) if float(r.get("observed_pairs") or 0) > 0]
     if not recs:
@@ -347,9 +347,16 @@ def check_rna(rep, manifest):
     rep.add("rna covers both haplotypes", len(haps) > 1 and min(haps.values()) > 0.2 * max(haps.values()),
             f"records per haplotype {dict(haps)}")
     srcs = Counter(x["source"] for x in recs)
-    want = {"reference", "fusion", "erv", "splice_isoform", "cta", "virus"}
-    rep.add("rna carries the designed classes", len(want & set(srcs)) >= 3,
-            f"sources present {dict(srcs)}")
+    # "at least three of six" counted `reference` and `virus` towards the total, and an episomal virus is
+    # not tied to a chromosome, so a slice with no ERV, splice isoform or CTA whatsoever satisfied it. The
+    # chr6 slice has exactly none of those three and passed. Expect the classes the catalog actually
+    # places on this chromosome, and say which are missing.
+    expect = set(expected_sources or ()) or {"reference"}
+    missing = sorted(expect - set(srcs))
+    rep.add("rna carries the designed classes", not missing,
+            f"sources present {dict(srcs)}"
+            + (f"; expected but absent: {', '.join(missing)}" if missing else ""),
+            {"expected": sorted(expect), "present": dict(srcs)})
 
 
 def main():
@@ -384,7 +391,20 @@ def main():
     if a.read_map and a.record_map:
         check_read_map(rep, a.read_map, a.record_map)
     if a.rna_manifest:
-        check_rna(rep, a.rna_manifest)
+        # which designed classes this slice could contain, from the catalog restricted to its chromosomes
+        exp = {"reference"}
+        if a.chrom:
+            chroms = set(a.chrom.split(","))
+            for cls, src in (("erv", "erv"), ("splice", "splice_isoform"), ("cta", "cta")):
+                for r in rows(os.path.join(a.catalog_dir, f"{a.dataset}.expressed.tsv")):
+                    if r.get("class") == cls and r.get("chrom") in chroms:
+                        exp.add(src)
+                        break
+            for r in rows(os.path.join(a.catalog_dir, f"{a.dataset}.fusions.tsv")):
+                if r.get("chrom_5p") in chroms:
+                    exp.add("fusion")
+                    break
+        check_rna(rep, a.rna_manifest, exp)
     rep.write(a.report)
     if rep.failed():
         print(f"\n{len(rep.failed())} check(s) failed", flush=True)

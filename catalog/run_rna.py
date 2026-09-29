@@ -72,10 +72,14 @@ def cta_records(expressed, env):
         tpm = tier_tpm.get(e.get("target_expression_tier", "T10"), 15.0)
         if tpm <= 0:
             continue
-        from igi_catalog.transcriptome import exon_sequence
+        # the transcript is passed through rather than a fixed sequence, so the builder can apply this
+        # clone and haplotype's germline and somatic edits: a CTA built from bare reference exons would
+        # carry none of the variants designed into it
         out.append({"id": f"{e['event_id']}|{e['gene']}", "source": "cta", "gene": e["gene"],
-                    "sequence": exon_sequence(env.genome, t), "tpm": tpm,
-                    "clone": e.get("clone", "T"), "hap": int(e.get("haplotype", 0) or 0)})
+                    "transcript": t, "tpm": tpm,
+                    "clone": e.get("clone", "T"), "hap": int(e.get("haplotype", 0) or 0),
+                    "reconcile": "replace",
+                    "normal_gene_tpm": float(e.get("normal_tissue_tpm_p95") or 0)})
     return out
 
 
@@ -141,7 +145,8 @@ def main():
     designed = [dict(r) for r in tb.records]
     designed += cta_records(expressed, env)
     designed += viral_records(paths, viruses, env)
-    rb.add_designed(designed)
+    rb.add_designed(designed, events)
+    rb.reconcile_designed()
     print(f"  designed classes: {len(designed)} source transcripts -> {len(rb.records)} total records",
           flush=True)
 
