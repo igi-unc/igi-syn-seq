@@ -9,6 +9,7 @@ import yaml
 
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
+from igi_catalog.junctions import fusion_junctions, sv_junctions, viral_junctions
 from igi_catalog.pipeline import WesBuilder, merged_capture, write_record_map
 from igi_catalog.readnames import shuffle_and_rename
 
@@ -40,6 +41,23 @@ def main():
 
     t0 = time.time()
     wb = WesBuilder(env, events, purity, work)
+    # structural variants, fusion breakpoints and viral integrations reach the DNA as junction contigs
+    if a.library == "tumor":
+        import csv as _csv
+
+        def _rows(name):
+            path = os.path.join(os.path.dirname(a.catalog), f"{a.dataset}.{name}.tsv")
+            if not os.path.exists(path):
+                return []
+            with open(path) as fh:
+                return list(_csv.DictReader(fh, delimiter="\t"))
+
+        jn = (sv_junctions(env.genome, _rows("svs"))
+              + fusion_junctions(env.genome, _rows("fusions"))
+              + viral_junctions(env.genome, paths.get("viral_fasta"), _rows("viruses")))
+        jn = [j for j in jn if j.get("chrom") == a.chrom or j.get("end_chrom") == a.chrom]
+        wb.index_junctions(jn)
+        print(f"  {len(jn)} junction contigs on {a.chrom}", flush=True)
     sources, n_iv = wb.write_source_fastas(capture, tumor=(a.library == "tumor"),
                                            max_intervals=a.max_intervals)
     print(f"[{a.dataset} {a.chrom} {a.library}] {n_iv} intervals, {len(sources)} sources, "
@@ -67,6 +85,13 @@ def main():
                            stdout=fh, check=True)
     n_reads = shuffle_and_rename(cat1, cat2, r1, r2, rmap, work, seed=a.seed)
     write_record_map(wb.record_map, recmap)
+    if wb.junctions_used:
+        jpath = os.path.join(a.out, f"{a.dataset}_{a.chrom}_{a.library}_junctions.tsv")
+        with open(jpath, "w") as fh:
+            fh.write("event_id\tchrom\tinterval_start\tinterval_end\tclone\thaplotype\n")
+            for row in wb.junctions_used:
+                fh.write("\t".join(str(x) for x in row) + "\n")
+        print(f"  {len(wb.junctions_used)} junctions placed -> {os.path.basename(jpath)}", flush=True)
     for f in (cat1, cat2):
         if os.path.exists(f):
             os.remove(f)

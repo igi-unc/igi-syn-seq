@@ -90,6 +90,29 @@ def cn_profile(clones, chrom, pos):
 class WesBuilder:
     """Write per-source interval FASTAs for an exome library, then simulate reads from them."""
 
+    def index_junctions(self, junctions):
+        """Index junction contigs by the interval-bearing breakpoints they replace.
+
+        A junction sits on one copy of one haplotype in one clone. That copy therefore carries the
+        rearrangement instead of the wild-type sequence, which is why the junction is emitted in place of
+        the "all" copy rather than alongside it: otherwise the junction reads would be added on top of an
+        unchanged background and the allele fraction would be too high.
+        """
+        self.junctions = junctions
+        self.jn_by_site = {}
+        for j in junctions:
+            for chrom, pos in ((j["chrom"], j["pos"]), (j.get("end_chrom"), j.get("end"))):
+                if not chrom or pos in (None, ""):
+                    continue
+                self.jn_by_site.setdefault((chrom, j["clone"], j["hap"]), []).append((int(pos), j))
+
+    def junction_at(self, chrom, start1, end1, clone, hap):
+        """The junction whose breakpoint falls in this interval for this clone and haplotype, if any."""
+        for pos, j in self.jn_by_site.get((chrom, clone, hap), []):
+            if start1 <= pos <= end1:
+                return j
+        return None
+
     def __init__(self, env, events_by_chrom, purity, workdir):
         self.env = env
         self.events = events_by_chrom
@@ -100,6 +123,9 @@ class WesBuilder:
         self.rejected = []         # designed somatic edits that could not be applied
         self.germline_rejected = 0
         self.denom = depth_denominator(env.clones, purity) if purity is not None else 2.0
+        self.junctions = []
+        self.jn_by_site = {}
+        self.junctions_used = []
         os.makedirs(workdir, exist_ok=True)
 
     def write_source_fastas(self, capture, tumor=True, max_intervals=None):
@@ -127,9 +153,18 @@ class WesBuilder:
                     # a pre-CNA copy carries only truncal events that predate the copy-number changes
                     clone = "T" if (src == "NORMAL" or kind == "pre_cna") else src
                     pre_only = (kind == "pre_cna")
-                    seq, stats = haplotype_sequence(self.env.genome, self.env.germline, use,
-                                                    self.env.clones, chrom, hap, clone, start1, end1,
-                                                    strict=False, only_pre_cna=pre_only)
+                    jn = None if (src == "NORMAL" or kind != "all") else \
+                        self.junction_at(chrom, start1, end1, src, hap)
+                    if jn is not None:
+                        # this copy carries the rearrangement, so it supplies the junction contig instead
+                        # of the wild-type interval
+                        seq = jn["sequence"]
+                        stats = {}
+                        self.junctions_used.append((jn["id"], chrom, start1, end1, src, hap))
+                    else:
+                        seq, stats = haplotype_sequence(self.env.genome, self.env.germline, use,
+                                                        self.env.clones, chrom, hap, clone, start1, end1,
+                                                        strict=False, only_pre_cna=pre_only)
                     # a designed somatic edit that fails to apply means the reads will not contain a
                     # change the truth table claims, so it is collected and raised rather than dropped
                     if stats.get("somatic_rejected"):

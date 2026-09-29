@@ -26,6 +26,38 @@ class CloneModel:
             ix.build()
             self.seg[c] = ix
         self.lineage = {c: self._lineage(c) for c in self.clones}
+        self.sv_seg = {}        # clone -> IntervalIndex of designed SV copy-number deltas
+
+    def add_sv_segments(self, sv_rows):
+        """Let designed deletions and duplications change copy number.
+
+        The arm-level and focal events in the design file are only part of the picture: a designed
+        structural variant also gains or loses a copy over its span. Without this a deletion produces a
+        junction with no depth drop across it, which is contradictory evidence for a caller.
+        """
+        by_clone = {}
+        for r in sv_rows:
+            t = r.get("svtype")
+            if t not in ("DEL", "DUP"):
+                continue
+            clone = r.get("clone", "T")
+            try:
+                start, end = int(r["start"]), int(r["end"])
+                hap = int(r.get("haplotype", 0) or 0)
+            except (KeyError, TypeError, ValueError):
+                continue
+            if end < start:
+                start, end = end, start
+            delta = -1 if t == "DEL" else 1
+            by_clone.setdefault(clone, []).append((r.get("chrom"), start, end, hap, delta,
+                                                   r.get("event_id", "")))
+        for clone, rows in by_clone.items():
+            ix = IntervalIndex()
+            for chrom, start, end, hap, delta, eid in rows:
+                ix.add(chrom, start, end, (hap, delta, eid))
+            ix.build()
+            self.sv_seg[clone] = ix
+        return sum(len(v) for v in by_clone.values())
 
     def region(self, r):
         if r in self.arms:
@@ -53,7 +85,18 @@ class CloneModel:
                 continue
             for _s, _e, (cnab, lab) in ix.overlaps(chrom, pos1 - 1, pos1):
                 state, label = cnab, lab
-        return state[0], state[1], label
+        a, b = state
+        for c in self.lineage[clone]:
+            ix = self.sv_seg.get(c)
+            if ix is None:
+                continue
+            for _s, _e, (hap, delta, eid) in ix.overlaps(chrom, pos1 - 1, pos1):
+                if hap == 0:
+                    a = max(0, a + delta)
+                else:
+                    b = max(0, b + delta)
+                label = f"{label}+{eid}"
+        return a, b, label
 
     def vaf(self, chrom, pos1, hap, clone, pre_cna=True):
         """Expected bulk-tumor VAF for an event on haplotype `hap` acquired in `clone`.

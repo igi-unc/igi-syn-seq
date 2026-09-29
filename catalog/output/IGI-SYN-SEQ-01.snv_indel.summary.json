@@ -29,41 +29,41 @@
     "nonsense": 60,
     "synonymous": 40,
     "stop_loss": 20,
-    "frameshift": 150,
+    "frameshift": 151,
     "inframe_deletion": 67,
-    "inframe_insertion": 33
+    "inframe_insertion": 32
   },
   "by_clonality_tier": {
-    "T_LOH": 80,
-    "T_het": 183,
+    "T_LOH": 79,
+    "T_het": 181,
     "T_amp": 24,
-    "A": 203,
-    "B": 205,
-    "A1": 184
+    "A": 201,
+    "B": 207,
+    "A1": 187
   },
   "by_expression_tier": {
-    "T10": 286,
-    "T100": 159,
-    "T1": 146,
-    "T0": 221,
+    "T10": 282,
+    "T100": 162,
+    "T1": 144,
+    "T0": 224,
     "T1000": 67
   },
   "by_binding_tier": {
-    "weak": 224,
-    "strong": 331,
-    "non": 188,
+    "weak": 218,
+    "strong": 347,
+    "non": 178,
     "na": 136
   },
   "by_context": {
-    "clean": 559,
-    "segdup": 51,
-    "exon_edge": 136,
+    "clean": 567,
+    "segdup": 48,
+    "exon_edge": 132,
     "homopolymer": 66,
-    "near_germline_het": 36,
+    "near_germline_het": 39,
     "deep_intronic": 25,
-    "repeat_other": 6
+    "repeat_other": 2
   },
-  "chr1to6_fraction": 0.627,
+  "chr1to6_fraction": 0.615,
   "flagposts": 12,
   "grid_cells_filled": 81,
   "grid_cells_total": 90,
@@ -84,36 +84,36 @@
   "expressed": {
     "n": 75,
     "by_subclass": {
-      "tumor_wide": 13,
-      "clone_restricted": 2,
+      "clone_restricted": 3,
+      "tumor_wide": 12,
       "tumor_specific": 25,
-      "tumor_associated": 25,
-      "unexpressed_negative": 10
+      "tumor_associated": 19,
+      "unexpressed_negative": 16
     }
   },
   "fusions": {
-    "n": 18,
+    "n": 17,
     "by_subclass": {
       "in_frame": 9,
       "out_of_frame": 4,
       "readthrough": 2,
-      "in_frame_novel": 3
+      "in_frame_novel": 2
     },
     "by_mechanism": {
+      "DUP": 1,
+      "INV": 5,
+      "TRA": 8,
       "DEL": 1,
-      "TRA": 9,
-      "DUP": 2,
-      "INV": 4,
       "none": 2
     },
-    "in_frame": 14,
+    "in_frame": 13,
     "wes_visible": 8,
     "by_binding_tier": {
-      "weak": 8,
-      "strong": 7,
-      "non": 3
+      "strong": 10,
+      "non": 4,
+      "weak": 3
     }
   },
-  "runtime_s": 816,
+  "runtime_s": 2806,
   "scale": 1.0
 }
