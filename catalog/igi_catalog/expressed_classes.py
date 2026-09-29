@@ -271,7 +271,13 @@ class ExpressedClassDesigner:
                 ref = self.env.genome.seq(t.chrom, site - 1, site + 1)
                 if len(ref) < 2 or self.env.germline.overlaps_variant(t.chrom, site, 2):
                     continue
-                alt = "A" if ref[0] != "A" else "C"
+                # pick a base that leaves a dinucleotide no spliceosome recognises. "A" at a GT donor
+                # would give AT, which is the U12 donor, so the change would not unambiguously break
+                # the site. Donors on a minus-strand gene read as their reverse complement here.
+                recognised = {"GT", "GC", "AT", "AC", "AG", "CT"}
+                alt = next((b for b in "CATG" if b != ref[0] and (b + ref[1]) not in recognised), None)
+                if alt is None:
+                    continue
                 causal = {"chrom": t.chrom, "pos": site, "ref": ref[0], "alt": alt}
             iso_prot, first_diff = self._splice_peptides(t, feasible(i + 1) or [])
             if iso_prot is None or first_diff is None:

@@ -101,6 +101,20 @@ Storage estimate (full, both datasets): ~700 GB, dominated by four 30x HiFi BAMs
 - Germline variants are also deliberately placed in a subset of CTA and ERV ORFs
   (section 6) to exercise germline-aware peptide generation.
 
+### 4.1 Designed germline alleles
+
+Each dataset carries a pathogenic germline allele on top of its baseline genotype. It is not a
+neoantigen source, but it has to be in the sequence: it is present in both the tumour and the normal
+library, it is why the somatic loss of heterozygosity at that locus matters, and a caller that reports
+it as somatic is making a mistake the benchmark should be able to see.
+
+Both datasets carry BRCA1 c.68_69delAG (the 185delAG founder allele), p.Glu23ValfsTer17, phased onto the
+haplotype that survives the truncal 17q loss so the tumour retains only the pathogenic copy. The allele
+is specified by coding position and resolved against the annotation at build time, then checked against
+the expected codon, wild-type residue and consequence before it is written; a hardcoded genomic
+coordinate would be silently wrong on a different annotation release. The resulting VCF is the dataset's
+own `germline.vcf.gz`, and the baseline it was built from is recorded alongside it.
+
 ## 5. Tumor architecture (TNBC)
 
 Shared driver logic, dataset-specific parameters.
@@ -250,6 +264,49 @@ segmented BAM so the delivered pair is exactly what a Revio run yields.
 
 All simulators run from containers (none are installed on the cluster; only wgsim,
 samtools and bcftools are on PATH). Workload runs under SLURM.
+
+### 10.1 Off-target capture coverage
+
+A hybrid-capture library is not confined to its bait set. Probes pull down the sequence flanking each
+bait, so coverage decays outward over a kilobase or two rather than stopping at the bait edge, and a
+thin background covers the rest of the genome. Building only on-target reads would leave every base
+outside the bait set at exactly zero depth, which no real exome shows and which makes off-target
+copy-number signal, mapping artefacts near baits and off-target germline calls impossible to exercise.
+
+The exome builder therefore emits three extra interval sets alongside the bait set, each at a depth
+relative to the on-target depth:
+
+| Set | Distance from a bait | Relative depth |
+|---|---|---|
+| proximal | 1-500 bp | 0.15 |
+| mid | 501-2,000 bp | 0.02 |
+| distal | random windows clear of every bait | 0.012 |
+
+The depths are means over each band, not the peak at the bait edge, since real flank coverage decays
+within a couple of hundred bases. They put a chr6 library at roughly 60-65 % on target, which is the
+range a real capture run occupies. The distal set samples the genome-wide background rather than tiling
+it: any window it covers looks like real off-target sequence, but the untiled remainder contributes
+nothing, so the library's overall off-target read count is lower than a real one.
+
+Every set runs through the same clone, haplotype and copy-number machinery as the bait set, so loss of
+heterozygosity and amplification are visible off-target as well. A rearrangement junction is handed out
+once across all four sets, because the bands overlap the bait flanks and the same junction would
+otherwise be counted twice. The record map records which set each source record came from.
+
+### 10.2 Passenger background
+
+Designed events are the ones a caller is meant to find. On their own they give a tumour genome whose
+only somatic differences are the ones under test, which is not what a caller sees and makes any
+false-positive rate measured against it meaningless. Each dataset therefore carries a passenger
+background at its configured `background_mut_per_mb`, drawn from a mixture of COSMIC v3.4 SBS profiles:
+SBS3-dominant for IGI-SYN-SEQ-01 (HRD), APOBEC-dominant for IGI-SYN-SEQ-02.
+
+A 96-channel is drawn first and a matching trinucleotide position second. This is the convention the
+COSMIC profiles are written in, so the realised spectrum reproduces the profile without a
+context-frequency correction. Passengers are assigned to clones by branch, avoid both germline variants
+and the spans of designed events, and those landing in coding sequence are annotated and scored through
+netMHCpan. A passenger missense in a well expressed gene is a genuine neoepitope; a truth set that
+omitted it would score a caller's correct answer as a false positive.
 
 ## 11. Truth bundle (`inputs/metadata/IGI-SYN-SEQ-01/truth/`, likewise for -02)
 

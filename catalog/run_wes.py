@@ -4,13 +4,13 @@
     python3 run_wes.py --design design.yaml --paths paths.yaml --dataset IGI-SYN-SEQ-01 \
         --chrom chr1 --library tumor --depth 150 --out /path/out
 """
-import argparse, json, os, subprocess, time
+import argparse, json, os, random, subprocess, time
 import yaml
 
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.junctions import fusion_junctions, sv_junctions, viral_junctions
-from igi_catalog.pipeline import WesBuilder, merged_capture, write_record_map
+from igi_catalog.pipeline import WesBuilder, merged_capture, off_target_bands, write_record_map
 from igi_catalog.readnames import shuffle_and_rename
 
 
@@ -28,6 +28,8 @@ def main():
     ap.add_argument("--work", required=True)
     ap.add_argument("--max-intervals", type=int, default=None)
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--no-off-target", action="store_true",
+                    help="build only the bait set; the library then has no reads outside it")
     a = ap.parse_args()
 
     design = yaml.safe_load(open(a.design))
@@ -70,6 +72,26 @@ def main():
     t1 = time.time()
     pieces = wb.simulate(sources, paths["art_cmd"], a.depth,
                          f"{a.dataset}_{a.chrom}_{a.library}", seed=a.seed)
+
+    # Off-target: coverage decaying away from each bait plus a thin genome-wide background. Without it
+    # every base outside the bait set sits at exactly zero depth, which no real capture library shows.
+    bands = []
+    if not a.no_off_target:
+        rng = random.Random(f"{a.seed}:{a.dataset}:{a.chrom}:offtarget")
+        for name, rel, spans in off_target_bands(capture, a.chrom, env.genome.lengths[a.chrom], rng):
+            bsrc, b_iv = wb.write_source_fastas({a.chrom: spans}, tumor=(a.library == "tumor"),
+                                                max_intervals=a.max_intervals, tag=f"_{name}")
+            if not bsrc:
+                continue
+            pieces += wb.simulate(bsrc, paths["art_cmd"], a.depth * rel,
+                                  f"{a.dataset}_{a.chrom}_{a.library}_{name}",
+                                  seed=a.seed + 1000 + len(bands))
+            # count only the intervals actually written, which `--max-intervals` may have capped
+            used = spans[:b_iv] if a.max_intervals else spans
+            bases = sum(e - s + 1 for s, e in used)
+            bands.append({"band": name, "relative_depth": rel, "intervals": b_iv, "bases": bases})
+            print(f"  off-target {name}: {b_iv} intervals, {bases / 1e6:.1f} Mb, "
+                  f"{a.depth * rel:.2f}x", flush=True)
     print(f"  ART done in {time.time() - t1:.0f}s", flush=True)
 
     # concatenate, then shuffle and give Illumina-style names in one disk-based pass, writing the map
@@ -100,7 +122,8 @@ def main():
           f"{os.path.basename(recmap)}", flush=True)
 
     meta = {"dataset": a.dataset, "chrom": a.chrom, "library": a.library, "depth": a.depth,
-            "intervals": n_iv, "sources": {f"{k[0]}_hap{k[1]}_{k[2]}_cn{k[3]}": w for k, (_p, w) in sources.items()},
+            "intervals": n_iv, "off_target_bands": bands,
+            "capture_bases": sum(e - s + 1 for s, e in capture.get(a.chrom, [])), "sources": {f"{k[0]}_hap{k[1]}_{k[2]}_cn{k[3]}": w for k, (_p, w) in sources.items()},
             "coverage_per_source": [{"source": s, "hap": h, "coverage": c} for _r1, _r2, s, h, c in pieces],
             "r1": r1, "r2": r2, "read_map": rmap, "record_map": recmap,
             "pairs_written": n_reads, "runtime_s": round(time.time() - t0)}

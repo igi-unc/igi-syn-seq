@@ -37,6 +37,65 @@ def merged_capture(bed_path, chroms, pad=100, gap=200):
     return out
 
 
+# Off-target coverage bands, as (name, distance-from-bait window in bp, depth relative to on-target).
+# A hybrid-capture library is not confined to its bait set: probes pull down flanking sequence, so
+# coverage falls away from the bait edge over a kilobase or two rather than stopping at it, and a thin
+# background covers the rest of the genome. Building only on-target reads leaves everything else at
+# exactly zero depth, which no real exome shows and which makes off-target copy-number signal, mapping
+# artefacts and off-target germline calls impossible to exercise.
+# Depths are the mean over each band, not the peak at the bait edge: real flank coverage falls off
+# within a couple of hundred bases, so averaging over 0-500 bp is well below what the edge itself shows.
+# With these values a chr6 library comes out around 60-65 % on target, which is the real range.
+OFF_TARGET_BANDS = [("proximal", (1, 500), 0.15), ("mid", (501, 2000), 0.02)]
+# The distal set samples the genome-wide background rather than tiling it: a few hundred windows per
+# chromosome, at the depth such regions really carry. Any window it covers looks like real off-target
+# sequence; the library's overall off-target read count is lower than a real one because the untiled
+# remainder contributes nothing.
+DISTAL_DEPTH = 0.012          # relative to on-target, for random windows away from any bait
+
+
+def off_target_bands(capture, chrom, chrom_length, rng, bands=OFF_TARGET_BANDS,
+                     n_distal=400, distal_width=5000, min_len=150):
+    """Interval sets for each off-target band, plus distal windows.
+
+    Returns [(name, relative_depth, [(start1, end1), ...]), ...]. Bands are measured outward from each
+    capture interval edge and clipped so they never enter a neighbouring capture region or another band.
+    """
+    ivs = sorted(capture.get(chrom, []))
+    if not ivs:
+        return []
+    out = []
+    for name, (d_lo, d_hi), rel in bands:
+        spans = []
+        for i, (s, e) in enumerate(ivs):
+            left_stop = ivs[i - 1][1] if i else 0
+            right_start = ivs[i + 1][0] if i + 1 < len(ivs) else chrom_length
+            lo, hi = max(left_stop + 1, s - d_hi), s - d_lo
+            if hi - lo + 1 >= min_len:
+                spans.append((lo, hi))
+            lo, hi = e + d_lo, min(right_start - 1, e + d_hi)
+            if hi - lo + 1 >= min_len:
+                spans.append((lo, hi))
+        if spans:
+            out.append((name, rel, sorted(spans)))
+    # distal: random windows clear of every bait and every band
+    import bisect
+    reach = max(hi for _n, (_lo, hi), _r in bands)
+    blocked = [(max(1, s - reach), e + reach) for s, e in ivs]
+    starts = [b[0] for b in blocked]
+    distal, tries = [], 0
+    while len(distal) < n_distal and tries < n_distal * 50:
+        tries += 1
+        pos = rng.randrange(1, max(2, chrom_length - distal_width))
+        j = bisect.bisect_right(starts, pos + distal_width)
+        if any(bs <= pos + distal_width and be >= pos for bs, be in blocked[max(0, j - 3):j + 1]):
+            continue
+        distal.append((pos, pos + distal_width - 1))
+    if distal:
+        out.append(("distal", DISTAL_DEPTH, sorted(distal)))
+    return out
+
+
 def depth_denominator(clones, purity):
     """Copy-weighted material at a baseline-ploidy locus, used to normalise depth.
 
@@ -107,9 +166,15 @@ class WesBuilder:
                 self.jn_by_site.setdefault((chrom, j["clone"], j["hap"]), []).append((int(pos), j))
 
     def junction_at(self, chrom, start1, end1, clone, hap):
-        """The junction whose breakpoint falls in this interval for this clone and haplotype, if any."""
+        """The junction whose breakpoint falls in this interval for this clone and haplotype, if any.
+
+        A junction is handed out once. The off-target bands overlap the capture flanks, so without this
+        the same rearrangement would replace an interval in more than one pass and its reads would be
+        counted twice.
+        """
         for pos, j in self.jn_by_site.get((chrom, clone, hap), []):
-            if start1 <= pos <= end1:
+            if start1 <= pos <= end1 and j["id"] not in self._jn_placed:
+                self._jn_placed.add(j["id"])
                 return j
         return None
 
@@ -119,16 +184,17 @@ class WesBuilder:
         self.purity = purity
         self.workdir = workdir
         self._n_rec = 0
-        self.record_map = []       # (record id, chrom, start, end, source, haplotype, copy kind)
+        self.record_map = []       # (record id, chrom, start, end, source, hap, copy kind, interval set)
         self.rejected = []         # designed somatic edits that could not be applied
         self.germline_rejected = 0
         self.denom = depth_denominator(env.clones, purity) if purity is not None else 2.0
         self.junctions = []
         self.jn_by_site = {}
         self.junctions_used = []
+        self._jn_placed = set()
         os.makedirs(workdir, exist_ok=True)
 
-    def write_source_fastas(self, capture, tumor=True, max_intervals=None):
+    def write_source_fastas(self, capture, tumor=True, max_intervals=None, tag=""):
         """One FASTA per (source, haplotype); each record is one capture interval on that haplotype.
 
         Returns {(source, hap): (path, weight)} with weights averaged over intervals.
@@ -145,8 +211,9 @@ class WesBuilder:
                 for src, hap, kind, w in source_plan(self.env.clones, self.purity, chrom, mid, tumor=tumor):
                     key = (src, hap, kind, pid)
                     if key not in handles:
-                        path = os.path.join(self.workdir,
-                                            f"{'tumor' if tumor else 'normal'}_{src}_hap{hap}_{kind}_cn{pid}.fa")
+                        path = os.path.join(
+                            self.workdir,
+                            f"{'tumor' if tumor else 'normal'}{tag}_{src}_hap{hap}_{kind}_cn{pid}.fa")
                         handles[key] = (path, open(path, "w"))
                         weights[key] = w
                     use = [] if src == "NORMAL" else evs
@@ -178,7 +245,8 @@ class WesBuilder:
                     # ART read ids and 860k of 2.0M names collided.
                     self._n_rec += 1
                     fh.write(f">e{self._n_rec:09d}\n")
-                    self.record_map.append((f"e{self._n_rec:09d}", chrom, start1, end1, src, hap, kind))
+                    self.record_map.append((f"e{self._n_rec:09d}", chrom, start1, end1, src, hap,
+                                            kind, tag.lstrip("_") or "on_target"))
                     for i in range(0, len(seq), 60):
                         fh.write(seq[i:i + 60] + "\n")
                 n += 1
@@ -215,7 +283,8 @@ class WesBuilder:
             # ART accepts fractional fold-coverage; rounding to an integer distorts the smallest clones
             # most, turning a 2.33x target into 2x.
             cov = max(0.01, depth * weight / self.denom)
-            pre = os.path.join(self.workdir, f"{os.path.basename(out_prefix)}_{src}_h{hap}_{kind}_cn{pid}_")
+            pre = os.path.join(self.workdir,
+                               f"{os.path.basename(out_prefix)}_{src}_h{hap}_{kind}_cn{pid}_")
             cmd = art_cmd.format(args=(f"-ss HS25 -i {path} -p -l {read_len} -f {cov:.5f} -m 350 -s 60 "
                                        f"-rs {seed + i} -na -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
@@ -227,7 +296,7 @@ def write_record_map(record_map, path):
     """The map from each source record to where it came from, for the truth bundle."""
     import gzip
     with gzip.open(path, "wt") as fh:
-        fh.write("record\tchrom\tstart\tend\tsource\thaplotype\tcopy_kind\n")
+        fh.write("record\tchrom\tstart\tend\tsource\thaplotype\tcopy_kind\tinterval_set\n")
         for row in record_map:
             fh.write("\t".join(str(x) for x in row) + "\n")
     return path

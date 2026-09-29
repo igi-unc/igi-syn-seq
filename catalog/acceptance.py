@@ -218,6 +218,42 @@ def check_read_names(rep, r1):
     rep.add("read names carry no truth", leaky == 0, f"{leaky} names contain source information")
 
 
+def check_read_map(rep, read_map, record_map):
+    """Every read must trace back to a source record, and the interval sets must all be represented.
+
+    The read map is what owner decision D2 promised: a way back from a read to the clone, haplotype and
+    interval it came from. A name that resolves to nothing is not a cosmetic defect, it is a hole in the
+    truth, and it is exactly the failure that a parse bug in the naming step produced for a tenth of the
+    library without anything noticing.
+    """
+    records, sets = {}, Counter()
+    with gzip.open(record_map, "rt") as fh:
+        head = fh.readline().rstrip("\n").split("\t")
+        iset = head.index("interval_set") if "interval_set" in head else None
+        for line in fh:
+            f = line.rstrip("\n").split("\t")
+            records[f[0]] = f[iset] if iset is not None else "on_target"
+    unresolved, n = 0, 0
+    with gzip.open(read_map, "rt") as fh:
+        fh.readline()
+        for line in fh:
+            _name, src = line.rstrip("\n").split("\t")
+            n += 1
+            if src in records:
+                sets[records[src]] += 1
+            else:
+                unresolved += 1
+    rep.add("every read traces to a source record", unresolved == 0,
+            f"{unresolved:,} of {n:,} reads have no source record",
+            {"reads": n, "unresolved": unresolved, "by_interval_set": dict(sets),
+             "on_target_fraction": round(sets.get("on_target", 0) / max(1, n), 4)})
+    if len(sets) > 1:
+        frac = sets.get("on_target", 0) / max(1, n)
+        rep.add("off-target reads present and in range", 0.35 <= frac <= 0.85,
+                f"{100 * frac:.1f}% of reads are on target",
+                {"by_interval_set": dict(sets)})
+
+
 def check_classes_present(rep, catalog_dir, dataset, junctions_tsv):
     """Every designed class that can reach this library should appear in it."""
     present, missing = {}, []
@@ -272,6 +308,8 @@ def main():
     ap.add_argument("--capture-bed")
     ap.add_argument("--junctions")
     ap.add_argument("--rna-manifest")
+    ap.add_argument("--read-map")
+    ap.add_argument("--record-map")
     ap.add_argument("--work", default="/tmp")
     ap.add_argument("--report", required=True)
     a = ap.parse_args()
@@ -286,6 +324,8 @@ def main():
         check_classes_present(rep, a.catalog_dir, a.dataset, a.junctions)
     if a.r1:
         check_read_names(rep, a.r1)
+    if a.read_map and a.record_map:
+        check_read_map(rep, a.read_map, a.record_map)
     if a.rna_manifest:
         check_rna(rep, a.rna_manifest)
     rep.write(a.report)

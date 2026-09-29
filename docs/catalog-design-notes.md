@@ -34,6 +34,13 @@ recompute. Cite: the TCGA Research Network (https://www.cancer.gov/tcga); Vivian
 Biotechnol 35:314 (Toil); Goldman et al. 2020, Nat Biotechnol 38:675 (Xena). `resources/` holds only
 per-transcript medians across 191 tumors plus the contributing sample barcodes, not per-sample values.
 
+`resources/cosmic_v3.4_sbs_subset.tsv` holds five columns of the COSMIC Mutational Signatures v3.4 single
+base substitution profiles for GRCh38 (SBS1, SBS2, SBS3, SBS5, SBS13), used by the passenger background
+model. Cite: COSMIC Mutational Signatures v3.4 (https://cancer.sanger.ac.uk/signatures); Alexandrov et
+al. 2020, Nature 578:94. The file was taken from the copy redistributed in AlexandrovLab's
+SigProfilerAssignment (`COSMIC_v3.4_SBS_GRCh38.txt`, md5 `633b2e6708d168fb9f6e3942e8d69a1f`) and reduced
+to the five signatures in use; the header records that provenance.
+
 netMHCpan 4.1 is not redistributed here; the code calls whatever binary the site configuration points at,
 under that user's own licence.
 
@@ -226,6 +233,9 @@ Throughput scales with the cores available to the job, so the design run is give
   run rather than forcing these cells.
 - The negative-control set (germline look-alikes, RNA-editing sites, pseudogene mismatches) is the one
   designed class still outstanding.
+- Splice events disrupt donors only, never acceptors, because of how the causal site is chosen.
+- The off-target coverage bands use one flat depth per band rather than a fitted decay curve, and the
+  band depths are assumed rather than measured from a real capture library.
 - Binding is scored for the whole candidate pool (about 12,000 missense candidates) although only some
   600 are placed, because a candidate's tier has to be known before it can be assigned to a grid cell.
   Scoring in waves until each cell fills would cut this several-fold and is the obvious next optimization.
@@ -239,3 +249,63 @@ substitution genuinely improved binding). This distinguishes a novel epitope fro
 version binds equally well, which a benchmark needs in order to judge false positives fairly. Indels and
 frameshifts shift everything downstream out of register, so no counterpart is defined and the columns are
 left blank rather than guessed.
+
+## 11. Passenger background
+
+`igi_catalog/background.py`, driven by `run_background.py`, writes `<dataset>.background.tsv`.
+
+Mutations are drawn from a weighted mixture of COSMIC v3.4 SBS profiles: for IGI-SYN-SEQ-01
+SBS3 0.60 / SBS1 0.15 / SBS5 0.15 / SBS13 0.10 at 1.0 per Mb; for IGI-SYN-SEQ-02
+SBS2 0.25 / SBS13 0.25 / SBS3 0.20 / SBS1 0.15 / SBS5 0.15 at 4.0 per Mb.
+
+A COSMIC profile is a distribution over the 96 pyrimidine-centred trinucleotide channels of *observed*
+mutations, not a per-context rate. The sampler therefore draws a channel first and a genomic position
+with the matching trinucleotide second, which reproduces the profile directly and needs no
+context-frequency correction. Positions are rejected if they contain an N, overlap a germline variant,
+or fall in a span already reserved by a designed event. Each mutation takes a clone by branch share
+(`background_truncal_fraction`, 0.60 by default, with the remainder split between branches in proportion
+to their cell fraction), a retained haplotype at that locus, and a timing that follows the clone. Short
+indels are mixed in at `background_indel_fraction` (0.08).
+
+Passengers that land in coding sequence are annotated with the same `CodingModel` the designed events
+use, and protein-changing ones are scored through netMHCpan. A passenger missense in a well expressed
+gene is a genuine neoepitope; a truth set that omitted it would score a caller's correct answer as a
+false positive.
+
+Measured on 3,817 SNVs across chr1-chr5 of IGI-SYN-SEQ-02: cosine similarity to the target mixture
+0.9983, chi-square 91.9 on 87 degrees of freedom. Composition matched the configuration at 4.0 per Mb,
+7.2 % indels, 57.6 % truncal and 1.3 % coding.
+
+The background scores against its own netMHCpan cache file. The cache is rewritten whole on each flush,
+so a background run sharing the catalog designer's cache would discard whatever the designer had added
+since it started.
+
+## 12. Designed germline alleles
+
+`igi_catalog/germline_spikein.py`, driven by `run_germline_spikein.py`, writes the dataset's own
+`germline.vcf.gz` plus a truth table and a diff card.
+
+The allele is specified by coding position, not genomic coordinate. The script resolves it against the
+representative transcript, requires the span to lie within one exon, builds the VCF record with an
+anchor base and left-aligns it, then checks the codon number, the wild-type residue and the consequence
+against what the design declared. A hardcoded coordinate would move silently under a different
+annotation release; this fails loudly instead.
+
+Both datasets carry BRCA1 c.68_69delAG, which resolves to chr17:43124027 ACT>A and yields a 38 aa
+protein from 1,863 - p.Glu23ValfsTer17, the published consequence of the 185delAG founder allele. It is
+phased onto the haplotype that the truncal 17q loss retains, so the tumour keeps only the pathogenic
+copy. The baseline VCF is never read back through the `germline_vcf` key once the spiked file exists,
+so re-running cannot double-spike or report its own allele as a pre-existing conflict.
+
+## 13. Causal splice-site variants
+
+`run_splice_causal.py` turns the `causal_variant` column of the expressed-class table into rows in the
+column layout `genome_build.read_events` accepts, so that a tumour-specific splice junction has a
+genomic cause in the sequence rather than only in the table. Each variant is checked against the
+reference before it is written, and the reference dinucleotide is recorded.
+
+One detail worth stating: the designer takes the donor dinucleotide downstream of the chosen exon, which
+on a minus-strand gene reads as its reverse complement on the plus strand. All 15 tumour-specific events
+in IGI-SYN-SEQ-02 sit at canonical donors (8 GT, 7 AC). Acceptor disruption is therefore not currently
+exercised, and the substituted base is now chosen so the resulting dinucleotide is not recognised by
+either spliceosome - the previous rule could turn a GT donor into AT, which is the U12 donor.

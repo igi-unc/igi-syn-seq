@@ -41,7 +41,12 @@ def shuffle_and_rename(cat_r1, cat_r2, out_r1, out_r2, out_map, work, seed=1):
             b = [f2.readline() for _ in range(4)]
             if not a[0]:
                 break
-            src = a[0][1:].split()[0].rsplit("-", 1)[0].rstrip("/1")
+            # `rstrip("/1")` would strip a *set* of characters, not a suffix, so every record id
+            # ending in 1 lost its trailing 1s and its reads could not be traced back to a source.
+            name = a[0][1:].split()[0]
+            if name[-2:] in ("/1", "/2"):
+                name = name[:-2]
+            src = name.rsplit("-", 1)[0]
             out.write(_key(a[0].strip(), seed) + "\t" + src + "\t"
                       + "\t".join(x.rstrip("\n") for x in a[1:]) + "\t"
                       + "\t".join(x.rstrip("\n") for x in b[1:]) + "\n")
