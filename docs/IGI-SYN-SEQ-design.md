@@ -90,7 +90,12 @@ Storage estimate (full, both datasets): ~700 GB, dominated by four 30x HiFi BAMs
   "ONT" files are ONT sequencing of the T1 10x 5' single-cell cDNA library (polyA, 10x adapters, median
   read 291 bp), so read-backed phasing comes from short reads only and SHAPEIT5 carries the genome-wide
   phase. Germline SVs must come from a short-read caller on the normal WGS (Manta proposed), annotated
-  for gene overlap. Procedure: `baseline-references.md`. HLA from manifest: A*01:01 hom, B*08:01/B*27:05, C*01:02/C*07:01.
+  for gene overlap. Procedure: `baseline-references.md`. HLA alleles A*01:01 homozygous, B*08:01 /
+  B*27:05, C*01:02 / C*07:01: stated by the manifest without provenance, and independently confirmed by
+  typing the patient's own recovered MHC reads (OptiType 1.3.5, all six calls identical). The MHC was
+  initially empty because alt-aware alignment had diverted the reads onto the reference's 525 HLA
+  contigs; realigning them to a primary-only reference restored 7,532 records in chr6:28-34 Mb against
+  1,822 before, of which 46% are heterozygous.
 - A pathogenic **BRCA1** germline frameshift is added to both baselines (TNBC/HRD
   realism; wild-type allele lost somatically, section 5).
 - Germline variants are also deliberately placed in a subset of CTA and ERV ORFs
@@ -124,8 +129,8 @@ region) up to ~0.8, truncal het ~0.35, clone A ~0.14, clone B ~0.09, clone A1 ~0
 Same clone topology with four clones (T, A, A1, B) at CCF 1.0 / 0.35 / 0.10 / 0.30.
 Drivers: TP53 frameshift + LOH (pre-WGD, so 0 wild-type copies out of 4 total at the
 locus after WGD), RB1 whole-gene deletion, PTEN nonsense + LOH, BRCA1 germline + LOH,
-MYC amp CN 20, EGFR amp in A, PIK3CA E545K in T, chromothripsis on chr3p, HLA LOH losing
-B*27:05/C*07:01 haplotype. Signatures: SBS2+13 0.50, SBS3 0.20, SBS1+5 0.30; ~4 mut/Mb
+MYC amp CN 20, EGFR amp in A, PIK3CA E545K in T, chromothripsis on chr3p, HLA LOH losing the B*27:05 / C*01:02 haplotype (hap1), matching
+`design.yaml`; the retained haplotype carries B*08:01 / C*07:01. Signatures: SBS2+13 0.50, SBS3 0.20, SBS1+5 0.30; ~4 mut/Mb
 background (~12,000 SNV, ~1,200 indel). Post-WGD private mutations have 1 of ~4 copies,
 which pushes many events into the low-VAF regime (truncal het post-WGD ~0.12).
 
