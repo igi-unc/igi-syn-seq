@@ -83,6 +83,8 @@ class WesBuilder:
         self.workdir = workdir
         self._n_rec = 0
         self.record_map = []       # (record id, chrom, start, end, source, haplotype, copy kind)
+        self.rejected = []         # designed somatic edits that could not be applied
+        self.germline_rejected = 0
         os.makedirs(workdir, exist_ok=True)
 
     def write_source_fastas(self, capture, tumor=True, max_intervals=None):
@@ -110,9 +112,14 @@ class WesBuilder:
                     # a pre-CNA copy carries only truncal events that predate the copy-number changes
                     clone = "T" if (src == "NORMAL" or kind == "pre_cna") else src
                     pre_only = (kind == "pre_cna")
-                    seq, _stats = haplotype_sequence(self.env.genome, self.env.germline, use,
-                                                     self.env.clones, chrom, hap, clone, start1, end1,
-                                                     strict=False, only_pre_cna=pre_only)
+                    seq, stats = haplotype_sequence(self.env.genome, self.env.germline, use,
+                                                    self.env.clones, chrom, hap, clone, start1, end1,
+                                                    strict=False, only_pre_cna=pre_only)
+                    # a designed somatic edit that fails to apply means the reads will not contain a
+                    # change the truth table claims, so it is collected and raised rather than dropped
+                    if stats.get("somatic_rejected"):
+                        self.rejected.extend(stats["somatic_rejected"])
+                    self.germline_rejected += stats.get("germline_rejected", 0)
                     if len(seq) < 100:
                         continue
                     fh = handles[key][1]
@@ -133,6 +140,11 @@ class WesBuilder:
         for key, (path, fh) in handles.items():
             fh.close()
             out[key] = (path, weights[key])      # per-interval weight for this copy-number profile
+        if self.rejected:
+            uniq = sorted(set(self.rejected))
+            raise RuntimeError(
+                f"{len(uniq)} designed somatic edits could not be applied, so the reads would not "
+                f"contain changes the truth table describes: {uniq[:8]}")
         return out, n
 
     def _profile_id(self, prof):

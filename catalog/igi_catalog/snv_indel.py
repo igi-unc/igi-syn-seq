@@ -27,6 +27,7 @@ class SnvIndelDesigner:
         self.driver_genes = {d[0] for evs in ds_cfg.get("drivers", {}).values() for d in evs}
         self.excluded = self._excluded_regions()
         self.models = {}
+        self.claimed = defaultdict(set)   # chrom -> positions already occupied by a designed event
         self.events = []
         self.cards = []
         self.n_id = defaultdict(int)
@@ -49,6 +50,20 @@ class SnvIndelDesigner:
         if t.tid not in self.models:
             self.models[t.tid] = CodingModel(t, self.env.genome)
         return self.models[t.tid]
+
+    def claim(self, chrom, pos1, ref_len=1):
+        """Reserve the reference span of an event, refusing one that overlaps an existing event.
+
+        Two events at one position, or an indel whose deletion swallows another event, cannot both be
+        expressed in one haplotype sequence. The genome builder would silently drop one and the truth
+        table would then describe a change the reads do not contain.
+        """
+        span = range(pos1, pos1 + max(1, ref_len))
+        taken = self.claimed[chrom]
+        if any(p in taken for p in span):
+            return False
+        taken.update(span)
+        return True
 
     def next_id(self, prefix):
         self.n_id[prefix] += 1
@@ -98,6 +113,8 @@ class SnvIndelDesigner:
             # reference coordinates, and the haplotype edit would not apply; skip such sites
             if self.env.germline.overlaps_variant(t.chrom, gpos, len(r)):
                 continue
+            if any(p in self.claimed[t.chrom] for p in range(gpos, gpos + len(r))):
+                continue          # another designed event already occupies this span
             mprot, k, cons = cm.mutate_protein(gpos, r, a)
             if mprot is None:
                 continue
@@ -249,6 +266,8 @@ class SnvIndelDesigner:
 
     # ------------------------------------------------------------------ placement
     def place(self, c, clone, subclass, flagpost=False, hap=None, pre_cna=None, ase="balanced", pair_with=None):
+        if not self.claim(c["chrom"], c["pos"], len(c["ref"])):
+            return None           # overlaps an event already placed
         cm = self.env.clones
         if hap is None:
             retained = cm.retained_haplotypes(clone, c["chrom"], c["pos"])
