@@ -13,6 +13,7 @@ exists because something that should have been caught was not.
 Exits non-zero if any check fails, so it can gate a release.
 """
 import argparse
+import bisect
 import csv
 import gzip
 import json
@@ -50,16 +51,21 @@ def pileup(bam, reference, sites_path, min_bq=15, min_mq=20, max_depth=8000):
     return res
 
 
-def captured_depth(bam, chrom, start, end, capture_bed, work, min_intervals=20):
+def captured_depth(bam, chrom, start, end, capture_bed, work, min_bases=5000):
     """Mean depth over captured bases only, within a region.
 
     Mean depth across a whole window is meaningless for an exome: it measures how much of the window is
     captured, not how deeply it is sequenced. An arbitrary 2 Mb window read 3.4x while the gene-dense MHC
     read 15.6x purely because far more of the MHC is on target. Restricting to capture intervals with
     `samtools bedcov` compares like with like.
+
+    The floor is on captured bases, not on interval count. A focal amplicon is small by definition: the
+    MYC amplicon holds 11 capture intervals but 15 kb of captured sequence, which at amplicon depth is
+    several million read bases and plenty to estimate a mean from. An interval-count floor of 20 skipped
+    it, so the amplified arm of the copy-number model went unmeasured while the check reported a pass.
     """
     sub = os.path.join(work, f"cap_{chrom}_{start}_{end}.bed")
-    n = 0
+    n = bases = 0
     with open(capture_bed) as fh, open(sub, "w") as out:
         for line in fh:
             f = line.split("\t")
@@ -68,9 +74,11 @@ def captured_depth(bam, chrom, start, end, capture_bed, work, min_intervals=20):
             s0, e0 = int(f[1]), int(f[2])
             if e0 <= start or s0 >= end:
                 continue
-            out.write(f"{chrom}\t{max(s0, start)}\t{min(e0, end)}\n")
+            lo, hi = max(s0, start), min(e0, end)
+            out.write(f"{chrom}\t{lo}\t{hi}\n")
             n += 1
-    if n < min_intervals:
+            bases += hi - lo
+    if bases < min_bases:
         return None, n
     res = subprocess.run(["samtools", "bedcov", "-Q", "20", sub, bam], capture_output=True, text=True).stdout
     total_bases = total_cov = 0
@@ -131,18 +139,31 @@ def check_variants(rep, bam, reference, catalog, chrom, work):
         if b.count(r["alt"]) > 0 or len(r["ref"]) > 1:
             seen += 1
     nums = {}
-    worst = 0.0
+    worst, worst_tier, thin = 0.0, None, []
+    # A tier with a couple of sites cannot distinguish a systematic bias from binomial noise: two sites at
+    # an expected 0.11 allele fraction and 150x depth scatter by tens of percent on their own. Thin tiers
+    # are still reported, but only tiers with enough sites decide the verdict.
+    MIN_N = 5
     for tier in TIER_ORDER:
         v = by_tier.get(tier)
         if not v:
             continue
         e, o = statistics.mean(x[0] for x in v), statistics.mean(x[1] for x in v)
+        dev = abs(o / e - 1) if e else None
         nums[tier] = {"n": len(v), "expected": round(e, 4), "observed": round(o, 4),
-                      "ratio": round(o / e, 3) if e else None}
-        if e:
-            worst = max(worst, abs(o / e - 1))
-    rep.add("allele fractions by tier", worst <= 0.15,
-            f"largest deviation {worst:.0%} across {sum(len(v) for v in by_tier.values())} sites", nums)
+                      "ratio": round(o / e, 3) if e else None,
+                      "counted_towards_verdict": len(v) >= MIN_N}
+        if e and len(v) >= MIN_N:
+            if dev > worst:
+                worst, worst_tier = dev, tier
+        elif e:
+            thin.append(f"{tier} n={len(v)} ratio={o / e:.2f}")
+    detail = (f"largest deviation {worst:.0%}"
+              + (f" ({worst_tier})" if worst_tier else " (no tier with enough sites)")
+              + f" across {sum(len(v) for v in by_tier.values())} sites")
+    if thin:
+        detail += f"; not counted: {', '.join(thin)}"
+    rep.add("allele fractions by tier", worst <= 0.15, detail, nums)
     rep.add("indels present", len([r for r in ev if r["class"] == "indel"]) == 0 or seen > 0,
             f"{seen} of {len(ev)} designed events have supporting reads")
 
@@ -185,7 +206,7 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
         want = sum(w for _s, _h, _k, w in source_plan(cm, cm.purity, chrom, (s + e) // 2)) / den
         got, n_iv = captured_depth(bam, chrom, s, e, capture_bed, work)
         if got is None:
-            nums[label] = {"skipped": f"only {n_iv} capture intervals"}
+            nums[label] = {"skipped": f"only {n_iv} capture intervals, under the captured-base floor"}
             continue
         ratio = got / base
         nums[label] = {"expected_ratio": round(want, 3), "observed_ratio": round(ratio, 3),
@@ -254,17 +275,53 @@ def check_read_map(rep, read_map, record_map):
                 {"by_interval_set": dict(sets)})
 
 
-def check_classes_present(rep, catalog_dir, dataset, junctions_tsv):
-    """Every designed class that can reach this library should appear in it."""
-    present, missing = {}, []
+def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, capture_bed=None):
+    """Junctions placed against the number this chromosome could place.
+
+    The catalog-wide count is the wrong yardstick. A rearrangement reaches an exome only if a breakpoint
+    falls inside a capture interval, and whether any do on one chromosome is a draw: dataset 02 has a
+    single chr8 SV breakpoint, at 1.45 Mb and off target, and no chr8 fusion at all, so nothing being
+    placed is the right answer rather than a failure. Comparing against the whole catalog reported that
+    correct behaviour as a defect.
+    """
+    present = {}
+    tables = {}
     for name, path in (("sv", f"{dataset}.svs.tsv"), ("fusion", f"{dataset}.fusions.tsv"),
                        ("virus", f"{dataset}.viruses.tsv")):
-        present[name] = len(rows(os.path.join(catalog_dir, path)))
+        tables[name] = rows(os.path.join(catalog_dir, path))
+        present[name] = len(tables[name])
     placed = rows(junctions_tsv) if junctions_tsv else []
     ids = {r["event_id"].split(":")[0] for r in placed}
-    rep.add("junction classes reach the library", bool(placed) or present["sv"] == 0,
-            f"{len(placed)} junctions placed covering {len(ids)} events",
-            {"catalog": present, "placed": len(placed)})
+
+    expected, detail_extra = None, ""
+    if chrom and capture_bed:
+        cap = []
+        with open(capture_bed) as fh:
+            for line in fh:
+                f = line.split("\t")
+                if len(f) >= 3 and f[0] == chrom:
+                    cap.append((int(f[1]) + 1 - 100, int(f[2]) + 100))
+        cap.sort()
+        def inside(pos):
+            i = bisect.bisect_right(cap, (pos, float("inf")))
+            return any(s <= pos <= e for s, e in cap[max(0, i - 4):i + 1])
+        cols = {"sv": [("chrom", "start"), ("end_chrom", "end")],
+                "fusion": [("chrom_5p", "breakpoint_5p"), ("chrom_3p", "breakpoint_3p")],
+                "virus": [("chrom", "integration_pos")]}
+        evs = set()
+        for name, rws in tables.items():
+            for r in rws:
+                for cc, pc in cols[name]:
+                    if r.get(cc) == chrom and str(r.get(pc) or "").strip():
+                        if inside(int(r[pc])):
+                            evs.add(r["event_id"])
+        expected = len(evs)
+        detail_extra = f" of {expected} placeable on {chrom}"
+
+    ok = len(ids) >= expected if expected is not None else (bool(placed) or present["sv"] == 0)
+    rep.add("junction classes reach the library", ok,
+            f"{len(placed)} junctions placed covering {len(ids)} events{detail_extra}",
+            {"catalog": present, "placed": len(placed), "placeable_on_chrom": expected})
 
 
 def check_rna(rep, manifest):
@@ -321,7 +378,7 @@ def main():
         if a.arms_bed and a.capture_bed:
             check_depth_by_cn(rep, a.bam, a.design, a.dataset, a.chrom, a.arms_bed,
                               a.capture_bed, a.work)
-        check_classes_present(rep, a.catalog_dir, a.dataset, a.junctions)
+        check_classes_present(rep, a.catalog_dir, a.dataset, a.junctions, a.chrom, a.capture_bed)
     if a.r1:
         check_read_names(rep, a.r1)
     if a.read_map and a.record_map:
