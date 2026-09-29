@@ -87,18 +87,30 @@ def somatic_edits(events, clones, chrom, hap, clone, start1=None, end1=None, onl
     return es
 
 
-def read_events(tsv):
-    """Designed SNV/indel events from a catalog table, keyed by chromosome."""
+def read_events(*tsvs):
+    """Designed and background SNV/indel events from one or more catalog tables, keyed by chromosome.
+
+    Several tables are accepted so the passenger background can be kept in its own file while still
+    reaching the sequence: the builder needs every somatic small variant, whatever table it came from.
+    """
     by_chrom = defaultdict(list)
-    with open(tsv) as fh:
-        for row in csv.DictReader(fh, delimiter="\t"):
-            if row.get("class") not in ("snv", "indel"):
-                continue
-            by_chrom[row["chrom"]].append({
-                "event_id": row["event_id"], "chrom": row["chrom"], "pos": int(row["pos"]),
-                "ref": row["ref"], "alt": row["alt"], "haplotype": int(row["haplotype"]),
-                "clone": row["clone"], "timing": row.get("timing", "pre_cna"),
-            })
+    rows = []
+    for tsv in tsvs:
+        with open(tsv) as fh:
+            rows.extend(list(csv.DictReader(fh, delimiter="\t")))
+    seen = set()
+    for row in rows:
+        if row.get("class") not in ("snv", "indel"):
+            continue
+        key = (row["chrom"], int(row["pos"]), row["ref"], row["alt"], int(row["haplotype"]))
+        if key in seen:
+            raise ValueError(f"duplicate somatic edit across tables: {key} ({row['event_id']})")
+        seen.add(key)
+        by_chrom[row["chrom"]].append({
+            "event_id": row["event_id"], "chrom": row["chrom"], "pos": int(row["pos"]),
+            "ref": row["ref"], "alt": row["alt"], "haplotype": int(row["haplotype"]),
+            "clone": row["clone"], "timing": row.get("timing", "pre_cna"),
+        })
     return by_chrom
 
 

@@ -2,6 +2,12 @@
 version: 0.1
 seed: 20260925
 
+# Passenger background. `background_mut_per_mb` is per dataset (section `datasets`); these two govern its
+# composition. The truncal fraction is the share of passengers that predate the most recent common
+# ancestor of the sampled clones; the rest are split between branches in proportion to their cell fraction.
+background_indel_fraction: 0.08
+background_truncal_fraction: 0.60
+
 tiers:
   expression: [T0, T1, T10, T100, T1000]          # gene TPM <0.5, ~1, ~10, ~100, >=300
   binding: [strong, weak, non]                    # netMHCpan %rank_EL <=0.5, <=2, >2 (best across patient alleles)
@@ -79,6 +85,14 @@ datasets:
     hrd_tandem_dups: 100
     signatures: {SBS3: 0.60, SBS1: 0.15, SBS5: 0.15, SBS13: 0.10}
     background_mut_per_mb: 1.0
+    germline_spikein:                # pathogenic germline alleles added to the baseline VCF
+      - id: GERM-BRCA1-185delAG
+        gene: BRCA1
+        cds_delete: [68, 69]         # c.68_69delAG, the Ashkenazi founder allele
+        expect: {codon: 23, wt_aa: E, consequence: frameshift}
+        haplotype: retained_after    # place on the copy the tumour keeps, so 17q LOH leaves only this one
+        cna_label: BRCA1_wt_loss_17q
+        note: "BRCA1 c.68_69delAG p.Glu23ValfsTer17; the HRD driver behind the SBS3 background"
     viruses:
       - {name: HPV16, accession: NC_001526.2, mode: integrated, site: "chr8:127400000", clone: T, expressed: true, copies: 3}
       - {name: EBV,   accession: NC_007605.1, mode: episomal, clone: T, expressed: low, copies: 5, normal_trace_copies: 0.05}
@@ -117,6 +131,14 @@ datasets:
     hrd_tandem_dups: 60
     signatures: {SBS2: 0.25, SBS13: 0.25, SBS3: 0.20, SBS1: 0.15, SBS5: 0.15}
     background_mut_per_mb: 4.0
+    germline_spikein:
+      - id: GERM-BRCA1-185delAG
+        gene: BRCA1
+        cds_delete: [68, 69]
+        expect: {codon: 23, wt_aa: E, consequence: frameshift}
+        haplotype: retained_after
+        cna_label: BRCA1_wt_loss_17q
+        note: "BRCA1 c.68_69delAG p.Glu23ValfsTer17; the HRD driver behind the SBS3 component"
     viruses:
       - {name: HPV16, accession: NC_001526.2, mode: integrated, site: "chr8:127400000", clone: T, expressed: true, copies: 3}
       - {name: EBV,   accession: NC_007605.1, mode: episomal, clone: T, expressed: low, copies: 5, normal_trace_copies: 0.05}

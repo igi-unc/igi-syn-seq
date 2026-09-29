@@ -23,6 +23,7 @@ def main():
     ap.add_argument("--library", choices=["tumor", "normal"], required=True)
     ap.add_argument("--depth", type=float, required=True)
     ap.add_argument("--catalog", required=True, help="the dataset's snv_indel.tsv")
+    ap.add_argument("--background", default=None, help="the dataset's background.tsv (passenger mutations)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--work", required=True)
     ap.add_argument("--max-intervals", type=int, default=None)
@@ -33,7 +34,7 @@ def main():
     paths = yaml.safe_load(open(a.paths))
     env = build_env(paths, design, a.dataset)
     purity = design["datasets"][a.dataset]["purity"]
-    events = read_events(a.catalog)
+    events = read_events(*[t for t in (a.catalog, a.background) if t])
     capture = merged_capture(paths["exome_bed"], {a.chrom})
     work = os.path.join(a.work, f"{a.dataset}_{a.chrom}_{a.library}")
     os.makedirs(work, exist_ok=True)

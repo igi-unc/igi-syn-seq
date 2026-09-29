@@ -1,0 +1,12 @@
+# IGI-SYN-SEQ-01 designed germline alleles (design v0.1)
+
+## GERM-BRCA1-185delAG  BRCA1 c.68_69delAG germline
+  germline  BRCA1 c.68_69delAG  p.E23Vfs  (frameshift)
+  DNA       chr17:43124027 ACT > A  GT 1|0 (haplotype 0)
+  tumour    somatic BRCA1_wt_loss_17q removes the other copy, leaving this allele alone
+  protein   wild type 1863 aa -> mutant 38 aa
+  wt        ...NVINAMQKILECPICLELIKEPVSTKCDHIFCKFC...
+  mut       ...NVINAMQKILVSHLSGVDQGTCLHKV...
+                         ^ first changed residue (aa 23)
+  note      BRCA1 c.68_69delAG p.Glu23ValfsTer17; the HRD driver behind the SBS3 background
+  consequence frameshift
