@@ -168,7 +168,7 @@ clean context, exon center. ~40 flagposts across all classes.
 | InDel, in-frame del / ins | 40 / 30 | |
 | InDel, homopolymer context | 40 | PacBio-hard indels |
 | Gene fusions | 20 | 4 flagposts; in-frame 10, out-of-frame 4, 5'UTR-CDS 2, promoter-swap 2, read-through with no DNA breakpoint 2 (tumor-associated); mechanisms TRA 8 / DEL 4 / INV 4 / DUP 2 / none 2; 8 with breakpoint inside a captured exon +-50 bp (WES-visible), 3 reciprocal; clonality 12 T / 5 A / 2 B / 1 A1 |
-| SVs (non-fusion designed) | 100 | DEL 25 (50 bp-5 Mb log-spaced), DUP 20, INV 15, TRA 15, INS 15 (10 L1/Alu/SVA MEIs, 5 novel sequence), complex 10; 50 land in coding sequence: exon-deleting in-frame 15, out-of-frame 15, whole-gene loss 10, intragenic exon dup 10 |
+| SVs (non-fusion designed) | 100 (achieved 98 per dataset; exome-visible 22 in -01 and 26 in -02, by the same interval rule as fusions) | DEL 25 (50 bp-5 Mb log-spaced), DUP 20, INV 15, TRA 15, INS 15 (10 L1/Alu/SVA MEIs, 5 novel sequence), complex 10; 50 land in coding sequence: exon-deleting in-frame 15, out-of-frame 15, whole-gene loss 10, intragenic exon dup 10 |
 | SVs, structured background | ~160 | chromothripsis cluster (~60) + HRD tandem dups (~100) |
 | Viruses | 3 | HPV16 integrated at 8q24 inside the MYC amplicon, E6/E7 expressed, host-virus fusion transcript, junction visible in WGS/RNA and off-target WES; EBV episomal ~5 copies/cell, low expression, plus trace 0.05 copies/cell in the blood normal (realistic negative); HPV18 episomal in clone B only, unexpressed |
 | CTAs | 15 | 5 expression tiers x 3; 4 carry germline coding variants, 3 carry somatic missense, 2 restricted to clone A (single-cell heterogeneity) |
