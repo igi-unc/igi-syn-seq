@@ -226,10 +226,23 @@ class SnvIndelDesigner:
                 c["best_rank"] = c["best_allele"] = c["best_aff_nM"] = c["best_peptide"] = None
                 c["binding_tier"] = "na"
             c["n_neopeptides_rank_lt2"] = n_lt2
+            # Owner decision D4: the same event scored again over the alleles the tumour still has. A
+            # tumour that has lost an HLA haplotype cannot present through the alleles on it, so both
+            # numbers are real; the grid is filled on the all-allele tier because that is how LENS ranks.
+            self._retained_fields(c, res, neo)
             c.pop("_mut_peps", None)
             c.pop("_wt_peps", None)
         self._score_wt_counterparts(cands)
         return cands
+
+    def _retained_fields(self, c, res, neo):
+        """Binding over the retained alleles only, and whether the best allele is one the tumour lost."""
+        rr, ral, _raff, rpep = NetMHCpan.best_over(res, neo, among=self.env.hla_retained)
+        c["best_rank_el_retained"] = round(rr, 3) if rr is not None else None
+        c["best_allele_retained"] = ral
+        c["best_peptide_retained"] = rpep
+        c["binding_tier_retained"] = NetMHCpan.tier(rr)
+        c["best_allele_is_lost"] = bool(c.get("best_allele") and c["best_allele"] in self.env.hla_lost)
 
     def _wt_counterpart(self, c):
         """The wild-type peptide occupying the same window as the best mutant peptide.
@@ -297,6 +310,12 @@ class SnvIndelDesigner:
             "binding_tier": c.get("binding_tier", "na"), "best_rank_el": c.get("best_rank"), "best_allele": c.get("best_allele"),
             "wt_peptide": c.get("wt_peptide"), "wt_peptide_rank_el": c.get("wt_peptide_rank"), "agretopicity": c.get("agretopicity"),
             "best_peptide": c.get("best_peptide"), "best_aff_nM": c.get("best_aff_nM"), "n_neopeptides_rank_lt2": c.get("n_neopeptides_rank_lt2", 0),
+            # owner decision D4: the same scoring restricted to the alleles the tumour retains
+            "binding_tier_retained": c.get("binding_tier_retained", "na"),
+            "best_rank_el_retained": c.get("best_rank_el_retained"),
+            "best_allele_retained": c.get("best_allele_retained"),
+            "best_peptide_retained": c.get("best_peptide_retained"),
+            "best_allele_is_lost": c.get("best_allele_is_lost", False),
             "context": c["context"], "flagpost": flagpost, "chr1to6": c["chrom"] in CHR1TO6, "paired_event": pair_with or "",
         }
         ev.update({f"ctx_{k}": v for k, v in c["context_features"].items()})

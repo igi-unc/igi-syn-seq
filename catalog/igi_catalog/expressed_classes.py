@@ -67,7 +67,27 @@ class ExpressedClassDesigner:
         self.pan_normal = load_pan_normal(paths["pan_normal_quant"]) if paths.get("pan_normal_quant") else {}
 
     # ------------------------------------------------------------------ shared
+    @staticmethod
+    def _no_retained():
+        return {"binding_tier_retained": "na", "best_rank_el_retained": None,
+                "best_allele_retained": None, "best_peptide_retained": None,
+                "best_allele_is_lost": False}
+
+    def _retained(self):
+        """The retained-allele fields for the event just scored, cleared so a stale set cannot be reused.
+
+        `_score_window` is not called for every candidate (an isoform that does not change the protein
+        never reaches it), and silently carrying the previous event's binding into this row would be a
+        wrong truth value rather than a missing one.
+        """
+        out = getattr(self, "_last_retained", None) or self._no_retained()
+        self._last_retained = self._no_retained()
+        return out
+
     def _score_window(self, protein, first_changed, n_changed):
+        """(rank, allele, peptide, tier, n_rank_lt2) over all alleles, and `self._last_retained` holding
+        the same over the retained alleles only, per owner decision D4."""
+        self._last_retained = self._no_retained()
         peps = spanning_peptides(protein, first_changed, n_changed, (8, 9, 10, 11))
         if not peps:
             return None, None, None, "na", 0
@@ -82,6 +102,11 @@ class ExpressedClassDesigner:
                 best = (r, allele, aff, pep)
         if not best:
             return None, None, None, "na", 0
+        rr, ral, _ra, rpep = NetMHCpan.best_over(res, sorted(peps), among=self.env.hla_retained)
+        self._last_retained = {"binding_tier_retained": NetMHCpan.tier(rr),
+                               "best_rank_el_retained": round(rr, 3) if rr is not None else None,
+                               "best_allele_retained": ral, "best_peptide_retained": rpep,
+                               "best_allele_is_lost": best[1] in self.env.hla_lost}
         return round(best[0], 3), best[1], best[3], NetMHCpan.tier(best[0]), n_lt2
 
     @staticmethod
@@ -130,7 +155,7 @@ class ExpressedClassDesigner:
                 "normal_tissue_tpm_p95": round(self.pan_normal.get(t.tid.split(".")[0], 0.0), 3),
                 "baseline_tumor_tpm": round(self.env.expr.gene(t.gene_id), 3),
                 "best_rank_el": rank, "best_allele": allele, "best_peptide": pep,
-                "binding_tier": tier, "n_peptides_rank_lt2": n_lt2,
+                "binding_tier": tier, "n_peptides_rank_lt2": n_lt2, **self._retained(),
                 "chr1to6": t.chrom in CHR1TO6,
             }
             ev.update(self._clone_fields(clone, t.chrom, t.start))
@@ -203,7 +228,7 @@ class ExpressedClassDesigner:
                 "normal_panel_tpm": normal_tpm, "normal_panel_source": "pan_normal_95th_percentile",
                 "target_tumor_tpm": 0.0 if status == "unexpressed_negative" else round(self.rng.uniform(5, 120), 2),
                 "best_rank_el": rank, "best_allele": allele, "best_peptide": pep,
-                "binding_tier": tier, "n_peptides_rank_lt2": n_lt2,
+                "binding_tier": tier, "n_peptides_rank_lt2": n_lt2, **self._retained(),
                 "chr1to6": chrom in CHR1TO6,
             }
             ev.update(self._clone_fields(clone, chrom, start))
@@ -305,7 +330,7 @@ class ExpressedClassDesigner:
                 "isoform_orf_aa": len(iso_prot) if iso_prot else 0,
                 "first_changed_aa": (first_diff + 1) if first_diff is not None else "",
                 "best_rank_el": rank, "best_allele": allele, "best_peptide": pep,
-                "binding_tier": tier, "n_peptides_rank_lt2": n_lt2,
+                "binding_tier": tier, "n_peptides_rank_lt2": n_lt2, **self._retained(),
                 "chr1to6": t.chrom in CHR1TO6,
             }
             ev.update(self._clone_fields(clone, t.chrom, exon_s))

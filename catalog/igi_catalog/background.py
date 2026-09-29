@@ -255,6 +255,9 @@ class BackgroundDesigner:
                     "expected_vaf_dna": round(vaf, 4), "tumor_cn_at_locus": round(tcn, 2),
                     "gene_tpm": "", "expression_tier": "", "binding_tier": "na",
                     "best_rank_el": "", "best_allele": "", "best_peptide": "",
+                    "binding_tier_retained": "na", "best_rank_el_retained": "",
+                    "best_allele_retained": "", "best_peptide_retained": "",
+                    "best_allele_is_lost": False,
                     "flagpost": False, "chr1to6": chrom in CHR1TO6,
                 }
                 c = self._coding(chrom, pos, r, a)
@@ -289,14 +292,14 @@ class BackgroundDesigner:
         log(f"  scoring {len(allp)} passenger neopeptides over {len(hits)} protein-changing background events")
         res = self.env.netmhc.predict(allp, self.env.hla)
         for ev, _c in hits:
-            best = None
-            for pep in want[ev["event_id"]]:
-                al = res.get(pep)
-                if not al:
-                    continue
-                r, allele, _aff = NetMHCpan.best(al)
-                if best is None or r < best[0]:
-                    best = (r, allele, pep)
-            if best:
-                ev.update({"binding_tier": NetMHCpan.tier(best[0]), "best_rank_el": round(best[0], 3),
-                           "best_allele": best[1], "best_peptide": best[2]})
+            peps = want[ev["event_id"]]
+            r, allele, _aff, pep = NetMHCpan.best_over(res, peps)
+            if r is not None:
+                ev.update({"binding_tier": NetMHCpan.tier(r), "best_rank_el": round(r, 3),
+                           "best_allele": allele, "best_peptide": pep})
+            # owner decision D4: the same peptides over the alleles the tumour retains
+            rr, ral, _ra, rpep = NetMHCpan.best_over(res, peps, among=self.env.hla_retained)
+            ev.update({"binding_tier_retained": NetMHCpan.tier(rr),
+                       "best_rank_el_retained": round(rr, 3) if rr is not None else None,
+                       "best_allele_retained": ral, "best_peptide_retained": rpep,
+                       "best_allele_is_lost": bool(allele and allele in self.env.hla_lost)})

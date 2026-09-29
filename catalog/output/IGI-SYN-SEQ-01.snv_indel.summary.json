@@ -1,13 +1,13 @@
 {
   "dataset": "IGI-SYN-SEQ-01",
-  "n_events": 879,
+  "n_events": 872,
   "by_class": {
-    "snv": 629,
-    "indel": 250
+    "snv": 623,
+    "indel": 249
   },
   "by_subclass": {
     "hotspot": 12,
-    "grid_missense": 322,
+    "grid_missense": 316,
     "context_homopolymer": 25,
     "context_segdup": 25,
     "context_near_germline_het": 25,
@@ -16,62 +16,64 @@
     "phased_pair": 50,
     "nonsense": 60,
     "synonymous": 40,
-    "stop_loss": 20,
+    "start_loss": 13,
+    "stop_loss": 7,
     "frameshift_del": 80,
     "frameshift_ins": 60,
     "inframe_del": 40,
     "inframe_ins": 30,
-    "homopolymer_indel": 40
+    "homopolymer_indel": 39
   },
   "by_consequence": {
-    "missense": 484,
+    "missense": 478,
     "intronic": 25,
     "nonsense": 60,
     "synonymous": 40,
-    "stop_loss": 20,
-    "frameshift": 151,
-    "inframe_deletion": 67,
+    "start_loss": 13,
+    "stop_loss": 7,
+    "frameshift": 154,
+    "inframe_deletion": 63,
     "inframe_insertion": 32
   },
   "by_clonality_tier": {
-    "T_LOH": 79,
-    "T_het": 181,
-    "T_amp": 24,
-    "A": 201,
-    "B": 207,
-    "A1": 187
+    "T_LOH": 86,
+    "T_het": 186,
+    "T_amp": 23,
+    "A": 221,
+    "B": 185,
+    "A1": 171
   },
   "by_expression_tier": {
-    "T10": 282,
-    "T100": 162,
-    "T1": 144,
-    "T0": 224,
-    "T1000": 67
+    "T10": 301,
+    "T100": 156,
+    "T1": 136,
+    "T0": 218,
+    "T1000": 61
   },
   "by_binding_tier": {
-    "weak": 218,
-    "strong": 347,
-    "non": 178,
-    "na": 136
+    "weak": 222,
+    "strong": 316,
+    "non": 175,
+    "na": 159
   },
   "by_context": {
-    "clean": 567,
-    "segdup": 48,
-    "exon_edge": 132,
+    "clean": 557,
+    "segdup": 55,
+    "exon_edge": 129,
     "homopolymer": 66,
-    "near_germline_het": 39,
+    "near_germline_het": 36,
     "deep_intronic": 25,
-    "repeat_other": 2
+    "repeat_other": 4
   },
-  "chr1to6_fraction": 0.615,
+  "chr1to6_fraction": 0.642,
   "flagposts": 12,
-  "grid_cells_filled": 81,
+  "grid_cells_filled": 80,
   "grid_cells_total": 90,
   "svs": {
-    "n": 98,
+    "n": 97,
     "by_subclass": {
-      "coding": 49,
-      "non_coding": 49
+      "non_coding": 49,
+      "coding": 48
     }
   },
   "viruses": {
@@ -84,36 +86,37 @@
   "expressed": {
     "n": 75,
     "by_subclass": {
-      "clone_restricted": 3,
       "tumor_wide": 12,
+      "clone_restricted": 3,
       "tumor_specific": 25,
-      "tumor_associated": 19,
-      "unexpressed_negative": 16
+      "tumor_associated": 20,
+      "unexpressed_negative": 15
     }
   },
   "fusions": {
-    "n": 17,
+    "n": 19,
     "by_subclass": {
       "in_frame": 9,
       "out_of_frame": 4,
       "readthrough": 2,
-      "in_frame_novel": 2
+      "in_frame_novel": 4
     },
     "by_mechanism": {
-      "DUP": 1,
+      "TRA": 9,
       "INV": 5,
-      "TRA": 8,
-      "DEL": 1,
+      "DEL": 2,
+      "DUP": 1,
       "none": 2
     },
-    "in_frame": 13,
-    "wes_visible": 8,
+    "in_frame": 15,
+    "wes_visible": 12,
     "by_binding_tier": {
-      "strong": 10,
-      "non": 4,
-      "weak": 3
+      "non": 5,
+      "strong": 7,
+      "weak": 6,
+      "na": 1
     }
   },
-  "runtime_s": 2806,
+  "runtime_s": 10873,
   "scale": 1.0
 }

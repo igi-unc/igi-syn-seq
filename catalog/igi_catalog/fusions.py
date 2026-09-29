@@ -97,6 +97,8 @@ class FusionDesigner:
             r, allele, aff = NetMHCpan.best(al)
             if best is None or r < best[0]:
                 best = (r, allele, aff, pep)
+        # owner decision D4: the same peptides scored again over the alleles the tumour retains
+        rr, ral, _ra, rpep = NetMHCpan.best_over(res, neo, among=self.env.hla_retained)
         tpm5 = self.env.expr.gene(t5.gene_id)
         tpm3 = self.env.expr.gene(t3.gene_id)
         ev = {
@@ -119,6 +121,10 @@ class FusionDesigner:
             "best_allele": best[1] if best else None,
             "best_peptide": best[3] if best else None,
             "n_junction_neopeptides": len(neo),
+            "binding_tier_retained": NetMHCpan.tier(rr),
+            "best_rank_el_retained": round(rr, 3) if rr is not None else None,
+            "best_allele_retained": ral, "best_peptide_retained": rpep,
+            "best_allele_is_lost": bool(best and best[1] in self.env.hla_lost),
             "wes_visible": self._captured(bp5) or self._captured(bp3),
             "flagpost": flagpost,
             "chr1to6": t5.chrom in CHR1TO6 and t3.chrom in CHR1TO6,

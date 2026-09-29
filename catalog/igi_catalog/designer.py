@@ -13,6 +13,7 @@ from .expression import Expression
 from .germline import Germline
 from .context import ContextAnnotator
 from .clones import CloneModel
+from .hla_loss import HlaLoss
 from .binding import NetMHCpan
 from .snv_indel import SnvIndelDesigner
 from .fusions import FusionDesigner
@@ -34,8 +35,18 @@ def build_env(paths, design, ds_name):
     os.makedirs(work, exist_ok=True)
     netmhc = NetMHCpan(paths["netmhcpan_cmd"], os.path.join(work, "netmhcpan"), os.path.join(work, "netmhcpan_cache.json"), threads=int(paths.get("netmhcpan_threads", 6)))
     hla = sorted(set(dcfg["hla"]))
+    # owner decision D4: every event is scored twice, once over all alleles and once over the alleles the
+    # tumour still has after HLA loss, and carries a flag when its best allele is one that was lost
+    hla_loss = HlaLoss(dcfg, clones)
+    hla_retained, hla_lost = hla_loss.retained(), hla_loss.lost()
     print(f"[env] {ds_name}: {len(tx)} transcripts, {len(rep)} representative CDS, loaded in {time.time() - t0:.0f}s", flush=True)
-    return SimpleNamespace(tx=tx, rep=rep, genome=genome, expr=expr, germline=germline, ctx=ctx, clones=clones, netmhc=netmhc, hla=hla, work=work)
+    if hla_lost:
+        print(f"[env] {ds_name}: HLA lost in clone {hla_loss.region['clone']} "
+              f"({hla_loss.region['label']}): {', '.join(hla_lost)}; retained: {', '.join(hla_retained)}",
+              flush=True)
+    return SimpleNamespace(tx=tx, rep=rep, genome=genome, expr=expr, germline=germline, ctx=ctx,
+                           clones=clones, netmhc=netmhc, hla=hla, hla_loss=hla_loss,
+                           hla_retained=hla_retained, hla_lost=hla_lost, work=work)
 
 
 def write_table(events, path):
@@ -84,6 +95,10 @@ def write_outputs(events, cards, out_dir, ds_name, design, summary_extra=None, f
         "by_context": dict(Counter(e["context"] for e in events)),
         "chr1to6_fraction": round(sum(1 for e in events if e["chr1to6"]) / max(1, len(events)), 3),
         "flagposts": sum(1 for e in events if e["flagpost"]),
+        "by_binding_tier_retained": dict(Counter(e.get("binding_tier_retained", "na") for e in events)),
+        "best_allele_is_lost": sum(1 for e in events if e.get("best_allele_is_lost")),
+        "tier_changed_by_hla_loss": sum(1 for e in events
+                                       if e.get("binding_tier") != e.get("binding_tier_retained")),
         "grid_cells_filled": len({(e["clonality_tier"], e["expression_tier"], e["binding_tier"]) for e in events if e["subclass"] == "grid_missense"}),
         "grid_cells_total": len(design["tiers"]["clonality"]) * len(design["tiers"]["expression"]) * len(design["tiers"]["binding"]),
     }
@@ -143,7 +158,8 @@ def main(argv=None):
     path, summ = write_outputs(events, des.cards, a.out, a.dataset, design,
                                {"runtime_s": round(time.time() - t0), "scale": a.scale},
                                fusions=fusions, fusion_cards=fus.cards,
-                               extra_tables={"svs": svs, "viruses": sv.viral, "expressed": exc.events})
+                               extra_tables={"svs": svs, "viruses": sv.viral, "expressed": exc.events,
+                                             "hla_loh": env.hla_loss.rows()})
     print(json.dumps(summ, indent=2))
     print(f"[done] {len(events)} events -> {path}")
 

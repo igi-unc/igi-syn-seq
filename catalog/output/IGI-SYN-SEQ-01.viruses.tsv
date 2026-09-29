@@ -1,4 +1,4 @@
 event_id	dataset	class	subclass	virus	accession	clone	ccf	copies_per_cell	expressed	normal_trace_copies	chrom	integration_pos	haplotype	expected_vaf_dna	tumor_cn_at_locus	host_junction	wes_visible	chr1to6
-IGI-SYN-SEQ-01-VIR-0001	IGI-SYN-SEQ-01	virus	integrated	HPV16	NC_001526.2	T	1.0	3	True	0	chr8	127400000	0	0.0778	12.0	chr8:127400000|NC_001526.2:1	False	False
+IGI-SYN-SEQ-01-VIR-0001	IGI-SYN-SEQ-01	virus	integrated	HPV16	NC_001526.2	T	1.0	3	True	0	chr8	127400000	1	0.8556	12.0	chr8:127400000|NC_001526.2:1	False	False
 IGI-SYN-SEQ-01-VIR-0002	IGI-SYN-SEQ-01	virus	episomal	EBV	NC_007605.1	T	1.0	5	low	0.05							False	True
 IGI-SYN-SEQ-01-VIR-0003	IGI-SYN-SEQ-01	virus	episomal	HPV18	NC_001357.1	B	0.25	2	False	0							False	True

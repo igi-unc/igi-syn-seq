@@ -204,6 +204,42 @@ Coding burden is ~10x a real TNBC by design.
 - Peptide binding evaluated against each patient's HLA with netMHCpan (and mhcflurry as
   a second opinion) at design time; the truth bundle records both.
 
+### 6.4 HLA loss and the two binding tiers (owner decision D4)
+
+LENS ranks candidates against all of a patient's alleles, but a tumour that has lost an HLA haplotype
+cannot present through the alleles on it. Both numbers are real, so the truth bundle carries both.
+
+Per event: `binding_tier` / `best_rank_el` / `best_allele` / `best_peptide` over all six alleles;
+`binding_tier_retained` / `best_rank_el_retained` / `best_allele_retained` / `best_peptide_retained`
+over the alleles the tumour retains; and `best_allele_is_lost`, true when the best all-allele result
+belongs to a lost allele. `<dataset>.hla_loh.tsv` lists every allele in every clone with its haplotype
+assignment, copy number, lost flag and the CNA label responsible.
+
+The evidence grid is filled on the **all-allele** tier, because that matches how LENS ranks today. The
+retained tier is an additional column. Scoring a caller follows the same split: ranking against the
+all-allele tier, and the warning a caller should emit about unusable alleles against the lost-allele flag.
+
+Both datasets lose haplotype 1 over `chr6:28,500,000-33,500,000`:
+
+| Dataset | Lost | Retained |
+|---|---|---|
+| IGI-SYN-SEQ-01 | A\*26:01, B\*38:01, C\*12:03 | A\*01:01, B\*35:08, C\*04:01 |
+| IGI-SYN-SEQ-02 | B\*27:05, C\*01:02 | A\*01:01, B\*08:01, C\*07:01 |
+
+Dataset 01 loses a full haplotype and therefore one allele of each class I gene. Dataset 02 keeps
+A\*01:01 because it is homozygous, so only B and C are affected.
+
+Which allele sits on which haplotype is not something a SNV-level phased VCF settles, so the arrangement
+is declared in `design.yaml` with its basis recorded. For IGI-SYN-SEQ-02 it follows linkage
+disequilibrium: A\*01:01-B\*08:01-C\*07:01 is the 8.1 ancestral haplotype and B\*27:05 travels with
+C\*01:02. OptiType on the recovered normal returned exactly the six manifest alleles, which confirms the
+genotype but not the phase. For IGI-SYN-SEQ-01 the B-C linkages are likewise established but which
+haplotype is maternal is still unverified.
+
+Because the lost alleles account for a large share of best hits -- about 50 % of events in dataset 01 and
+36 % in dataset 02 -- the two tiers differ for a substantial fraction of the catalog, which is the point
+of carrying both.
+
 ## 7. Cross-assay reflection matrix
 
 | Event class | WES T | WES N | bulk RNA | HiFi WGS T | HiFi WGS N | Kinnex bulk | Kinnex sc | 10x GEX | 10x TCR |

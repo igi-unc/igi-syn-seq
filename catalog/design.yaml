@@ -54,7 +54,10 @@ datasets:
     baseline: HG002
     sex: male
     hla: [HLA-A*01:01, HLA-A*26:01, HLA-B*35:08, HLA-B*38:01, HLA-C*04:01, HLA-C*12:03]
-    hla_haplotypes: {0: [HLA-A*01:01, HLA-B*35:08, HLA-C*04:01], 1: [HLA-A*26:01, HLA-B*38:01, HLA-C*12:03]}  # hap0 maternal, hap1 paternal
+    # B*35:08-C*04:01 and B*38:01-C*12:03 are both established B-C linkages; which haplotype is maternal
+    # is still unverified (Q3), and the arrangement is what decides which alleles the 17q-style HLA loss
+    # takes, so it is declared here rather than inferred.
+    hla_haplotypes: {0: [HLA-A*01:01, HLA-B*35:08, HLA-C*04:01], 1: [HLA-A*26:01, HLA-B*38:01, HLA-C*12:03]}
     purity: 0.70
     wgd: false
     clones:                  # ccf = fraction of tumor cells carrying the clone's events; parent null = truncal
@@ -101,7 +104,12 @@ datasets:
     baseline: IPISRC044
     sex: male
     hla: [HLA-A*01:01, HLA-A*01:01, HLA-B*08:01, HLA-B*27:05, HLA-C*01:02, HLA-C*07:01]
-    hla_haplotypes: {0: [HLA-A*01:01, HLA-B*08:01, HLA-C*07:01], 1: [HLA-A*01:01, HLA-B*27:05, HLA-C*01:02]}  # assignment to be confirmed from phased VCF
+    # Arrangement from linkage disequilibrium, not from the phased VCF: a SNV-level phasing does not
+    # assign HLA alleles to haplotypes. A*01:01-B*08:01-C*07:01 is the 8.1 ancestral haplotype, and
+    # B*27:05 travels with C*01:02. A*01:01 is homozygous so it sits on both and survives the loss.
+    # OptiType on the recovered normal returned exactly these six alleles (D3), which confirms the
+    # genotype but not the phase.
+    hla_haplotypes: {0: [HLA-A*01:01, HLA-B*08:01, HLA-C*07:01], 1: [HLA-A*01:01, HLA-B*27:05, HLA-C*01:02]}
     purity: 0.45
     wgd: true
     clones:

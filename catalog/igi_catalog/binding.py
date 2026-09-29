@@ -130,10 +130,34 @@ class NetMHCpan:
             self._dirty = False
 
     @staticmethod
-    def best(pep_alleles):
-        """Lowest %rank_EL across alleles -> (rank, allele, affinity)."""
-        allele, vals = min(pep_alleles.items(), key=lambda kv: kv[1][0])
+    def best(pep_alleles, among=None):
+        """Lowest %rank_EL across alleles -> (rank, allele, affinity).
+
+        `among` restricts the search to a subset of alleles, which is how the retained-allele tier is
+        scored: a tumour that has lost an HLA haplotype cannot present through the alleles on it, so the
+        best rank over the surviving alleles is a different and equally real number (owner decision D4).
+        Returns (None, None, None) when no allele in `among` was scored for this peptide.
+        """
+        items = pep_alleles if among is None else {a: v for a, v in pep_alleles.items() if a in among}
+        if not items:
+            return None, None, None
+        allele, vals = min(items.items(), key=lambda kv: kv[1][0])
         return vals[0], allele, vals[2]
+
+    @staticmethod
+    def best_over(res, peptides, among=None):
+        """Best (rank, allele, affinity, peptide) over a set of peptides, optionally restricted by allele."""
+        best = None
+        for pep in peptides:
+            al = res.get(pep)
+            if not al:
+                continue
+            r, allele, aff = NetMHCpan.best(al, among=among)
+            if r is None:
+                continue
+            if best is None or r < best[0]:
+                best = (r, allele, aff, pep)
+        return best or (None, None, None, None)
 
     @staticmethod
     def tier(rank_el):

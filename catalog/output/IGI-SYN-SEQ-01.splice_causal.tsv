@@ -1,0 +1,16 @@
+event_id	dataset	class	subclass	chrom	pos	ref	alt	haplotype	clone	ccf	timing	clonality_tier	gene	transcript	mechanism	exon_index	consequence	reference_dinucleotide	canonical_site	chr1to6
+IGI-SYN-SEQ-01-SPL-0001	IGI-SYN-SEQ-01	snv	splice_causal	chr22	50582247	A	C	1	A1	0.12	post_cna	A1	CHKB	ENST00000406938.3	exon_skip	2	splice_site	AC	True	False
+IGI-SYN-SEQ-01-SPL-0002	IGI-SYN-SEQ-01	snv	splice_causal	chr7	43869306	A	C	0	T	1.0	pre_cna	T_het	MRPS24	ENST00000317534.6	intron_retention	2	splice_site	AC	True	False
+IGI-SYN-SEQ-01-SPL-0003	IGI-SYN-SEQ-01	snv	splice_causal	chr14	67692436	A	C	1	T	1.0	pre_cna	T_het	RDH11	ENST00000381346.9	cryptic_5p	3	splice_site	AC	True	False
+IGI-SYN-SEQ-01-SPL-0004	IGI-SYN-SEQ-01	snv	splice_causal	chr1	44926626	A	C	0	A	0.4	post_cna	A	EIF2B3	ENST00000360403.7	cryptic_3p	5	splice_site	AC	True	True
+IGI-SYN-SEQ-01-SPL-0005	IGI-SYN-SEQ-01	snv	splice_causal	chr7	30782213	G	A	1	T	1.0	pre_cna	T_het	MINDY4	ENST00000265299.6	novel_exon	3	splice_site	GT	True	False
+IGI-SYN-SEQ-01-SPL-0006	IGI-SYN-SEQ-01	snv	splice_causal	chr3	196371894	A	C	1	T	1.0	pre_cna	T_het	UBXN7	ENST00000296328.9	exon_skip	6	splice_site	AC	True	True
+IGI-SYN-SEQ-01-SPL-0007	IGI-SYN-SEQ-01	snv	splice_causal	chr12	75501921	A	C	0	B	0.25	post_cna	B	KRR1	ENST00000229214.9	intron_retention	8	splice_site	AC	True	False
+IGI-SYN-SEQ-01-SPL-0008	IGI-SYN-SEQ-01	snv	splice_causal	chr15	73587522	A	C	0	T	1.0	pre_cna	T_het	NPTN	ENST00000345330.9	cryptic_5p	4	splice_site	AC	True	False
+IGI-SYN-SEQ-01-SPL-0009	IGI-SYN-SEQ-01	snv	splice_causal	chr10	101806043	A	C	1	T	1.0	pre_cna	T_het	OGA	ENST00000361464.8	cryptic_3p	6	splice_site	AC	True	False
+IGI-SYN-SEQ-01-SPL-0010	IGI-SYN-SEQ-01	snv	splice_causal	chr12	50437839	G	A	1	A	0.4	post_cna	A	LARP4	ENST00000398473.7	novel_exon	6	splice_site	GT	True	False
+IGI-SYN-SEQ-01-SPL-0011	IGI-SYN-SEQ-01	snv	splice_causal	chr15	76947518	G	A	1	T	1.0	pre_cna	T_het	RCN2	ENST00000394885.8	exon_skip	5	splice_site	GT	True	False
+IGI-SYN-SEQ-01-SPL-0012	IGI-SYN-SEQ-01	snv	splice_causal	chr1	79005068	A	C	1	T	1.0	pre_cna	T_het	ADGRL4	ENST00000370742.4	intron_retention	2	splice_site	AC	True	True
+IGI-SYN-SEQ-01-SPL-0013	IGI-SYN-SEQ-01	snv	splice_causal	chr5	179970408	A	C	0	A	0.4	post_cna	A	RNF130	ENST00000521389.6	cryptic_5p	6	splice_site	AC	True	True
+IGI-SYN-SEQ-01-SPL-0014	IGI-SYN-SEQ-01	snv	splice_causal	chr10	67906938	G	A	0	T	1.0	pre_cna	T_het	SIRT1	ENST00000212015.11	cryptic_3p	5	splice_site	GT	True	False
+IGI-SYN-SEQ-01-SPL-0015	IGI-SYN-SEQ-01	snv	splice_causal	chr19	39329542	A	C	1	T	1.0	pre_cna	T_het	GMFG	ENST00000597595.6	novel_exon	5	splice_site	AC	True	False

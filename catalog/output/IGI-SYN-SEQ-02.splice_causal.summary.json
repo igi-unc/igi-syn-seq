@@ -1,0 +1,23 @@
+{
+  "dataset": "IGI-SYN-SEQ-02",
+  "n": 15,
+  "skipped": [],
+  "reference_dinucleotides": {
+    "AC": 7,
+    "GT": 8
+  },
+  "non_canonical": 0,
+  "by_clone": {
+    "A": 1,
+    "T": 11,
+    "A1": 2,
+    "B": 1
+  },
+  "by_mechanism": {
+    "exon_skip": 3,
+    "intron_retention": 3,
+    "cryptic_5p": 3,
+    "cryptic_3p": 3,
+    "novel_exon": 3
+  }
+}
