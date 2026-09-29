@@ -37,8 +37,22 @@ def merged_capture(bed_path, chroms, pad=100, gap=200):
     return out
 
 
+def depth_denominator(clones, purity):
+    """Copy-weighted material at a baseline-ploidy locus, used to normalise depth.
+
+    Depth is proportional to the number of DNA copies in the sequenced material. Dividing every locus by
+    this baseline makes an unaltered region come out at the requested depth, a loss come out lower and an
+    amplification higher, in the same proportion the clone model's expected VAF assumes.
+    """
+    base_total = sum(clones.base)
+    return purity * sum(clones.excl.values()) * base_total + (1.0 - purity) * 2.0
+
+
 def source_plan(clones, purity, chrom, pos, tumor=True):
-    """(source, haplotype, weight) triples for one locus, weights summing to 1.
+    """(source, haplotype, copy kind, weight) tuples for one locus.
+
+    Weights are absolute copy-weighted contributions, not normalised to 1, so their sum varies with local
+    copy number and carries the depth signal. Divide by `depth_denominator` to convert to coverage.
 
     Read depth follows the number of copies present, not the number of cells: a clone contributes in
     proportion to its exclusive cell fraction times the absolute copy number of that haplotype at this
@@ -47,7 +61,8 @@ def source_plan(clones, purity, chrom, pos, tumor=True):
     by the same mean local copy number.
     """
     if not tumor:
-        return [("NORMAL", 0, "all", 0.5), ("NORMAL", 1, "all", 0.5)]
+        # the normal library is diploid everywhere, so its depth does not vary with the tumour's copy number
+        return [("NORMAL", 0, "all", 1.0), ("NORMAL", 1, "all", 1.0)]
     raw = []
     for src, frac in clones.excl.items():
         if frac <= 0:
@@ -64,8 +79,7 @@ def source_plan(clones, purity, chrom, pos, tumor=True):
             if cn > 1:
                 raw.append((src, hap, "pre_cna", purity * frac * (cn - 1)))
     raw += [("NORMAL", 0, "all", (1.0 - purity)), ("NORMAL", 1, "all", (1.0 - purity))]
-    total = sum(w for _s, _h, _k, w in raw) or 1.0
-    return [(s, h, k, w / total) for s, h, k, w in raw]
+    return raw
 
 
 def cn_profile(clones, chrom, pos):
@@ -85,6 +99,7 @@ class WesBuilder:
         self.record_map = []       # (record id, chrom, start, end, source, haplotype, copy kind)
         self.rejected = []         # designed somatic edits that could not be applied
         self.germline_rejected = 0
+        self.denom = depth_denominator(env.clones, purity) if purity is not None else 2.0
         os.makedirs(workdir, exist_ok=True)
 
     def write_source_fastas(self, capture, tumor=True, max_intervals=None):
@@ -159,10 +174,12 @@ class WesBuilder:
         pieces = []
         for i, (key, (path, weight)) in enumerate(sorted(sources.items())):
             src, hap, kind, pid = key
-            # weights sum to 1 within a copy-number profile, so every locus receives `depth` in total.
-            # ART accepts fractional fold-coverage, and rounding to an integer distorts the smallest
-            # clones most: a 2.33x target became 2x, which is a 14% shortfall on the deepest subclone.
-            cov = max(0.01, depth * weight)
+            # weight is an absolute copy-weighted contribution, so dividing by the baseline makes total
+            # depth track local copy number: a deleted region is shallower and an amplicon deeper, rather
+            # than every locus receiving the same depth with only the allele mixture changing.
+            # ART accepts fractional fold-coverage; rounding to an integer distorts the smallest clones
+            # most, turning a 2.33x target into 2x.
+            cov = max(0.01, depth * weight / self.denom)
             pre = os.path.join(self.workdir, f"{os.path.basename(out_prefix)}_{src}_h{hap}_{kind}_cn{pid}_")
             cmd = art_cmd.format(args=(f"-ss HS25 -i {path} -p -l {read_len} -f {cov:.5f} -m 350 -s 60 "
                                        f"-rs {seed + i} -na -o {pre}"))
