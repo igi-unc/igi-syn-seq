@@ -124,7 +124,12 @@ class StructuralDesigner:
         self.events.append(ev)
         return ev
 
-    def _captured(self, chrom, pos, flank=50):
+    # must match the padding used when the exome intervals are built for generation
+    # (pipeline.merged_capture pad=100); gap-merging there can admit a few more breakpoints, so this
+    # flag is a conservative predictor and the junctions table written by the run is authoritative
+    CAPTURE_PAD = 100
+
+    def _captured(self, chrom, pos, flank=CAPTURE_PAD):
         return self.env.ctx.exome.any(chrom, max(0, pos - 1 - flank), pos + flank)
 
     # ------------------------------------------------------------------ viruses

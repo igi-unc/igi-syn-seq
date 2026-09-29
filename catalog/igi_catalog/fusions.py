@@ -127,8 +127,12 @@ class FusionDesigner:
         self.events.append(ev)
         return ev
 
-    def _captured(self, bp, flank=50):
-        """Whether a breakpoint falls inside a capture region once the kit's flank is allowed for."""
+    def _captured(self, bp, flank=100):
+        """Whether a breakpoint falls inside a capture region once the kit's flank is allowed for.
+
+        The flank matches the padding used when intervals are built for generation, so the flag predicts
+        what the run will actually place; the run's junctions table remains authoritative.
+        """
         if not bp:
             return False
         chrom, pos = bp
