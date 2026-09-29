@@ -236,6 +236,9 @@ Throughput scales with the cores available to the job, so the design run is give
 - Splice events disrupt donors only, never acceptors, because of how the causal site is chosen.
 - The off-target coverage bands use one flat depth per band rather than a fitted decay curve, and the
   band depths are assumed rather than measured from a real capture library.
+- The builder's on-target region is the bait list padded by 100 bp, so a third of it is bait flank. A
+  library reads 77.6 % on target against that definition and about 51 % against the raw baits; the
+  second figure is calculated from interval sizes, not from an alignment.
 - Binding is scored for the whole candidate pool (about 12,000 missense candidates) although only some
   600 are placed, because a candidate's tier has to be known before it can be assigned to a grid cell.
   Scoring in waves until each cell fills would cut this several-fold and is the obvious next optimization.

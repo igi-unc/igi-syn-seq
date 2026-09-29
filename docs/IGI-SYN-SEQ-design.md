@@ -283,10 +283,24 @@ relative to the on-target depth:
 | distal | random windows clear of every bait | 0.012 |
 
 The depths are means over each band, not the peak at the bait edge, since real flank coverage decays
-within a couple of hundred bases. They put a chr6 library at roughly 60-65 % on target, which is the
-range a real capture run occupies. The distal set samples the genome-wide background rather than tiling
-it: any window it covers looks like real off-target sequence, but the untiled remainder contributes
-nothing, so the library's overall off-target read count is lower than a real one.
+within a couple of hundred bases.
+
+Measured on an uncapped chr6 tumour library (3,568,125 pairs, job 11555336): 77.6 % of reads fall inside
+the capture intervals the builder uses, 16.5 % proximal, 5.6 % mid and 0.3 % distal. That figure depends
+entirely on which interval list it is measured against, and both numbers matter:
+
+- Against the builder's capture intervals, which are the bait list padded by 100 bp and merged across
+  200 bp gaps, the library is **77.6 % on target**. The padding is 2.19 Mb of the 6.42 Mb total, so a
+  third of what this definition calls on target is really bait flank.
+- Against the raw bait list (4.23 Mb over 11,091 baits on chr6), the same library is about **51 % on
+  target**, which is where a real exome measured by Picard `HsMetrics` normally sits. This figure is
+  calculated from the interval sizes rather than from an alignment, so treat it as an estimate until a
+  BAM confirms it.
+
+The distal set samples the genome-wide background rather than tiling it: any window it covers looks like
+real off-target sequence, but the untiled remainder contributes nothing, so the library's total
+off-target read count is lower than a real one. Local depth realism is the more useful property for a
+benchmark, so it is the one preserved.
 
 Every set runs through the same clone, haplotype and copy-number machinery as the bait set, so loss of
 heterozygosity and amplification are visible off-target as well. A rearrangement junction is handed out

@@ -47,15 +47,16 @@ def merged_capture(bed_path, chroms, pad=100, gap=200):
 # within a couple of hundred bases, so averaging over 0-500 bp is well below what the edge itself shows.
 # With these values a chr6 library comes out around 60-65 % on target, which is the real range.
 OFF_TARGET_BANDS = [("proximal", (1, 500), 0.15), ("mid", (501, 2000), 0.02)]
-# The distal set samples the genome-wide background rather than tiling it: a few hundred windows per
-# chromosome, at the depth such regions really carry. Any window it covers looks like real off-target
+# The distal set samples the genome-wide background rather than tiling it: a couple of thousand windows
+# per chromosome, at the depth such regions really carry. Any window it covers looks like real off-target
 # sequence; the library's overall off-target read count is lower than a real one because the untiled
-# remainder contributes nothing.
+# remainder contributes nothing. Local depth realism is worth more here than the headline read count,
+# since a caller reading one of these windows has to see what a real off-target region looks like.
 DISTAL_DEPTH = 0.012          # relative to on-target, for random windows away from any bait
 
 
 def off_target_bands(capture, chrom, chrom_length, rng, bands=OFF_TARGET_BANDS,
-                     n_distal=400, distal_width=5000, min_len=150):
+                     n_distal=2000, distal_width=5000, min_len=150):
     """Interval sets for each off-target band, plus distal windows.
 
     Returns [(name, relative_depth, [(start1, end1), ...]), ...]. Bands are measured outward from each
