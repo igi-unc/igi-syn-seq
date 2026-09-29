@@ -75,10 +75,34 @@ class CodingModel:
             rng = range(s, e + 1) if t.strand == "+" else range(e, s - 1, -1)
             self.map.extend(rng)
         seq = "".join(genome.seq(t.chrom, s - 1, e) for s, e in t.cds)
-        self.cds = seq if t.strand == "+" else revcomp(seq)
-        # append the stop codon (GENCODE CDS excludes it) when in frame
-        self.protein = translate(self.cds)
+        coding = seq if t.strand == "+" else revcomp(seq)
+        # GENCODE CDS excludes the stop codon, so the model had no way to know where the stop was:
+        # `stop_loss` could not be sampled and was instead inferred from protein length, which fires on
+        # frame artefacts. The three downstream bases are appended so the stop is addressable like any
+        # other codon, and their genomic positions join the coordinate map.
+        stop_positions = self._stop_codon_positions(t, genome)
+        self.stop_index = len(coding) // 3 if stop_positions else None
+        if stop_positions:
+            self.map.extend(stop_positions)
+            coding += "".join(genome.seq(t.chrom, p - 1, p) if t.strand == "+"
+                              else revcomp(genome.seq(t.chrom, p - 1, p)) for p in stop_positions)
+        self.cds = coding
+        full = translate(self.cds)
+        stop_at = full.find("*")
+        self.protein = full[:stop_at] if stop_at >= 0 else full
+        self.has_stop = stop_at >= 0
         self.pos_index = {p: i for i, p in enumerate(self.map)}
+
+    @staticmethod
+    def _stop_codon_positions(t, genome):
+        """Genomic positions of the three bases immediately after the CDS, in transcript order."""
+        if t.strand == "+":
+            last = t.cds[-1][1]
+            pos = [last + 1, last + 2, last + 3]
+            return pos if pos[-1] <= genome.lengths.get(t.chrom, 0) else []
+        first = t.cds[0][0]
+        pos = [first - 1, first - 2, first - 3]
+        return pos if pos[-1] >= 1 else []
     def cds_index(self, gpos): return self.pos_index.get(gpos)
     def codon_number(self, gpos):
         i = self.cds_index(gpos); return None if i is None else i // 3
@@ -112,16 +136,29 @@ class CodingModel:
         while k < min(len(mprot), len(wprot)) and mprot[k] == wprot[k]: k += 1
         d = len(alt_t) - len(ref_t)
         if d == 0 and len(ref_t) == 1:
-            if k == len(wprot) and len(mprot) == len(wprot): cons = "synonymous"
-            elif k < len(wprot) and len(mprot) == k: cons = "nonsense" if k < len(wprot) else "synonymous"
-            elif k == 0 and mprot[:1] != "M": cons = "start_loss"
-            elif len(mprot) > len(wprot): cons = "stop_loss"
-            else: cons = "missense" if len(mprot) == len(wprot) else "nonsense"
+            codon = i // 3
+            # consequence is decided by which codon was hit, not by how the protein lengths compare
+            if self.stop_index is not None and codon == self.stop_index:
+                cons = "stop_loss" if len(mprot) > len(wprot) else "synonymous"
+            elif codon == 0:
+                cons = "start_loss" if mprot[:1] != "M" else "synonymous"
+            elif k >= len(wprot) and len(mprot) == len(wprot): cons = "synonymous"
+            elif len(mprot) < len(wprot): cons = "nonsense"
+            else: cons = "missense"
         elif d % 3 == 0: cons = "inframe_insertion" if d > 0 else "inframe_deletion"
         else: cons = "frameshift"
         return mprot, k, cons
     def _downstream(self, n):
+        """Sequence after the coding region, starting past the stop codon.
+
+        The stop codon is part of `self.cds`, so the tail must begin after it; otherwise a readthrough
+        immediately meets a duplicated copy of the stop it just destroyed and appears to extend by one
+        residue.
+        """
         t = self.t
+        skip = 3 if self.stop_index is not None else 0
         if t.strand == "+":
-            last = t.cds[-1][1]; return self.g.seq(t.chrom, last, last + n)
-        first = t.cds[0][0]; return revcomp(self.g.seq(t.chrom, first - 1 - n, first - 1))
+            last = t.cds[-1][1] + skip
+            return self.g.seq(t.chrom, last, last + n)
+        first = t.cds[0][0] - skip
+        return revcomp(self.g.seq(t.chrom, first - 1 - n, first - 1))

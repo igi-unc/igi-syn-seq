@@ -83,7 +83,9 @@ class SnvIndelDesigner:
             if len(cm.protein) < 60 or "*" in cm.protein:
                 continue
             for _ in range(per_gene):
-                i = self.rng.randrange(3, len(cm.map) - 3)
+                # the whole coding span including the start and stop codons: excluding them made genuine
+                # start-loss and stop-loss impossible to sample
+                i = self.rng.randrange(0, len(cm.map))
                 gpos = cm.map[i]
                 if self._excluded(t.chrom, gpos):
                     continue
@@ -153,7 +155,9 @@ class SnvIndelDesigner:
         if cons in ("inframe_insertion", "inframe_deletion"):
             return f"{wt[k] if k < len(wt) else '?'}{k + 1}{'ins' if cons.endswith('insertion') else 'del'}"
         if cons == "stop_loss":
-            return f"*{len(wt) + 1}ext*{len(mut) - len(wt)}"
+            return f"*{len(wt) + 1}ext*{max(0, len(mut) - len(wt))}"
+        if cons == "start_loss":
+            return f"M1?"
         return cons
 
     @staticmethod
@@ -181,6 +185,7 @@ class SnvIndelDesigner:
         if cons in ("frameshift", "stop_loss", "start_loss"):
             mut, k = c["mut_protein"], c["aa_index"]
             return max(1, len(mut) - k) if (mut and k is not None) else 1
+        return 1
         return 0
 
     def score(self, cands, lengths=(8, 9, 10, 11)):
