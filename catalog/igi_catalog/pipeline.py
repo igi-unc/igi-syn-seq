@@ -81,6 +81,8 @@ class WesBuilder:
         self.events = events_by_chrom
         self.purity = purity
         self.workdir = workdir
+        self._n_rec = 0
+        self.record_map = []       # (record id, chrom, start, end, source, haplotype, copy kind)
         os.makedirs(workdir, exist_ok=True)
 
     def write_source_fastas(self, capture, tumor=True, max_intervals=None):
@@ -114,7 +116,12 @@ class WesBuilder:
                     if len(seq) < 100:
                         continue
                     fh = handles[key][1]
-                    fh.write(f">{chrom}_{start1}_{end1}_{src}_hap{hap}\n")
+                    # A stable id, unique across every source file. The previous name omitted `kind`
+                    # and the copy-number profile, so the "all" and "pre_cna" files produced identical
+                    # ART read ids and 860k of 2.0M names collided.
+                    self._n_rec += 1
+                    fh.write(f">e{self._n_rec:09d}\n")
+                    self.record_map.append((f"e{self._n_rec:09d}", chrom, start1, end1, src, hap, kind))
                     for i in range(0, len(seq), 60):
                         fh.write(seq[i:i + 60] + "\n")
                 n += 1
@@ -150,6 +157,16 @@ class WesBuilder:
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
             pieces.append((f"{pre}1.fq", f"{pre}2.fq", src, hap, round(cov, 5)))
         return pieces
+
+
+def write_record_map(record_map, path):
+    """The map from each source record to where it came from, for the truth bundle."""
+    import gzip
+    with gzip.open(path, "wt") as fh:
+        fh.write("record\tchrom\tstart\tend\tsource\thaplotype\tcopy_kind\n")
+        for row in record_map:
+            fh.write("\t".join(str(x) for x in row) + "\n")
+    return path
 
 
 def concat_fastqs(pieces, out_r1, out_r2, gzip_output=True):
