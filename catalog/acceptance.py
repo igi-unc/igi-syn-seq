@@ -50,12 +50,37 @@ def pileup(bam, reference, sites_path, min_bq=15, min_mq=20, max_depth=8000):
     return res
 
 
-def region_depth(bam, chrom, start, end, min_mq=20):
-    """Mean depth over a region."""
-    cmd = ["samtools", "depth", "-a", "-Q", str(min_mq), "-r", f"{chrom}:{start}-{end}", bam]
-    out = subprocess.run(cmd, capture_output=True, text=True).stdout
-    vals = [int(l.split("\t")[2]) for l in out.splitlines() if l]
-    return statistics.mean(vals) if vals else 0.0
+def captured_depth(bam, chrom, start, end, capture_bed, work, min_intervals=20):
+    """Mean depth over captured bases only, within a region.
+
+    Mean depth across a whole window is meaningless for an exome: it measures how much of the window is
+    captured, not how deeply it is sequenced. An arbitrary 2 Mb window read 3.4x while the gene-dense MHC
+    read 15.6x purely because far more of the MHC is on target. Restricting to capture intervals with
+    `samtools bedcov` compares like with like.
+    """
+    sub = os.path.join(work, f"cap_{chrom}_{start}_{end}.bed")
+    n = 0
+    with open(capture_bed) as fh, open(sub, "w") as out:
+        for line in fh:
+            f = line.split("\t")
+            if len(f) < 3 or f[0] != chrom:
+                continue
+            s0, e0 = int(f[1]), int(f[2])
+            if e0 <= start or s0 >= end:
+                continue
+            out.write(f"{chrom}\t{max(s0, start)}\t{min(e0, end)}\n")
+            n += 1
+    if n < min_intervals:
+        return None, n
+    res = subprocess.run(["samtools", "bedcov", "-Q", "20", sub, bam], capture_output=True, text=True).stdout
+    total_bases = total_cov = 0
+    for line in res.splitlines():
+        f = line.split("\t")
+        if len(f) < 4:
+            continue
+        total_bases += int(f[2]) - int(f[1])
+        total_cov += int(f[3])
+    return (total_cov / total_bases if total_bases else 0.0), n
 
 
 class Report:
@@ -122,7 +147,7 @@ def check_variants(rep, bam, reference, catalog, chrom, work):
             f"{seen} of {len(ev)} designed events have supporting reads")
 
 
-def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed):
+def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, work):
     """Observed depth ratio between copy-number regions against the purity and copy-number formula."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import yaml
@@ -139,19 +164,37 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed):
     if not regions:
         rep.add("depth by copy number", True, f"no large copy-number segment on {chrom} to test")
         return
-    base = region_depth(bam, chrom, 1_000_000, 3_000_000)
-    nums, worst = {}, 0.0
+    # the baseline must itself be a copy-number-neutral stretch, not an arbitrary window
+    neutral = []
+    pos = 1_000_000
+    while pos < 150_000_000:
+        a, b, _lab = cm.cn("T", chrom, pos)
+        if (a, b) == cm.base and not any(s <= pos <= e for _l, s, e in regions):
+            neutral.append(pos)
+        pos += 2_000_000
+    if not neutral:
+        rep.add("depth by copy number", False, "no copy-number-neutral baseline found on this chromosome")
+        return
+    mid_n = neutral[len(neutral) // 2]
+    base, n_base = captured_depth(bam, chrom, mid_n - 5_000_000, mid_n + 5_000_000, capture_bed, work)
+    nums, worst = {"baseline": {"depth": round(base, 2) if base else None, "intervals": n_base}}, 0.0
+    if not base:
+        rep.add("depth by copy number", False, "baseline region has no captured depth")
+        return
     for label, s, e in regions:
-        mid = (s + e) // 2
-        want = sum(w for _s, _h, _k, w in source_plan(cm, cm.purity, chrom, mid)) / den
-        got = region_depth(bam, chrom, mid - 200_000, mid + 200_000)
-        ratio = got / base if base else 0
+        want = sum(w for _s, _h, _k, w in source_plan(cm, cm.purity, chrom, (s + e) // 2)) / den
+        got, n_iv = captured_depth(bam, chrom, s, e, capture_bed, work)
+        if got is None:
+            nums[label] = {"skipped": f"only {n_iv} capture intervals"}
+            continue
+        ratio = got / base
         nums[label] = {"expected_ratio": round(want, 3), "observed_ratio": round(ratio, 3),
-                       "observed_depth": round(got, 1), "baseline_depth": round(base, 1)}
+                       "captured_depth": round(got, 2), "baseline_depth": round(base, 2),
+                       "intervals": n_iv}
         if want:
             worst = max(worst, abs(ratio / want - 1))
     rep.add("depth by copy number", worst <= 0.25,
-            f"largest deviation {worst:.0%} over {len(regions)} segment(s)", nums)
+            f"largest deviation {worst:.0%} over {len(regions)} segment(s), on captured bases", nums)
 
 
 def check_read_names(rep, r1):
@@ -195,14 +238,18 @@ def check_rna(rep, manifest):
         rep.add("rna", False, "no transcript produced reads")
         return
     import math
-    a = [math.log10(float(r["abundance"])) for r in recs if float(r["abundance"]) > 0]
-    o = [math.log10(float(r["observed_pairs"])) for r in recs if float(r["abundance"]) > 0]
+    # TPM is already length-normalised, so the quantity that should track abundance is per-base coverage,
+    # not the raw pair count: a short abundant transcript and a long rare one can yield the same number of
+    # pairs. Comparing pairs directly confounds length with abundance and understates the agreement.
+    live = [r for r in recs if float(r["abundance"]) > 0 and int(r["length"]) > 0]
+    a = [math.log10(float(r["abundance"])) for r in live]
+    o = [math.log10(float(r["observed_pairs"]) * 2 * 150 / int(r["length"])) for r in live]
     ma, mo = statistics.mean(a), statistics.mean(o)
     num = sum((x - ma) * (y - mo) for x, y in zip(a, o))
     den = math.sqrt(sum((x - ma) ** 2 for x in a) * sum((y - mo) ** 2 for y in o))
     r = num / den if den else 0
-    rep.add("rna depth tracks abundance", r >= 0.9,
-            f"correlation of log abundance with log observed pairs = {r:.3f} over {len(recs):,} records")
+    rep.add("rna depth tracks abundance", r >= 0.95,
+            f"correlation of log abundance with log observed coverage = {r:.3f} over {len(live):,} records")
     haps = Counter(x["hap"] for x in recs)
     rep.add("rna covers both haplotypes", len(haps) > 1 and min(haps.values()) > 0.2 * max(haps.values()),
             f"records per haplotype {dict(haps)}")
@@ -222,6 +269,7 @@ def main():
     ap.add_argument("--chrom")
     ap.add_argument("--design", default="design.yaml")
     ap.add_argument("--arms-bed")
+    ap.add_argument("--capture-bed")
     ap.add_argument("--junctions")
     ap.add_argument("--rna-manifest")
     ap.add_argument("--work", default="/tmp")
@@ -232,8 +280,9 @@ def main():
     if a.bam and a.reference and a.dataset and a.chrom:
         cat = os.path.join(a.catalog_dir, f"{a.dataset}.snv_indel.tsv")
         check_variants(rep, a.bam, a.reference, cat, a.chrom, a.work)
-        if a.arms_bed:
-            check_depth_by_cn(rep, a.bam, a.design, a.dataset, a.chrom, a.arms_bed)
+        if a.arms_bed and a.capture_bed:
+            check_depth_by_cn(rep, a.bam, a.design, a.dataset, a.chrom, a.arms_bed,
+                              a.capture_bed, a.work)
         check_classes_present(rep, a.catalog_dir, a.dataset, a.junctions)
     if a.r1:
         check_read_names(rep, a.r1)
