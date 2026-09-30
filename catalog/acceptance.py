@@ -17,6 +17,7 @@ import bisect
 import csv
 import gzip
 import json
+import math
 import os
 import re
 import statistics
@@ -135,36 +136,56 @@ def check_variants(rep, bam, reference, catalog, chrom, work):
         obs = b.count(r["alt"]) / dp if len(r["alt"]) == 1 and len(r["ref"]) == 1 else None
         exp = float(r["expected_vaf_tumor"])
         if obs is not None:
-            by_tier[r["clonality_tier"]].append((exp, obs))
-            by_class[r["class"]].append((exp, obs))
+            by_tier[r["clonality_tier"]].append((exp, obs, dp))
+            by_class[r["class"]].append((exp, obs, dp))
         if b.count(r["alt"]) > 0 or len(r["ref"]) > 1:
             seen += 1
     nums = {}
-    worst, worst_tier, thin = 0.0, None, []
-    # A tier with a couple of sites cannot distinguish a systematic bias from binomial noise: two sites at
-    # an expected 0.11 allele fraction and 150x depth scatter by tens of percent on their own. Thin tiers
-    # are still reported, but only tiers with enough sites decide the verdict.
-    MIN_N = 5
+    thin, failures, worst, worst_tier = [], [], 0.0, None
+    # A flat tolerance is the wrong test. The precision of an allele-fraction estimate depends on the
+    # expected number of alt reads, n x depth x VAF, not on the number of sites: the A1 tier sits at a VAF
+    # of 0.015 to 0.065, so a dozen sites yield only a few dozen alt reads and one sigma is already 13 to
+    # 20 %, while T_het at 0.35 has a sigma of 2 to 4 % and a 15 % bound would miss a real bias six times
+    # over. Each tier is therefore compared against its own sampling error, with a floor so that a
+    # systematic offset still fails where sigma is tiny.
+    MIN_ALT_READS = 20
+    SIGMA_MULT = 3.0
+    FLOOR = 0.10
     for tier in TIER_ORDER:
         v = by_tier.get(tier)
         if not v:
             continue
-        e, o = statistics.mean(x[0] for x in v), statistics.mean(x[1] for x in v)
-        dev = abs(o / e - 1) if e else None
+        e = statistics.mean(x[0] for x in v)
+        o = statistics.mean(x[1] for x in v)
+        total_depth = sum(x[2] for x in v)
+        alt_reads = e * total_depth
+        # relative standard error of the mean observed fraction
+        sigma = math.sqrt((1 - e) / (e * total_depth)) if e > 0 and total_depth else float("inf")
+        dev = abs(o / e - 1) if e else 0.0
+        bound = max(SIGMA_MULT * sigma, FLOOR)
+        counted = alt_reads >= MIN_ALT_READS
         nums[tier] = {"n": len(v), "expected": round(e, 4), "observed": round(o, 4),
                       "ratio": round(o / e, 3) if e else None,
-                      "counted_towards_verdict": len(v) >= MIN_N}
-        if e and len(v) >= MIN_N:
-            if dev > worst:
-                worst, worst_tier = dev, tier
-        elif e:
-            thin.append(f"{tier} n={len(v)} ratio={o / e:.2f}")
+                      "expected_alt_reads": round(alt_reads),
+                      "relative_sigma": round(sigma, 4),
+                      "bound": round(bound, 4), "deviation": round(dev, 4),
+                      "counted_towards_verdict": counted}
+        if not counted:
+            thin.append(f"{tier} alt~{alt_reads:.0f}")
+            continue
+        if dev > worst:
+            worst, worst_tier = dev, tier
+        if dev > bound:
+            failures.append(f"{tier} {dev:.0%} > {bound:.0%} ({dev / sigma:.1f} sigma)")
     detail = (f"largest deviation {worst:.0%}"
-              + (f" ({worst_tier})" if worst_tier else " (no tier with enough sites)")
+              + (f" ({worst_tier}, {worst / max(nums[worst_tier]['relative_sigma'], 1e-9):.1f} sigma)"
+                 if worst_tier else " (no tier with enough alt reads)")
               + f" across {sum(len(v) for v in by_tier.values())} sites")
+    if failures:
+        detail += "; beyond sampling error: " + ", ".join(failures)
     if thin:
         detail += f"; not counted: {', '.join(thin)}"
-    rep.add("allele fractions by tier", worst <= 0.15, detail, nums)
+    rep.add("allele fractions by tier", not failures, detail, nums)
     rep.add("indels present", len([r for r in ev if r["class"] == "indel"]) == 0 or seen > 0,
             f"{seen} of {len(ev)} designed events have supporting reads")
 
