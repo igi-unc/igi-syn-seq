@@ -6,20 +6,29 @@ class Germline:
     def __init__(self, vcf, sample=None, sex="male"):
         self.vcf = pysam.VariantFile(vcf); self.sample = sample or self.vcf.header.samples[0]; self.sex = sex
     def variants(self, chrom, start, end):
-        """Yield (pos1, ref, alt, gt_tuple, phased) for records overlapping [start,end) 0-based; biallelic GT only."""
+        """Yield (pos1, ref, alts_tuple, gt_tuple, phased) for records overlapping [start,end) 0-based.
+
+        `alts` is the record's full ALT tuple and the genotype indexes into it, so a heterozygous site
+        carrying two different non-reference alleles is represented on both haplotypes. Dropping those
+        records left 178,123 HG002 genotypes and 31,863 IPISRC044 genotypes out of the sequence, 3.0 %
+        and 0.69 % of each genome, while the truth VCF still listed them: every one would have been a
+        false negative for a germline caller reading the simulated reads.
+
+        A record with no genotype call is still skipped, because there is nothing to apply.
+        """
         try: it = self.vcf.fetch(chrom, start, end)
         except ValueError: return
         for rec in it:
             s = rec.samples[self.sample]; gt = s.get("GT")
             if gt is None or None in gt or rec.alts is None: continue
-            if any(a > 1 for a in gt): continue  # multiallelic genotypes are skipped for window construction
-            yield rec.pos, rec.ref, rec.alts[0], tuple(gt), bool(s.phased) or len(gt) == 1
+            if any(a > len(rec.alts) for a in gt): continue      # genotype indexes an allele that is not there
+            yield rec.pos, rec.ref, tuple(rec.alts), tuple(gt), bool(s.phased) or len(gt) == 1
     def overlaps_variant(self, chrom, pos1, ref_len=1):
         """Whether any germline record overlaps the span [pos1, pos1 + ref_len). A somatic allele that
         overlaps a germline variant cannot be expressed unambiguously in reference coordinates, so the
         designer excludes such sites."""
         start, end = pos1 - 1, pos1 - 1 + ref_len
-        for pos, r, _a, _gt, _ph in self.variants(chrom, max(0, start - 60), end + 60):
+        for pos, r, _alts, _gt, _ph in self.variants(chrom, max(0, start - 60), end + 60):
             if pos - 1 < end and pos - 1 + len(r) > start:
                 return True
         return False
@@ -31,11 +40,11 @@ class Germline:
         extra: optional (pos1, ref, alt, hap_index) somatic change applied on one haplotype -> returns (h0, h1, m0, m1)."""
         ref = genome.seq(chrom, start1 - 1, end1)
         edits = {0: [], 1: []}
-        for pos, r, a, gt, phased in self.variants(chrom, start1 - 1, end1):
+        for pos, r, alts, gt, phased in self.variants(chrom, start1 - 1, end1):
             if pos < start1 or pos + len(r) - 1 > end1: continue
             haps = (gt[0], gt[1]) if len(gt) == 2 else (gt[0], gt[0])
             for h, allele in enumerate(haps):
-                if allele == 1: edits[h].append((pos - start1, r, a))
+                if allele > 0: edits[h].append((pos - start1, r, alts[allele - 1]))
         def apply(seq, ed, strict_from=None):
             """Apply reference-coordinate edits right to left. Germline records that do not match are
             skipped (overlapping or inconsistent calls); a somatic edit that does not match is an error,

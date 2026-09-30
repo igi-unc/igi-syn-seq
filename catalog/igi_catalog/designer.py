@@ -95,6 +95,9 @@ def write_outputs(events, cards, out_dir, ds_name, design, summary_extra=None, f
         "by_binding_tier": dict(Counter(e["binding_tier"] for e in events)),
         "by_context": dict(Counter(e["context"] for e in events)),
         "chr1to6_fraction": round(sum(1 for e in events if e["chr1to6"]) / max(1, len(events)), 3),
+        # `events` is the SNV/indel table only, so this counts that table's share. The design target is
+        # across every class, and promote_flagposts spreads them, so the total is reported separately or
+        # the figure reads as a shortfall against the target when there is none.
         "flagposts": sum(1 for e in events if e["flagpost"]),
         "by_binding_tier_retained": dict(Counter(e.get("binding_tier_retained", "na") for e in events)),
         "best_allele_is_lost": sum(1 for e in events if e.get("best_allele_is_lost")),
@@ -102,6 +105,14 @@ def write_outputs(events, cards, out_dir, ds_name, design, summary_extra=None, f
                                        if e.get("binding_tier") != e.get("binding_tier_retained")),
         "grid_cells_filled": len({(e["clonality_tier"], e["expression_tier"], e["binding_tier"]) for e in events if e["subclass"] == "grid_missense"}),
         "grid_cells_total": len(design["tiers"]["clonality"]) * len(design["tiers"]["expression"]) * len(design["tiers"]["binding"]),
+    }
+    all_rows = list(events) + list(fusions or [])
+    for rows in (extra_tables or {}).values():
+        all_rows += list(rows or [])
+    summ["flagposts_all_classes"] = {
+        "total": sum(1 for e in all_rows if e.get("flagpost")),
+        "target": design["counts"].get("flagposts"),
+        "by_class": dict(Counter(e.get("class", "") for e in all_rows if e.get("flagpost"))),
     }
     for name, rows in (extra_tables or {}).items():
         if rows:

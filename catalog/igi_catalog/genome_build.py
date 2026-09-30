@@ -61,10 +61,12 @@ class EditSet:
 def germline_edits(germline, chrom, hap, start1, end1):
     """Phased germline edits for one haplotype over a region."""
     es = EditSet(chrom)
-    for pos, ref, alt, gt, _phased in germline.variants(chrom, start1 - 1, end1):
+    for pos, ref, alts, gt, _phased in germline.variants(chrom, start1 - 1, end1):
         allele = gt[hap] if len(gt) == 2 else gt[0]
-        if allele == 1:
-            es.add(pos, ref, alt, "germline")
+        # the genotype indexes into the record's ALT tuple: at a multiallelic site the two haplotypes
+        # carry different non-reference alleles, and testing `allele == 1` applied neither
+        if allele > 0:
+            es.add(pos, ref, alts[allele - 1], "germline")
     return es
 
 

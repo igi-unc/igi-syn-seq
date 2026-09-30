@@ -66,7 +66,15 @@
     "repeat_other": 2
   },
   "chr1to6_fraction": 0.629,
-  "flagposts": 12,
+  "flagposts": 30,
+  "by_binding_tier_retained": {
+    "weak": 220,
+    "strong": 268,
+    "non": 233,
+    "na": 153
+  },
+  "best_allele_is_lost": 323,
+  "tier_changed_by_hla_loss": 126,
   "grid_cells_filled": 80,
   "grid_cells_total": 90,
   "svs": {
@@ -93,6 +101,12 @@
       "unexpressed_negative": 18
     }
   },
+  "hla_loh": {
+    "n": 20,
+    "by_subclass": {
+      "": 20
+    }
+  },
   "fusions": {
     "n": 20,
     "by_subclass": {
@@ -116,6 +130,6 @@
       "non": 6
     }
   },
-  "runtime_s": 9677,
+  "runtime_s": 129,
   "scale": 1.0
 }

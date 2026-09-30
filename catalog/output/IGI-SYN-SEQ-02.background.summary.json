@@ -1,7 +1,7 @@
 {
   "dataset": "IGI-SYN-SEQ-02",
   "n": 11695,
-  "runtime_s": 99,
+  "runtime_s": 62,
   "mut_per_mb": 4.0,
   "signatures": {
     "SBS2": 0.25,

@@ -1,9 +1,9 @@
 {
   "dataset": "IGI-SYN-SEQ-01",
-  "n_events": 872,
+  "n_events": 873,
   "by_class": {
     "snv": 623,
-    "indel": 249
+    "indel": 250
   },
   "by_subclass": {
     "hotspot": 12,
@@ -22,7 +22,7 @@
     "frameshift_ins": 60,
     "inframe_del": 40,
     "inframe_ins": 30,
-    "homopolymer_indel": 39
+    "homopolymer_indel": 40
   },
   "by_consequence": {
     "missense": 478,
@@ -31,49 +31,57 @@
     "synonymous": 40,
     "start_loss": 13,
     "stop_loss": 7,
-    "frameshift": 154,
-    "inframe_deletion": 63,
+    "frameshift": 159,
+    "inframe_deletion": 59,
     "inframe_insertion": 32
   },
   "by_clonality_tier": {
-    "T_LOH": 86,
-    "T_het": 186,
+    "T_LOH": 93,
+    "A": 204,
+    "T_het": 182,
     "T_amp": 23,
-    "A": 221,
-    "B": 185,
-    "A1": 171
+    "B": 184,
+    "A1": 187
   },
   "by_expression_tier": {
-    "T10": 301,
-    "T100": 156,
-    "T1": 136,
-    "T0": 218,
-    "T1000": 61
+    "T10": 303,
+    "T100": 158,
+    "T1": 152,
+    "T0": 204,
+    "T1000": 56
   },
   "by_binding_tier": {
-    "weak": 222,
-    "strong": 316,
-    "non": 175,
-    "na": 159
+    "weak": 229,
+    "strong": 313,
+    "non": 180,
+    "na": 151
   },
   "by_context": {
     "clean": 557,
-    "segdup": 55,
-    "exon_edge": 129,
+    "segdup": 53,
+    "exon_edge": 131,
     "homopolymer": 66,
-    "near_germline_het": 36,
+    "near_germline_het": 40,
     "deep_intronic": 25,
-    "repeat_other": 4
+    "repeat_other": 1
   },
-  "chr1to6_fraction": 0.642,
-  "flagposts": 12,
+  "chr1to6_fraction": 0.645,
+  "flagposts": 30,
+  "by_binding_tier_retained": {
+    "non": 308,
+    "strong": 194,
+    "weak": 220,
+    "na": 151
+  },
+  "best_allele_is_lost": 449,
+  "tier_changed_by_hla_loss": 217,
   "grid_cells_filled": 80,
   "grid_cells_total": 90,
   "svs": {
-    "n": 97,
+    "n": 99,
     "by_subclass": {
-      "non_coding": 49,
-      "coding": 48
+      "coding": 50,
+      "non_coding": 49
     }
   },
   "viruses": {
@@ -86,11 +94,17 @@
   "expressed": {
     "n": 75,
     "by_subclass": {
-      "tumor_wide": 12,
-      "clone_restricted": 3,
+      "clone_restricted": 5,
+      "tumor_wide": 10,
       "tumor_specific": 25,
-      "tumor_associated": 20,
-      "unexpressed_negative": 15
+      "tumor_associated": 19,
+      "unexpressed_negative": 16
+    }
+  },
+  "hla_loh": {
+    "n": 24,
+    "by_subclass": {
+      "": 24
     }
   },
   "fusions": {
@@ -102,21 +116,20 @@
       "in_frame_novel": 4
     },
     "by_mechanism": {
-      "TRA": 9,
-      "INV": 5,
-      "DEL": 2,
-      "DUP": 1,
+      "TRA": 10,
+      "INV": 4,
+      "DUP": 2,
+      "DEL": 1,
       "none": 2
     },
     "in_frame": 15,
-    "wes_visible": 12,
+    "wes_visible": 11,
     "by_binding_tier": {
-      "non": 5,
-      "strong": 7,
-      "weak": 6,
-      "na": 1
+      "strong": 10,
+      "weak": 5,
+      "non": 4
     }
   },
-  "runtime_s": 10873,
+  "runtime_s": 9465,
   "scale": 1.0
 }
