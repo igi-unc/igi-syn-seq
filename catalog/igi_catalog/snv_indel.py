@@ -23,6 +23,8 @@ class SnvIndelDesigner:
         self.env = env            # namespace: genome, tx, rep, expr, germline, ctx, clones, netmhc, hla
         self.ds = ds_name
         self.dcfg = ds_cfg
+        self.publish_windows = bool((cfg.get("publish_haplotype_windows") or {})
+                                    .get(ds_cfg.get("baseline"), False))
         self.cfg = cfg
         self.rng = rng
         self.driver_genes = {d[0] for evs in ds_cfg.get("drivers", {}).values() for d in evs}
@@ -332,7 +334,19 @@ class SnvIndelDesigner:
     def _card(self, ev, c):
         dna, wt_w, mut_w = diffcards.dna_card(self.env.genome, self.env.germline, ev["chrom"], ev["pos"], ev["ref"], ev["alt"], ev["haplotype"])
         prot, wt_p, mut_p = diffcards.protein_card(c["wt_protein"], c["mut_protein"], c["aa_index"], c["consequence"])
-        ev["wt_hap_window"], ev["mut_hap_window"], ev["wt_protein_window"], ev["mut_protein_window"] = wt_w, mut_w, wt_p, mut_p
+        # Reconstructed haplotype windows disclose a real individual's genotype over the window. They are
+        # published only for a consented reference baseline; elsewhere the truth table names the window and
+        # whoever runs the recipe regenerates the sequence locally from their own copy of the VCF, so
+        # nothing is lost by not shipping it (owner decision D12).
+        if self.publish_windows:
+            ev["wt_hap_window"], ev["mut_hap_window"] = wt_w, mut_w
+        else:
+            ev["wt_hap_window"] = ev["mut_hap_window"] = "withheld"
+        ev["wt_protein_window"], ev["mut_protein_window"] = wt_p, mut_p
+        if not self.publish_windows:
+            # keep the coordinates and the change, drop the reconstructed sequence lines
+            dna = [l for l in dna if not any(l.strip().startswith(k) for k in ("ref ", "hap0", "hap1"))]
+            dna.append("  sequence  withheld; regenerate locally from the baseline VCF (D12)")
         title = f"{ev['gene']} {ev['aa_change']} {ev['consequence']}  clone={ev['clone']} tier={ev['clonality_tier']} VAF={ev['expected_vaf_tumor']} expr={ev['expression_tier']} bind={ev['binding_tier']} ctx={ev['context']}"
         extra = {"peptide": f"{ev['best_peptide']} {ev['best_allele']} rank {ev['best_rank_el']}" if ev["best_peptide"] else "none"}
         if ev.get("wt_peptide"):

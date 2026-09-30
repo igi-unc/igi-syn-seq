@@ -5,6 +5,13 @@ seed: 20260925
 # Passenger background. `background_mut_per_mb` is per dataset (section `datasets`); these two govern its
 # composition. The truncal fraction is the share of passengers that predate the most recent common
 # ancestor of the sampled clones; the rest are split between branches in proportion to their cell fraction.
+# Reconstructed haplotype sequence is a property of a real individual. It may be published only where the
+# baseline is consented reference material; otherwise the columns and diff cards are written locally by
+# whoever runs the recipe and are not committed (owner decision D12).
+publish_haplotype_windows:
+  HG002: true          # GIAB consented public reference material
+  IPISRC044: false     # public dataset, but not consented for redistribution of reconstructed haplotypes
+
 background_indel_fraction: 0.08
 background_truncal_fraction: 0.60
 
