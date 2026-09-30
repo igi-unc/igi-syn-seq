@@ -37,10 +37,19 @@ def rows(path):
         return list(csv.DictReader(fh, delimiter="\t"))
 
 
-def pileup(bam, reference, sites_path, min_bq=15, min_mq=20, max_depth=8000):
-    """{position: (depth, bases)} at the requested sites."""
+def pileup(bam, reference, sites_path, min_bq=15, min_mq=20, max_depth=8000, region=None):
+    """{position: (depth, bases)} at the requested sites.
+
+    `region` matters at release scale. With `-l` alone, mpileup streams the whole BAM and filters, which on
+    a 6.25 GB whole-genome alignment takes over a quarter of an hour per call; on the slice BAMs it was
+    free, so the cost only appeared once the release existed. Every site in the list is on one chromosome
+    by construction, so passing `-r` lets mpileup seek with the index instead.
+    """
     cmd = ["samtools", "mpileup", "-f", reference, "-l", sites_path,
-           "-d", str(max_depth), "-Q", str(min_bq), "-q", str(min_mq), bam]
+           "-d", str(max_depth), "-Q", str(min_bq), "-q", str(min_mq)]
+    if region:
+        cmd += ["-r", region]
+    cmd += [bam]
     out = subprocess.run(cmd, capture_output=True, text=True).stdout
     res = {}
     for line in out.splitlines():
@@ -123,7 +132,7 @@ def check_variants(rep, bam, reference, catalog, chrom, work):
     with open(sites, "w") as fh:
         for r in ev:
             fh.write(f"{chrom}\t{r['pos']}\n")
-    pile = pileup(bam, reference, sites)
+    pile = pileup(bam, reference, sites, region=chrom)
     by_tier, by_class = defaultdict(list), defaultdict(list)
     seen = 0
     for r in ev:
@@ -238,25 +247,44 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
     if not regions:
         rep.add("depth by copy number", True, f"no large copy-number segment on {chrom} to test")
         return
-    # the baseline must itself be a copy-number-neutral stretch, not an arbitrary window
-    neutral = []
-    pos = 1_000_000
-    while pos < 150_000_000:
-        a, b, _lab = cm.cn("T", chrom, pos)
-        if (a, b) == cm.base and not any(s <= pos <= e for _l, s, e in regions):
-            neutral.append(pos)
-        pos += 2_000_000
-    if not neutral:
-        rep.add("depth by copy number", False, "no copy-number-neutral baseline found on this chromosome")
-        return
-    mid_n = neutral[len(neutral) // 2]
-    b_lo, b_hi = mid_n - 5_000_000, mid_n + 5_000_000
-    base, n_base = captured_depth(bam, chrom, b_lo, b_hi, capture_bed, work)
-    gc_base = mean_gc_factor(genome, gc, chrom, b_lo, b_hi, capture_bed) if genome else 1.0
-    nums, worst = {"baseline": {"depth": round(base, 2) if base else None, "intervals": n_base}}, 0.0
+    # The baseline must be a copy-number-neutral stretch that is actually captured, and it does not have
+    # to be on this chromosome. Requiring the same chromosome left the design's headline events
+    # unverifiable: chr13p is acrocentric with zero capture intervals, so dataset 01's 13q LOH had no
+    # usable local baseline, and chr17 has both arms altered in both datasets so it has no neutral region
+    # at all. The depth model is genome-wide and GC is now corrected explicitly, so a neutral region
+    # elsewhere is a valid reference; the chromosome it came from is reported either way.
+    def neutral_baseline(order):
+        for ch in order:
+            if ch not in (genome.lengths if genome else {ch: None}):
+                continue
+            limit = min(genome.lengths[ch] if genome else 150_000_000, 250_000_000)
+            pos = 1_000_000
+            cands = []
+            while pos < limit:
+                a, b, _lab = cm.cn("T", ch, pos)
+                on_region = ch == chrom and any(s <= pos <= e for _l, s, e in regions)
+                if (a, b) == cm.base and not on_region:
+                    cands.append(pos)
+                pos += 2_000_000
+            # try the middle first, then work outwards: the centre of a chromosome is the least likely
+            # to be centromeric or telomeric and so the most likely to be captured
+            for p in sorted(cands, key=lambda x: abs(x - (cands[len(cands) // 2] if cands else 0))):
+                lo, hi = max(1, p - 5_000_000), p + 5_000_000
+                d, n_iv = captured_depth(bam, ch, lo, hi, capture_bed, work)
+                if d:
+                    return ch, lo, hi, d, n_iv
+        return None, None, None, None, 0
+
+    others = [c for c in (f"chr{i}" for i in list(range(1, 23))) if c != chrom]
+    b_chrom, b_lo, b_hi, base, n_base = neutral_baseline([chrom] + others)
     if not base:
-        rep.add("depth by copy number", False, "baseline region has no captured depth")
+        rep.add("depth by copy number", False,
+                "no copy-number-neutral, captured baseline found on any chromosome")
         return
+    gc_base = mean_gc_factor(genome, gc, b_chrom, b_lo, b_hi, capture_bed) if genome else 1.0
+    nums, worst = {"baseline": {"depth": round(base, 2), "intervals": n_base,
+                               "chrom": b_chrom, "start": b_lo, "end": b_hi,
+                               "same_chromosome": b_chrom == chrom}}, 0.0
     for label, s, e in regions:
         want = sum(w for _s, _h, _k, w in source_plan(cm, cm.purity, chrom, (s + e) // 2)) / den
         # fold in the region's GC composition relative to the baseline's
