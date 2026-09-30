@@ -270,6 +270,15 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
             # to be centromeric or telomeric and so the most likely to be captured
             for p in sorted(cands, key=lambda x: abs(x - (cands[len(cands) // 2] if cands else 0))):
                 lo, hi = max(1, p - 5_000_000), p + 5_000_000
+                # The whole window must be neutral, not just its midpoint. Checking only the centre put
+                # dataset 01's chr13 baseline at 10-20 Mb, whose midpoint sits on the acrocentric 13p but
+                # whose upper half is inside the 13q LOH; since 13p carries almost no capture, nearly every
+                # captured base in that window came from the lost region, so the check compared LOH against
+                # LOH and read the RB1 loss as ratio 1.04 against an expected 0.65.
+                step = 500_000
+                probes = list(range(lo, hi + 1, step)) + [hi]
+                if any(cm.cn("T", ch, q)[:2] != cm.base for q in probes):
+                    continue
                 d, n_iv = captured_depth(bam, ch, lo, hi, capture_bed, work)
                 if d:
                     return ch, lo, hi, d, n_iv
