@@ -102,7 +102,11 @@ def main():
     ap.add_argument("--pairs", type=int, default=20_000_000)
     ap.add_argument("--read-len", type=int, default=150)
     ap.add_argument("--bins", type=int, default=60)
-    ap.add_argument("--min-tpm", type=float, default=0.5)
+    ap.add_argument("--min-tpm", type=float, default=0.01,
+                    help="expression floor. LENS filters on the 50th percentile of the sample's own "
+                         "non-zero TPM, so a high floor removes the low tail and lifts that bar: 0.5 "
+                         "keeps 27%% of non-zero transcripts and puts p50 at 7.8x the real value. The "
+                         "default is low enough that truncation comes from sequencing depth instead.")
     ap.add_argument("--out", required=True)
     ap.add_argument("--work", required=True)
     ap.add_argument("--seed", type=int, default=1)

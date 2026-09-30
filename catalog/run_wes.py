@@ -12,7 +12,7 @@ from igi_catalog.genome_build import read_events
 from igi_catalog.junctions import fusion_junctions, sv_junctions, viral_junctions
 from igi_catalog.pipeline import (GcBias, WesBuilder, merged_capture, off_target_bands,
                                  quality_model, write_record_map)
-from igi_catalog.readnames import shuffle_and_rename
+from igi_catalog.readnames import NAME_SPACE_STRIDE, shuffle_and_rename
 
 
 def main():
@@ -117,7 +117,12 @@ def main():
         with open(out, "w") as fh:
             subprocess.run(["cat"] + [p[idx] for p in pieces if os.path.exists(p[idx])],
                            stdout=fh, check=True)
-    n_reads = shuffle_and_rename(cat1, cat2, r1, r2, rmap, work, seed=a.seed)
+    # each chromosome takes its own slice of the Illumina name space, so the per-chromosome libraries
+    # concatenate into one library without colliding names
+    ordinals = {f"chr{i}": i for i in range(1, 23)}
+    ordinals.update({"chrX": 23, "chrY": 24, "chrM": 25})
+    offset = ordinals.get(a.chrom, 0) * NAME_SPACE_STRIDE
+    n_reads = shuffle_and_rename(cat1, cat2, r1, r2, rmap, work, seed=a.seed, index_offset=offset)
     write_record_map(wb.record_map, recmap)
     if wb.junctions_used:
         jpath = os.path.join(a.out, f"{a.dataset}_{a.chrom}_{a.library}_junctions.tsv")

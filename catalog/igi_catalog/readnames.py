@@ -28,11 +28,21 @@ def _key(name, seed):
     return hashlib.md5(f"{seed}:{name}".encode()).hexdigest()[:12]
 
 
-def shuffle_and_rename(cat_r1, cat_r2, out_r1, out_r2, out_map, work, seed=1):
+# Names are a pure function of a read's index, so two runs starting from 0 produce the identical name
+# sequence. A library built a chromosome at a time therefore had 100 % name collision between every pair
+# of chromosomes, and merging them would have repeated each name 24 times and made the name-to-record map
+# ambiguous -- destroying exactly the truth artefact owner decision D2 asks for. Each run is given a slice
+# of the name space instead. The space is 4 lanes x 78 tiles x 20000 x 20000 = 1.25e11 names, so a stride
+# of 4e9 holds 31 runs without overlap.
+NAME_SPACE_STRIDE = 4_000_000_000
+
+
+def shuffle_and_rename(cat_r1, cat_r2, out_r1, out_r2, out_map, work, seed=1, index_offset=0):
     """Shuffle a paired FASTQ and give it Illumina names, writing the name-to-source map.
 
     Records are keyed by a seeded digest and sorted on disk, so the peak memory is the sort buffer rather
-    than the library.
+    than the library. `index_offset` places this run's names in their own slice of the name space, so
+    libraries built in pieces can be concatenated without collision.
     """
     keyed = os.path.join(work, "keyed.tsv")
     with open(cat_r1) as f1, open(cat_r2) as f2, open(keyed, "w") as out:
@@ -61,7 +71,7 @@ def shuffle_and_rename(cat_r1, cat_r2, out_r1, out_r2, out_map, work, seed=1):
             f = line.rstrip("\n").split("\t")
             if len(f) < 8:
                 continue
-            name = illumina_name(n)
+            name = illumina_name(index_offset + n)
             g1.write(f"@{name} 1:N:0:1\n{f[2]}\n+\n{f[4]}\n")
             g2.write(f"@{name} 2:N:0:1\n{f[5]}\n+\n{f[7]}\n")
             gm.write(f"{name}\t{f[1]}\n")
