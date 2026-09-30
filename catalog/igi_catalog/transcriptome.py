@@ -163,7 +163,11 @@ class TranscriptomeBuilder:
             chrom=t.chrom, hap=int(event.get("haplotype", 0)), clone=event.get("clone", "T"),
             sequence=seq, tpm=float(event.get("target_tumor_junction_tpm", 0) or 0),
             # an isoform switch moves expression within the gene rather than adding to it
-            reconcile="redistribute", reconcile_gene=t.gene_name)
+            reconcile="redistribute", reconcile_gene=t.gene_name,
+            # a junction created by a somatic splice-site variant is confined to that variant's
+            # haplotype; a switch with no genomic cause is not
+            haplotypes=([int(event.get("haplotype", 0))] if event.get("causal_variant") else [0, 1]),
+            pos=(t.start + t.end) // 2)
         self.records.append(rec)
         return rec
 
@@ -201,7 +205,9 @@ class TranscriptomeBuilder:
             gene=event.get("locus_id", ""), chrom=chrom, hap=int(event.get("haplotype", 0)),
             clone=event.get("clone", "T"), sequence=seq,
             tpm=float(event.get("target_tumor_tpm", 0) or 0),
-            reconcile="add")      # a locus in its own right, not one of a gene's transcripts
+            reconcile="add",      # a locus in its own right, not one of a gene's transcripts
+            # hypomethylation de-represses both copies of the locus
+            haplotypes=[0, 1], pos=(s + e) // 2)
         self.records.append(rec)
         return rec
 

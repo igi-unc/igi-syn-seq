@@ -151,27 +151,46 @@ class RnaBuilder:
                     continue
                 else:
                     share = 1.0
-                hap = int(rec.get("hap", 0) or 0)
-                seq = rec.get("sequence")
-                if t is not None:
-                    es = EditSet(t.chrom)
-                    es.edits += germline_edits(self.env.germline, t.chrom, hap, t.start, t.end).edits
-                    if src != "NORMAL":
-                        es.edits += somatic_edits((events_by_chrom or {}).get(t.chrom, []),
-                                                  self.env.clones, t.chrom, hap,
-                                                  "T" if src == "NORMAL" else src,
-                                                  t.start, t.end).edits
-                    seq = exon_sequence(self.env.genome, t, es)
-                if not seq or len(seq) < 150:
-                    continue
-                self.records.append({
-                    "id": f"{rec['id']}|{src}|hap{hap}", "clone": src, "hap": hap,
-                    "source": rec.get("source", "designed"), "gene": rec.get("gene", ""),
-                    "sequence": seq, "abundance": tpm * share * w,
-                    "reconcile": rec.get("reconcile", "add"),
-                    "reconcile_gene": rec.get("reconcile_gene") or rec.get("gene", ""),
-                    "normal_gene_tpm": rec.get("normal_gene_tpm"),
-                })
+                # Allelic expression of a designed class. A cancer-testis antigen or an ERV locus is
+                # de-repressed epigenetically, which acts on both alleles, so emitting it from one
+                # haplotype only makes every germline heterozygous site inside it read as homozygous. A
+                # splice isoform caused by a somatic splice-site variant is genuinely confined to that
+                # variant's haplotype; an isoform switch with no genomic cause is not.
+                haps = rec.get("haplotypes")
+                if haps is None:
+                    haps = [int(rec.get("hap", 0) or 0)]
+                if len(haps) > 1 and src != "NORMAL":
+                    split = haplotype_split(self.env.clones, src, rec["chrom"], int(rec["pos"]))
+                elif len(haps) > 1:
+                    split = (0.5, 0.5)
+                else:
+                    split = None
+                for hap in haps:
+                    hshare = share * (split[hap] if split else 1.0)
+                    if hshare <= 0:
+                        continue
+                    self._emit(rec, t, src, hap, tpm, hshare, events_by_chrom)
+
+    def _emit(self, rec, t, src, hap, tpm, share, events_by_chrom):
+        """One record for this designed transcript on one clone and one haplotype."""
+        seq = rec.get("sequence")
+        if t is not None:
+            es = EditSet(t.chrom)
+            es.edits += germline_edits(self.env.germline, t.chrom, hap, t.start, t.end).edits
+            if src != "NORMAL":
+                es.edits += somatic_edits((events_by_chrom or {}).get(t.chrom, []), self.env.clones,
+                                          t.chrom, hap, src, t.start, t.end).edits
+            seq = exon_sequence(self.env.genome, t, es)
+        if not seq or len(seq) < 150:
+            return
+        self.records.append({
+            "id": f"{rec['id']}|{src}|hap{hap}", "clone": src, "hap": hap,
+            "source": rec.get("source", "designed"), "gene": rec.get("gene", ""),
+            "sequence": seq, "abundance": tpm * share,
+            "reconcile": rec.get("reconcile", "add"),
+            "reconcile_gene": rec.get("reconcile_gene") or rec.get("gene", ""),
+            "normal_gene_tpm": rec.get("normal_gene_tpm"),
+        })
 
     def reconcile_designed(self, log=print):
         """Make a designed transcript take its abundance from its gene instead of adding to it.

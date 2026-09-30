@@ -78,9 +78,17 @@ def cta_records(expressed, env):
         out.append({"id": f"{e['event_id']}|{e['gene']}", "source": "cta", "gene": e["gene"],
                     "transcript": t, "tpm": tpm,
                     "clone": e.get("clone", "T"), "hap": int(e.get("haplotype", 0) or 0),
+                    # de-repression is epigenetic and acts on both alleles, so a CTA is expressed from
+                    # both haplotypes; emitting it from one made every germline het inside it homozygous
+                    "haplotypes": [0, 1], "chrom": t.chrom, "pos": (t.start + t.end) // 2,
                     "reconcile": "replace",
                     "normal_gene_tpm": float(e.get("normal_tissue_tpm_p95") or 0)})
     return out
+
+
+def _chrkey(c):
+    t = c[3:]
+    return (0, int(t)) if t.isdigit() else (1, t)
 
 
 def main():
@@ -98,6 +106,7 @@ def main():
     ap.add_argument("--work", required=True)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--max-genes", type=int, default=None)
+    ap.add_argument("--label", default=None, help="slice name used in output filenames")
     a = ap.parse_args()
 
     chroms = set(a.chroms.split(","))
@@ -168,9 +177,13 @@ def main():
 
     # concatenate, then shuffle and rename in one disk-based pass so peak memory does not scale with
     # the library, and write the map from each read name back to the record it came from
-    r1 = os.path.join(a.out, f"{a.dataset}_chr1to6_rna_R1.fastq.gz")
-    r2 = os.path.join(a.out, f"{a.dataset}_chr1to6_rna_R2.fastq.gz")
-    rmap = os.path.join(a.out, f"{a.dataset}_chr1to6_rna_readmap.tsv.gz")
+    # the slice label comes from --chroms, not a hardcoded "chr1to6": a chr4 run was being written under
+    # a chr1to6 name, which would have put a development slice in a release's filenames
+    label = a.label or ("chr1to6" if chroms == {f"chr{i}" for i in range(1, 7)}
+                        else "wg" if len(chroms) >= 23 else "_".join(sorted(chroms, key=_chrkey)))
+    r1 = os.path.join(a.out, f"{a.dataset}_{label}_rna_R1.fastq.gz")
+    r2 = os.path.join(a.out, f"{a.dataset}_{label}_rna_R2.fastq.gz")
+    rmap = os.path.join(a.out, f"{a.dataset}_{label}_rna_readmap.tsv.gz")
     cat1 = os.path.join(work, "all_1.fq")
     cat2 = os.path.join(work, "all_2.fq")
     for idx, out in ((0, cat1), (1, cat2)):
@@ -180,12 +193,12 @@ def main():
     print(f"  {n_reads:,} pairs written, names Illumina-style, map in {os.path.basename(rmap)}", flush=True)
 
     rb.attach_counts(rmap, a.read_len)
-    rb.write_manifest(os.path.join(a.out, f"{a.dataset}_chr1to6_rna_transcripts.tsv"))
+    rb.write_manifest(os.path.join(a.out, f"{a.dataset}_{label}_rna_transcripts.tsv"))
     meta = {"dataset": a.dataset, "chroms": sorted(chroms), "pairs_target": a.pairs,
             "pairs_planned": realised, "pairs_written": n_reads, "records": len(rb.records),
             "bins": len(plan), "read_map": rmap,
             "r1": r1, "r2": r2, "runtime_s": round(time.time() - t0)}
-    with open(os.path.join(a.out, f"{a.dataset}_chr1to6_rna.json"), "w") as fh:
+    with open(os.path.join(a.out, f"{a.dataset}_{label}_rna.json"), "w") as fh:
         json.dump(meta, fh, indent=2)
     for p in pieces:
         for f in p:
