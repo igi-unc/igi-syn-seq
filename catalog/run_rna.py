@@ -21,6 +21,7 @@ import yaml
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog import fusion_core
+from igi_catalog.pipeline import quality_model
 from igi_catalog.readnames import shuffle_and_rename
 from igi_catalog.rna import RnaBuilder
 from igi_catalog.simulate import clone_weights
@@ -164,11 +165,13 @@ def main():
     print(f"  {len(plan)} abundance bins, coverage {min(c for _i, c, _r in plan):.3f}-"
           f"{max(c for _i, c, _r in plan):.1f}x, ~{realised:,} pairs", flush=True)
 
+    qual = quality_model(paths)
+    print(f"  quality model: {qual}", flush=True)
     pieces = []
     for n, (idx, cov, recs) in enumerate(plan):
         fa = rb.write_bin(recs, os.path.join(work, f"bin{idx:03d}.fa"))
         pre = os.path.join(work, f"bin{idx:03d}_")
-        cmd = paths["art_cmd"].format(args=(f"-ss HS25 -i {fa} -p -l {a.read_len} -f {cov:.4f} "
+        cmd = paths["art_cmd"].format(args=(f"{qual} -i {fa} -p -l {a.read_len} -f {cov:.4f} "
                                             f"-m 250 -s 50 -rs {a.seed + n} -na -o {pre}"))
         subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
         if os.path.exists(f"{pre}1.fq"):
@@ -196,7 +199,7 @@ def main():
     rb.write_manifest(os.path.join(a.out, f"{a.dataset}_{label}_rna_transcripts.tsv"))
     meta = {"dataset": a.dataset, "chroms": sorted(chroms), "pairs_target": a.pairs,
             "pairs_planned": realised, "pairs_written": n_reads, "records": len(rb.records),
-            "bins": len(plan), "read_map": rmap,
+            "bins": len(plan), "quality_model": qual, "read_map": rmap,
             "r1": r1, "r2": r2, "runtime_s": round(time.time() - t0)}
     with open(os.path.join(a.out, f"{a.dataset}_{label}_rna.json"), "w") as fh:
         json.dump(meta, fh, indent=2)

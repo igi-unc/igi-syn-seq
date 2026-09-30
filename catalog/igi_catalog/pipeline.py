@@ -13,6 +13,20 @@ from .genome_build import haplotype_sequence, read_events
 from .simulate import clone_weights
 
 
+def quality_model(paths):
+    """The ART quality-model arguments: a fitted profile where one is configured, else stock HS25.
+
+    HS25 is HiSeq 2500 chemistry with continuous quality scores. Current instruments bin qualities into
+    a handful of levels, so stock HS25 produces quality strings unlike anything a caller sees today.
+    `art_profile_r1`/`art_profile_r2` in the site configuration point at a profile fitted from real
+    reads with `art_profiler_illumina`.
+    """
+    r1, r2 = (paths or {}).get("art_profile_r1"), (paths or {}).get("art_profile_r2")
+    if r1 and r2:
+        return f"-1 {r1} -2 {r2}"
+    return "-ss HS25"
+
+
 def merged_capture(bed_path, chroms, pad=100, gap=200):
     """Capture intervals for the requested chromosomes, padded and merged."""
     by_chrom = defaultdict(list)
@@ -273,7 +287,7 @@ class WesBuilder:
             self._profiles[prof] = len(self._profiles)
         return self._profiles[prof]
 
-    def simulate(self, sources, art_cmd, depth, out_prefix, read_len=150, seed=1):
+    def simulate(self, sources, art_cmd, depth, out_prefix, read_len=150, seed=1, qual="-ss HS25"):
         """Run ART per source at coverage proportional to its weight; returns the FASTQ pieces."""
         pieces = []
         for i, (key, (path, weight)) in enumerate(sorted(sources.items())):
@@ -286,7 +300,7 @@ class WesBuilder:
             cov = max(0.01, depth * weight / self.denom)
             pre = os.path.join(self.workdir,
                                f"{os.path.basename(out_prefix)}_{src}_h{hap}_{kind}_cn{pid}_")
-            cmd = art_cmd.format(args=(f"-ss HS25 -i {path} -p -l {read_len} -f {cov:.5f} -m 350 -s 60 "
+            cmd = art_cmd.format(args=(f"{qual} -i {path} -p -l {read_len} -f {cov:.5f} -m 350 -s 60 "
                                        f"-rs {seed + i} -na -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
             pieces.append((f"{pre}1.fq", f"{pre}2.fq", src, hap, round(cov, 5)))

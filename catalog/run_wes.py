@@ -10,7 +10,8 @@ import yaml
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.junctions import fusion_junctions, sv_junctions, viral_junctions
-from igi_catalog.pipeline import WesBuilder, merged_capture, off_target_bands, write_record_map
+from igi_catalog.pipeline import (WesBuilder, merged_capture, off_target_bands, quality_model,
+                                 write_record_map)
 from igi_catalog.readnames import shuffle_and_rename
 
 
@@ -70,8 +71,10 @@ def main():
               f"{os.path.getsize(path) / 1e6:.1f} MB", flush=True)
 
     t1 = time.time()
+    qual = quality_model(paths)
+    print(f"  quality model: {qual}", flush=True)
     pieces = wb.simulate(sources, paths["art_cmd"], a.depth,
-                         f"{a.dataset}_{a.chrom}_{a.library}", seed=a.seed)
+                         f"{a.dataset}_{a.chrom}_{a.library}", seed=a.seed, qual=qual)
 
     # Off-target: coverage decaying away from each bait plus a thin genome-wide background. Without it
     # every base outside the bait set sits at exactly zero depth, which no real capture library shows.
@@ -85,7 +88,7 @@ def main():
                 continue
             pieces += wb.simulate(bsrc, paths["art_cmd"], a.depth * rel,
                                   f"{a.dataset}_{a.chrom}_{a.library}_{name}",
-                                  seed=a.seed + 1000 + len(bands))
+                                  seed=a.seed + 1000 + len(bands), qual=qual)
             # count only the intervals actually written, which `--max-intervals` may have capped
             used = spans[:b_iv] if a.max_intervals else spans
             bases = sum(e - s + 1 for s, e in used)
@@ -122,7 +125,7 @@ def main():
           f"{os.path.basename(recmap)}", flush=True)
 
     meta = {"dataset": a.dataset, "chrom": a.chrom, "library": a.library, "depth": a.depth,
-            "intervals": n_iv, "off_target_bands": bands,
+            "intervals": n_iv, "off_target_bands": bands, "quality_model": qual,
             "capture_bases": sum(e - s + 1 for s, e in capture.get(a.chrom, [])), "sources": {f"{k[0]}_hap{k[1]}_{k[2]}_cn{k[3]}": w for k, (_p, w) in sources.items()},
             "coverage_per_source": [{"source": s, "hap": h, "coverage": c} for _r1, _r2, s, h, c in pieces],
             "r1": r1, "r2": r2, "read_map": rmap, "record_map": recmap,
