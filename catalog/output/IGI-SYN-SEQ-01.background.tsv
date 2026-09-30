@@ -13,7 +13,7 @@ BG-000011	IGI-SYN-SEQ-01	indel	background	chr1	166845645	TGG	T				non_coding	0	A
 BG-000012	IGI-SYN-SEQ-01	snv	background	chr1	186569031	G	T	GGG			non_coding	1	T	1.0	pre_cna	T_het	0.2593	3.0			na				na				False	False	True
 BG-000013	IGI-SYN-SEQ-01	snv	background	chr1	149332933	G	A	TGT			non_coding	0	T	1.0	pre_cna	T_het	0.5185	3.0			na				na				False	False	True
 BG-000014	IGI-SYN-SEQ-01	snv	background	chr1	75739742	G	C	AGA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000015	IGI-SYN-SEQ-01	indel	background	chr1	208685113	AA	A				non_coding	1	A1	0.12	post_cna	A1	0.0311	3.0			na				na				False	False	True
+BG-000015	IGI-SYN-SEQ-01	indel	background	chr1	208685111	TA	T				non_coding	1	A1	0.12	post_cna	A1	0.0311	3.0			na				na				False	False	True
 BG-000016	IGI-SYN-SEQ-01	snv	background	chr1	77647761	G	A	CGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000017	IGI-SYN-SEQ-01	snv	background	chr1	120840107	A	T	CAA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000018	IGI-SYN-SEQ-01	snv	background	chr1	6081136	G	A	CGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -39,7 +39,7 @@ BG-000037	IGI-SYN-SEQ-01	snv	background	chr1	14371032	G	A	GGG			non_coding	1	T	1
 BG-000038	IGI-SYN-SEQ-01	snv	background	chr1	59925971	C	T	ACG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000039	IGI-SYN-SEQ-01	snv	background	chr1	171597772	C	T	CCC			non_coding	1	A	0.4	post_cna	A	0.1037	3.0			na				na				False	False	True
 BG-000040	IGI-SYN-SEQ-01	snv	background	chr1	238928072	C	G	TCT			non_coding	1	T	1.0	pre_cna	T_het	0.2593	3.0			na				na				False	False	True
-BG-000041	IGI-SYN-SEQ-01	indel	background	chr1	66596296	AA	A				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000041	IGI-SYN-SEQ-01	indel	background	chr1	66596295	GA	G				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000042	IGI-SYN-SEQ-01	snv	background	chr1	112282626	C	A	CCC			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000043	IGI-SYN-SEQ-01	snv	background	chr1	223930563	A	T	CAC			non_coding	0	A	0.4	post_cna	A	0.1037	3.0			na				na				False	False	True
 BG-000044	IGI-SYN-SEQ-01	snv	background	chr1	74711793	C	G	GCT			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
@@ -173,7 +173,7 @@ BG-000171	IGI-SYN-SEQ-01	snv	background	chr1	59142541	G	T	AGA			non_coding	1	T	1
 BG-000172	IGI-SYN-SEQ-01	snv	background	chr1	85515953	T	A	CTT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000173	IGI-SYN-SEQ-01	snv	background	chr1	180452963	C	T	ACA			non_coding	0	T	1.0	pre_cna	T_het	0.5185	3.0			na				na				False	False	True
 BG-000174	IGI-SYN-SEQ-01	snv	background	chr1	115182004	A	T	AAC			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
-BG-000175	IGI-SYN-SEQ-01	indel	background	chr1	20107529	A	AA				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000175	IGI-SYN-SEQ-01	indel	background	chr1	20107528	G	GA				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000176	IGI-SYN-SEQ-01	snv	background	chr1	150306536	C	A	GCC			non_coding	0	T	1.0	pre_cna	T_het	0.5185	3.0			na				na				False	False	True
 BG-000177	IGI-SYN-SEQ-01	snv	background	chr1	167938162	G	A	CGC			non_coding	0	T	1.0	pre_cna	T_het	0.5185	3.0			na				na				False	False	True
 BG-000178	IGI-SYN-SEQ-01	snv	background	chr1	50660602	T	A	CTC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -225,10 +225,10 @@ BG-000223	IGI-SYN-SEQ-01	indel	background	chr1	216337932	CCT	C				non_coding	0	B
 BG-000224	IGI-SYN-SEQ-01	snv	background	chr1	162584883	C	A	ACA			non_coding	0	T	1.0	pre_cna	T_het	0.5185	3.0			na				na				False	False	True
 BG-000225	IGI-SYN-SEQ-01	snv	background	chr1	235920160	T	A	GTC			non_coding	1	T	1.0	pre_cna	T_het	0.2593	3.0			na				na				False	False	True
 BG-000226	IGI-SYN-SEQ-01	snv	background	chr1	1401312	G	C	AGC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000227	IGI-SYN-SEQ-01	indel	background	chr1	224650814	GG	G				non_coding	0	T	1.0	pre_cna	T_het	0.5185	3.0			na				na				False	False	True
+BG-000227	IGI-SYN-SEQ-01	indel	background	chr1	224650812	TG	T				non_coding	0	T	1.0	pre_cna	T_het	0.5185	3.0			na				na				False	False	True
 BG-000228	IGI-SYN-SEQ-01	indel	background	chr1	122946653	AGTT	A				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000229	IGI-SYN-SEQ-01	snv	background	chr1	124380084	C	T	CCT			non_coding	0	T	1.0	pre_cna	T_het	0.5185	3.0			na				na				False	False	True
-BG-000230	IGI-SYN-SEQ-01	indel	background	chr1	116000945	TT	T				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000230	IGI-SYN-SEQ-01	indel	background	chr1	116000944	AT	A				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000231	IGI-SYN-SEQ-01	snv	background	chr2	63624760	A	T	GAG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000232	IGI-SYN-SEQ-01	snv	background	chr2	121556733	T	A	CTG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000233	IGI-SYN-SEQ-01	indel	background	chr2	139587934	TG	T				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -267,7 +267,7 @@ BG-000265	IGI-SYN-SEQ-01	snv	background	chr2	101150748	C	T	GCG			non_coding	1	T	
 BG-000266	IGI-SYN-SEQ-01	snv	background	chr2	33434356	T	A	TTC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000267	IGI-SYN-SEQ-01	snv	background	chr2	53068596	G	C	AGA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000268	IGI-SYN-SEQ-01	snv	background	chr2	110384267	G	T	CGG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
-BG-000269	IGI-SYN-SEQ-01	indel	background	chr2	19990781	GG	G				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
+BG-000269	IGI-SYN-SEQ-01	indel	background	chr2	19990780	TG	T				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000270	IGI-SYN-SEQ-01	snv	background	chr2	143673787	C	G	ACA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000271	IGI-SYN-SEQ-01	snv	background	chr2	241202525	G	A	TGC			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000272	IGI-SYN-SEQ-01	snv	background	chr2	22911705	G	A	GGT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -315,7 +315,7 @@ BG-000313	IGI-SYN-SEQ-01	snv	background	chr2	7447581	A	T	AAT			non_coding	1	T	1.
 BG-000314	IGI-SYN-SEQ-01	snv	background	chr2	92483635	C	T	TCG			non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	True
 BG-000315	IGI-SYN-SEQ-01	snv	background	chr2	114780445	T	C	GTC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000316	IGI-SYN-SEQ-01	snv	background	chr2	71864468	G	C	GGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000317	IGI-SYN-SEQ-01	indel	background	chr2	173161214	AAA	A				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000317	IGI-SYN-SEQ-01	indel	background	chr2	173161213	CAA	C				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000318	IGI-SYN-SEQ-01	snv	background	chr2	25305023	A	G	AAT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000319	IGI-SYN-SEQ-01	snv	background	chr2	71142266	C	G	GCC			non_coding	0	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	True
 BG-000320	IGI-SYN-SEQ-01	snv	background	chr2	68197871	T	C	CTT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -337,7 +337,7 @@ BG-000335	IGI-SYN-SEQ-01	snv	background	chr2	164017962	T	C	ATA			non_coding	0	T	
 BG-000336	IGI-SYN-SEQ-01	snv	background	chr2	102443246	G	T	GGG	IL18RAP	ENST00000264260.6	missense	0	B	0.25	post_cna	B	0.0875	2.0	0.314	T0	strong	0.073	HLA-A*26:01	SVFNPVIKWY	weak	1.027	HLA-A*01:01	SVFNPVIKWY	True	False	True
 BG-000337	IGI-SYN-SEQ-01	snv	background	chr2	171940411	G	C	AGT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000338	IGI-SYN-SEQ-01	snv	background	chr2	192453606	A	G	AAG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000339	IGI-SYN-SEQ-01	indel	background	chr2	70218753	A	AACATA				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000339	IGI-SYN-SEQ-01	indel	background	chr2	70218751	C	CTAACA				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000340	IGI-SYN-SEQ-01	snv	background	chr2	124815461	T	G	ATC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000341	IGI-SYN-SEQ-01	snv	background	chr2	41681858	T	C	GTA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000342	IGI-SYN-SEQ-01	snv	background	chr2	24832069	G	C	GGG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -390,7 +390,7 @@ BG-000388	IGI-SYN-SEQ-01	snv	background	chr2	51225582	G	A	CGT			non_coding	1	T	1
 BG-000389	IGI-SYN-SEQ-01	snv	background	chr2	76289864	T	A	GTG			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000390	IGI-SYN-SEQ-01	snv	background	chr2	6766563	C	T	ACG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000391	IGI-SYN-SEQ-01	snv	background	chr2	137464642	C	T	GCA			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
-BG-000392	IGI-SYN-SEQ-01	indel	background	chr2	24863291	AACA	A				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000392	IGI-SYN-SEQ-01	indel	background	chr2	24863290	AAAC	A				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000393	IGI-SYN-SEQ-01	snv	background	chr2	69173246	C	G	CCT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000394	IGI-SYN-SEQ-01	snv	background	chr2	68129608	G	C	TGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000395	IGI-SYN-SEQ-01	snv	background	chr2	12051396	C	T	ACC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -538,7 +538,7 @@ BG-000536	IGI-SYN-SEQ-01	snv	background	chr3	1590069	C	T	ACA			non_coding	1	T	1.
 BG-000537	IGI-SYN-SEQ-01	snv	background	chr3	126419962	C	G	CCC			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000538	IGI-SYN-SEQ-01	snv	background	chr3	104278606	T	A	CTG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000539	IGI-SYN-SEQ-01	snv	background	chr3	192921269	G	A	CGA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000540	IGI-SYN-SEQ-01	indel	background	chr3	112598724	TGTT	T				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000540	IGI-SYN-SEQ-01	indel	background	chr3	112598723	CTGT	C				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000541	IGI-SYN-SEQ-01	snv	background	chr3	163468115	C	G	TCA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000542	IGI-SYN-SEQ-01	indel	background	chr3	25415435	ATTAT	A				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000543	IGI-SYN-SEQ-01	snv	background	chr3	54490452	C	G	TCT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -566,9 +566,9 @@ BG-000564	IGI-SYN-SEQ-01	snv	background	chr3	172641050	A	G	AAA			non_coding	0	T	
 BG-000565	IGI-SYN-SEQ-01	snv	background	chr3	25302478	A	G	TAC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000566	IGI-SYN-SEQ-01	snv	background	chr3	184986193	C	G	TCT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000567	IGI-SYN-SEQ-01	snv	background	chr3	167402992	G	C	GGA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000568	IGI-SYN-SEQ-01	indel	background	chr3	38039454	CCTC	C		DLEC1	ENST00000308059.11	inframe_deletion	1	A	0.4	post_cna	A	0.14	2.0	0.26	T0	strong	0.003	HLA-B*38:01	QHLETVLEL	strong	0.009	HLA-A*01:01	FTDYEIGPVY	True	False	True
+BG-000568	IGI-SYN-SEQ-01	indel	background	chr3	38039453	GCCT	G		DLEC1	ENST00000308059.11	inframe_deletion	1	A	0.4	post_cna	A	0.14	2.0	0.26	T0	strong	0.003	HLA-B*38:01	QHLETVLEL	strong	0.009	HLA-A*01:01	FTDYEIGPVY	True	False	True
 BG-000569	IGI-SYN-SEQ-01	snv	background	chr3	63126747	C	T	TCA			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
-BG-000570	IGI-SYN-SEQ-01	indel	background	chr3	171943058	G	GG				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000570	IGI-SYN-SEQ-01	indel	background	chr3	171943057	T	TG				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000571	IGI-SYN-SEQ-01	snv	background	chr3	66331674	T	A	ATG			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000572	IGI-SYN-SEQ-01	snv	background	chr3	177911192	C	A	ACA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000573	IGI-SYN-SEQ-01	snv	background	chr3	182252975	C	T	ACG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -608,7 +608,7 @@ BG-000606	IGI-SYN-SEQ-01	snv	background	chr3	32109646	C	A	CCA			non_coding	1	T	1
 BG-000607	IGI-SYN-SEQ-01	snv	background	chr3	75030809	T	C	TTT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000608	IGI-SYN-SEQ-01	snv	background	chr3	119748595	G	A	CGG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000609	IGI-SYN-SEQ-01	snv	background	chr3	186768729	C	T	TCG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000610	IGI-SYN-SEQ-01	indel	background	chr3	140265183	A	AAA				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
+BG-000610	IGI-SYN-SEQ-01	indel	background	chr3	140265182	G	GAA				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000611	IGI-SYN-SEQ-01	snv	background	chr3	162351614	G	A	AGT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000612	IGI-SYN-SEQ-01	snv	background	chr3	146587584	A	G	GAA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000613	IGI-SYN-SEQ-01	snv	background	chr3	185193627	G	C	AGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -626,7 +626,7 @@ BG-000624	IGI-SYN-SEQ-01	indel	background	chr3	62450442	ACC	A				non_coding	1	B	
 BG-000625	IGI-SYN-SEQ-01	snv	background	chr3	179456063	C	A	TCA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000626	IGI-SYN-SEQ-01	snv	background	chr3	26642744	C	T	GCG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000627	IGI-SYN-SEQ-01	snv	background	chr3	42506338	C	G	GCT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
-BG-000628	IGI-SYN-SEQ-01	indel	background	chr3	180553393	T	TT				non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	True
+BG-000628	IGI-SYN-SEQ-01	indel	background	chr3	180553392	C	CT				non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	True
 BG-000629	IGI-SYN-SEQ-01	snv	background	chr3	136523139	G	A	CGC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000630	IGI-SYN-SEQ-01	snv	background	chr3	51768102	A	G	GAG			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000631	IGI-SYN-SEQ-01	snv	background	chr3	98785769	G	C	TGG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -659,7 +659,7 @@ BG-000657	IGI-SYN-SEQ-01	indel	background	chr3	179896774	CAT	C				non_coding	0	T
 BG-000658	IGI-SYN-SEQ-01	snv	background	chr3	164562916	C	G	TCA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000659	IGI-SYN-SEQ-01	snv	background	chr3	42227605	G	A	CGC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000660	IGI-SYN-SEQ-01	snv	background	chr3	177685203	T	A	TTC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000661	IGI-SYN-SEQ-01	indel	background	chr3	114779579	AAAA	A				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000661	IGI-SYN-SEQ-01	indel	background	chr3	114779578	TAAA	T				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000662	IGI-SYN-SEQ-01	snv	background	chr3	183503059	A	C	CAC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000663	IGI-SYN-SEQ-01	snv	background	chr3	37503764	G	A	AGG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000664	IGI-SYN-SEQ-01	snv	background	chr3	194968446	C	T	CCC			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
@@ -679,7 +679,7 @@ BG-000677	IGI-SYN-SEQ-01	snv	background	chr4	1618665	G	T	GGC			non_coding	0	A	0.
 BG-000678	IGI-SYN-SEQ-01	snv	background	chr4	119058695	G	A	TGA			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000679	IGI-SYN-SEQ-01	snv	background	chr4	29680023	G	T	TGG			non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	True
 BG-000680	IGI-SYN-SEQ-01	snv	background	chr4	100612842	G	C	AGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000681	IGI-SYN-SEQ-01	indel	background	chr4	143933226	AA	A				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000681	IGI-SYN-SEQ-01	indel	background	chr4	143933224	TA	T				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000682	IGI-SYN-SEQ-01	snv	background	chr4	18746544	T	G	GTG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000683	IGI-SYN-SEQ-01	snv	background	chr4	23513916	G	C	TGT			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000684	IGI-SYN-SEQ-01	snv	background	chr4	133976231	T	A	GTT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -696,7 +696,7 @@ BG-000694	IGI-SYN-SEQ-01	snv	background	chr4	100461819	T	G	TTC			non_coding	0	T	
 BG-000695	IGI-SYN-SEQ-01	snv	background	chr4	79772612	C	G	CCA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000696	IGI-SYN-SEQ-01	snv	background	chr4	48132221	A	G	GAG			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000697	IGI-SYN-SEQ-01	snv	background	chr4	132949852	G	A	AGT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
-BG-000698	IGI-SYN-SEQ-01	indel	background	chr4	40742355	AATA	A				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
+BG-000698	IGI-SYN-SEQ-01	indel	background	chr4	40742354	CAAT	C				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000699	IGI-SYN-SEQ-01	snv	background	chr4	147938324	T	C	TTA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000700	IGI-SYN-SEQ-01	snv	background	chr4	170339662	G	A	TGC			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000701	IGI-SYN-SEQ-01	snv	background	chr4	170623073	T	G	TTT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -761,7 +761,7 @@ BG-000759	IGI-SYN-SEQ-01	snv	background	chr4	39518061	T	A	CTG			non_coding	1	A1	
 BG-000760	IGI-SYN-SEQ-01	snv	background	chr4	87694328	C	A	GCC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000761	IGI-SYN-SEQ-01	snv	background	chr4	115510023	A	G	TAT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000762	IGI-SYN-SEQ-01	snv	background	chr4	70005048	A	G	CAT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000763	IGI-SYN-SEQ-01	indel	background	chr4	4713246	A	ATTGAA				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000763	IGI-SYN-SEQ-01	indel	background	chr4	4713245	C	CATTGA				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000764	IGI-SYN-SEQ-01	snv	background	chr4	158285656	G	A	GGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000765	IGI-SYN-SEQ-01	snv	background	chr4	62928474	T	A	GTA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000766	IGI-SYN-SEQ-01	snv	background	chr4	162741229	A	G	TAA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -780,7 +780,7 @@ BG-000778	IGI-SYN-SEQ-01	snv	background	chr4	128892138	C	T	ACG			non_coding	0	A	
 BG-000779	IGI-SYN-SEQ-01	snv	background	chr4	65040588	A	T	TAT			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000780	IGI-SYN-SEQ-01	snv	background	chr4	19251283	G	T	GGG			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000781	IGI-SYN-SEQ-01	snv	background	chr4	148737321	C	A	ACT			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
-BG-000782	IGI-SYN-SEQ-01	indel	background	chr4	10575764	A	AA				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-000782	IGI-SYN-SEQ-01	indel	background	chr4	10575761	T	TA				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000783	IGI-SYN-SEQ-01	snv	background	chr4	118144154	G	T	GGC			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000784	IGI-SYN-SEQ-01	snv	background	chr4	121275838	G	A	AGC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000785	IGI-SYN-SEQ-01	snv	background	chr4	10772060	C	G	ACA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -797,7 +797,7 @@ BG-000795	IGI-SYN-SEQ-01	snv	background	chr4	171126421	G	A	CGT			non_coding	1	T	
 BG-000796	IGI-SYN-SEQ-01	snv	background	chr4	134133	G	A	AGT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000797	IGI-SYN-SEQ-01	snv	background	chr4	93247199	A	T	GAC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000798	IGI-SYN-SEQ-01	snv	background	chr4	39967755	C	A	TCG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000799	IGI-SYN-SEQ-01	indel	background	chr4	32552635	TCT	T				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
+BG-000799	IGI-SYN-SEQ-01	indel	background	chr4	32552634	TTC	T				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000800	IGI-SYN-SEQ-01	snv	background	chr4	7734808	C	T	CCG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000801	IGI-SYN-SEQ-01	snv	background	chr4	140716434	G	C	AGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000802	IGI-SYN-SEQ-01	snv	background	chr4	89964121	T	A	GTG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -829,7 +829,7 @@ BG-000827	IGI-SYN-SEQ-01	snv	background	chr4	52891383	A	G	TAT			non_coding	0	B	0
 BG-000828	IGI-SYN-SEQ-01	snv	background	chr4	48200132	G	C	AGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000829	IGI-SYN-SEQ-01	snv	background	chr4	85084919	C	T	CCC			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000830	IGI-SYN-SEQ-01	snv	background	chr4	145348222	G	A	TGT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000831	IGI-SYN-SEQ-01	indel	background	chr4	136508048	G	GCG				non_coding	0	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	True
+BG-000831	IGI-SYN-SEQ-01	indel	background	chr4	136508047	A	AGC				non_coding	0	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	True
 BG-000832	IGI-SYN-SEQ-01	snv	background	chr4	87958746	T	C	ATT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000833	IGI-SYN-SEQ-01	snv	background	chr4	5939583	C	T	GCT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000834	IGI-SYN-SEQ-01	snv	background	chr4	110293280	A	C	CAT			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
@@ -838,10 +838,10 @@ BG-000836	IGI-SYN-SEQ-01	snv	background	chr4	85355516	C	G	GCT			non_coding	1	T	1
 BG-000837	IGI-SYN-SEQ-01	snv	background	chr4	122399102	G	A	TGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000838	IGI-SYN-SEQ-01	snv	background	chr4	66829715	C	T	GCT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000839	IGI-SYN-SEQ-01	snv	background	chr4	140820723	A	T	TAG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-000840	IGI-SYN-SEQ-01	indel	background	chr4	39465137	A	ACCGA		LIAS	ENST00000640888.2	frameshift	1	A1	0.12	post_cna	A1	0.042	2.0	4.395	T10	strong	0.02	HLA-A*26:01	DASEPYNRY	strong	0.137	HLA-B*35:08	DASEPYNRY	True	False	True
+BG-000840	IGI-SYN-SEQ-01	indel	background	chr4	39465136	A	AACCG		LIAS	ENST00000640888.2	frameshift	1	A1	0.12	post_cna	A1	0.042	2.0	4.395	T10	strong	0.02	HLA-A*26:01	DASEPYNRY	strong	0.137	HLA-B*35:08	DASEPYNRY	True	False	True
 BG-000841	IGI-SYN-SEQ-01	snv	background	chr4	110992448	A	G	TAT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000842	IGI-SYN-SEQ-01	snv	background	chr4	62523168	G	A	GGC			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
-BG-000843	IGI-SYN-SEQ-01	indel	background	chr4	104826537	AGTCAAACAA	A				non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
+BG-000843	IGI-SYN-SEQ-01	indel	background	chr4	104826536	GAGTCAAACA	G				non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000844	IGI-SYN-SEQ-01	snv	background	chr4	190091488	G	A	CGG			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-000845	IGI-SYN-SEQ-01	indel	background	chr4	189627382	A	ACG				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-000846	IGI-SYN-SEQ-01	snv	background	chr4	75660178	T	G	CTT			non_coding	0	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	True
@@ -995,7 +995,7 @@ BG-000993	IGI-SYN-SEQ-01	snv	background	chr5	39562586	G	C	GGA			non_coding	1	T	1
 BG-000994	IGI-SYN-SEQ-01	snv	background	chr5	164587378	T	C	CTT			non_coding	0	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	True
 BG-000995	IGI-SYN-SEQ-01	snv	background	chr5	166312676	A	T	CAT			non_coding	0	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	True
 BG-000996	IGI-SYN-SEQ-01	snv	background	chr5	160569128	A	G	TAG			non_coding	0	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	True
-BG-000997	IGI-SYN-SEQ-01	indel	background	chr5	12267483	TT	T				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
+BG-000997	IGI-SYN-SEQ-01	indel	background	chr5	12267482	CT	C				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000998	IGI-SYN-SEQ-01	snv	background	chr5	33794259	T	G	CTC			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-000999	IGI-SYN-SEQ-01	snv	background	chr5	19076042	G	C	AGA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-001000	IGI-SYN-SEQ-01	snv	background	chr5	158379674	A	G	CAT			non_coding	0	A	0.4	post_cna	A	0.2154	1.0			na				na				False	False	True
@@ -1066,7 +1066,7 @@ BG-001064	IGI-SYN-SEQ-01	snv	background	chr6	152459378	G	C	TGA			non_coding	1	T	
 BG-001065	IGI-SYN-SEQ-01	snv	background	chr6	60275068	T	G	TTT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001066	IGI-SYN-SEQ-01	snv	background	chr6	736256	A	G	GAT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001067	IGI-SYN-SEQ-01	snv	background	chr6	87822826	G	A	TGC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-001068	IGI-SYN-SEQ-01	indel	background	chr6	157118667	AA	A				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-001068	IGI-SYN-SEQ-01	indel	background	chr6	157118665	CA	C				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001069	IGI-SYN-SEQ-01	indel	background	chr6	55779050	T	TACA				non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-001070	IGI-SYN-SEQ-01	snv	background	chr6	7751633	T	A	CTC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001071	IGI-SYN-SEQ-01	snv	background	chr6	95140896	C	T	ACG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -1134,7 +1134,7 @@ BG-001132	IGI-SYN-SEQ-01	snv	background	chr6	141025826	C	T	CCC			non_coding	0	T	
 BG-001133	IGI-SYN-SEQ-01	snv	background	chr6	66968737	G	C	AGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001134	IGI-SYN-SEQ-01	snv	background	chr6	13296739	G	C	AGG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001135	IGI-SYN-SEQ-01	snv	background	chr6	81228790	T	C	GTC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-001136	IGI-SYN-SEQ-01	indel	background	chr6	152088242	ATAA	A				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-001136	IGI-SYN-SEQ-01	indel	background	chr6	152088241	TATA	T				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001137	IGI-SYN-SEQ-01	snv	background	chr6	19638243	A	G	AAG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001138	IGI-SYN-SEQ-01	snv	background	chr6	62703620	A	T	TAC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001139	IGI-SYN-SEQ-01	snv	background	chr6	122305525	T	C	GTG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -1144,7 +1144,7 @@ BG-001142	IGI-SYN-SEQ-01	snv	background	chr6	27902158	A	C	AAA			non_coding	0	A	0
 BG-001143	IGI-SYN-SEQ-01	snv	background	chr6	30203238	T	G	TTG			non_coding	0	A	0.4	post_cna	A	0.2154	1.0			na				na				False	False	True
 BG-001144	IGI-SYN-SEQ-01	snv	background	chr6	51851882	G	T	GGG			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-001145	IGI-SYN-SEQ-01	snv	background	chr6	110863191	C	T	CCG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-001146	IGI-SYN-SEQ-01	indel	background	chr6	150088127	G	GTG				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-001146	IGI-SYN-SEQ-01	indel	background	chr6	150088126	A	AGT				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001147	IGI-SYN-SEQ-01	snv	background	chr6	15424722	G	C	TGG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001148	IGI-SYN-SEQ-01	snv	background	chr6	43539644	C	A	TCC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001149	IGI-SYN-SEQ-01	snv	background	chr6	24521810	G	C	AGG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -1155,14 +1155,14 @@ BG-001153	IGI-SYN-SEQ-01	snv	background	chr6	13235765	G	C	AGA			non_coding	1	A	0
 BG-001154	IGI-SYN-SEQ-01	snv	background	chr6	165566845	C	G	ACT			non_coding	0	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	True
 BG-001155	IGI-SYN-SEQ-01	snv	background	chr6	39694547	A	T	CAA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001156	IGI-SYN-SEQ-01	snv	background	chr6	38700158	A	C	CAA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-001157	IGI-SYN-SEQ-01	indel	background	chr6	161104507	G	GG				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-001157	IGI-SYN-SEQ-01	indel	background	chr6	161104505	A	AG				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001158	IGI-SYN-SEQ-01	snv	background	chr6	97157438	C	T	ACG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-001159	IGI-SYN-SEQ-01	snv	background	chr6	42411826	G	C	GGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001160	IGI-SYN-SEQ-01	snv	background	chr6	141884373	G	C	AGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001161	IGI-SYN-SEQ-01	snv	background	chr6	156207733	A	T	GAC			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-001162	IGI-SYN-SEQ-01	snv	background	chr6	14806628	C	G	TCT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-001163	IGI-SYN-SEQ-01	snv	background	chr6	46506575	T	G	CTG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-001164	IGI-SYN-SEQ-01	indel	background	chr6	56585365	T	TT				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
+BG-001164	IGI-SYN-SEQ-01	indel	background	chr6	56585362	A	AT				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-001165	IGI-SYN-SEQ-01	snv	background	chr6	93516035	C	G	ACA			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-001166	IGI-SYN-SEQ-01	snv	background	chr6	2615697	G	T	AGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001167	IGI-SYN-SEQ-01	snv	background	chr6	43764937	T	A	GTC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -1180,19 +1180,19 @@ BG-001178	IGI-SYN-SEQ-01	snv	background	chr6	45473971	G	A	CGC			non_coding	1	A	0
 BG-001179	IGI-SYN-SEQ-01	snv	background	chr6	153955309	A	T	CAA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001180	IGI-SYN-SEQ-01	snv	background	chr6	89007681	C	G	TCC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001181	IGI-SYN-SEQ-01	snv	background	chr6	50030022	C	T	GCG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
-BG-001182	IGI-SYN-SEQ-01	indel	background	chr6	147731405	AA	A				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-001182	IGI-SYN-SEQ-01	indel	background	chr6	147731404	TA	T				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001183	IGI-SYN-SEQ-01	snv	background	chr6	43160851	G	T	TGG	PTK7	ENST00000230419.9	synonymous	0	T	1.0	pre_cna	T_het	0.35	2.0	83.693	T100	na				na				False	False	True
 BG-001184	IGI-SYN-SEQ-01	snv	background	chr6	14518197	C	T	ACG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-001185	IGI-SYN-SEQ-01	snv	background	chr6	166872674	T	C	GTT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-001186	IGI-SYN-SEQ-01	indel	background	chr6	146975222	T	TCCCGTTG				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001187	IGI-SYN-SEQ-01	snv	background	chr6	2439950	G	C	TGA			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
-BG-001188	IGI-SYN-SEQ-01	indel	background	chr6	28341254	T	TT				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
+BG-001188	IGI-SYN-SEQ-01	indel	background	chr6	28341253	G	GT				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001189	IGI-SYN-SEQ-01	snv	background	chr6	22159129	G	T	AGC			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-001190	IGI-SYN-SEQ-01	snv	background	chr6	85615073	C	T	CCG	SYNCRIP	ENST00000369622.8	missense	0	T	1.0	pre_cna	T_het	0.35	2.0	68.63	T100	weak	0.592	HLA-C*12:03	AAPPRSRAGY	weak	0.629	HLA-B*35:08	APPRSRAGY	True	False	True
 BG-001191	IGI-SYN-SEQ-01	snv	background	chr6	69315986	C	G	TCA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001192	IGI-SYN-SEQ-01	snv	background	chr6	35843088	C	T	GCC			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-001193	IGI-SYN-SEQ-01	snv	background	chr6	126713971	C	G	TCA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
-BG-001194	IGI-SYN-SEQ-01	indel	background	chr6	116528070	ACA	A				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
+BG-001194	IGI-SYN-SEQ-01	indel	background	chr6	116528069	GAC	G				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	True
 BG-001195	IGI-SYN-SEQ-01	snv	background	chr6	107237799	G	A	CGG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
 BG-001196	IGI-SYN-SEQ-01	snv	background	chr6	126965909	A	G	CAT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	True
 BG-001197	IGI-SYN-SEQ-01	snv	background	chr6	75219203	A	G	TAT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	True
@@ -1288,7 +1288,7 @@ BG-001286	IGI-SYN-SEQ-01	snv	background	chr7	109002882	A	G	GAC			non_coding	1	T	
 BG-001287	IGI-SYN-SEQ-01	snv	background	chr7	135432926	T	C	TTT			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001288	IGI-SYN-SEQ-01	snv	background	chr7	51593065	A	G	CAT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001289	IGI-SYN-SEQ-01	snv	background	chr7	27294076	T	C	TTG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-001290	IGI-SYN-SEQ-01	indel	background	chr7	19166182	T	TT				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
+BG-001290	IGI-SYN-SEQ-01	indel	background	chr7	19166181	G	GT				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001291	IGI-SYN-SEQ-01	snv	background	chr7	62993742	T	C	ATA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001292	IGI-SYN-SEQ-01	snv	background	chr7	38545908	C	G	CCT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001293	IGI-SYN-SEQ-01	snv	background	chr7	20503775	T	C	ATG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -1321,7 +1321,7 @@ BG-001319	IGI-SYN-SEQ-01	snv	background	chr7	78011534	C	T	ACC			non_coding	0	T	1
 BG-001320	IGI-SYN-SEQ-01	snv	background	chr7	128528709	A	C	CAC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001321	IGI-SYN-SEQ-01	snv	background	chr7	94868204	G	A	CGA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001322	IGI-SYN-SEQ-01	snv	background	chr7	81053218	G	A	CGT			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
-BG-001323	IGI-SYN-SEQ-01	indel	background	chr7	126673488	GACTTTACTGG	G				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-001323	IGI-SYN-SEQ-01	indel	background	chr7	126673487	AGACTTTACTG	A				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001324	IGI-SYN-SEQ-01	snv	background	chr7	39928581	G	C	AGC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001325	IGI-SYN-SEQ-01	snv	background	chr7	13055012	A	C	GAA			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001326	IGI-SYN-SEQ-01	snv	background	chr7	133585349	C	G	ACT			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
@@ -1355,7 +1355,7 @@ BG-001353	IGI-SYN-SEQ-01	snv	background	chr7	158240305	C	A	TCT			non_coding	0	T	
 BG-001354	IGI-SYN-SEQ-01	snv	background	chr7	155728480	G	T	AGG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001355	IGI-SYN-SEQ-01	snv	background	chr7	111481337	A	G	GAC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001356	IGI-SYN-SEQ-01	snv	background	chr7	148901812	C	G	TCT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-001357	IGI-SYN-SEQ-01	indel	background	chr7	101682058	G	GTG				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
+BG-001357	IGI-SYN-SEQ-01	indel	background	chr7	101682057	G	GGT				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001358	IGI-SYN-SEQ-01	snv	background	chr7	136976137	G	C	AGG			non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
 BG-001359	IGI-SYN-SEQ-01	snv	background	chr7	39306130	G	T	GGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001360	IGI-SYN-SEQ-01	snv	background	chr7	107834756	C	G	TCA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -1372,7 +1372,7 @@ BG-001370	IGI-SYN-SEQ-01	snv	background	chr8	107508653	T	A	CTC			non_coding	0	B	
 BG-001371	IGI-SYN-SEQ-01	snv	background	chr8	122381537	G	C	TGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001372	IGI-SYN-SEQ-01	snv	background	chr8	79195526	A	T	AAA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001373	IGI-SYN-SEQ-01	indel	background	chr8	8329840	G	GC				non_coding	1	A	0.4	post_cna	A	0.2154	1.0			na				na				False	False	False
-BG-001374	IGI-SYN-SEQ-01	indel	background	chr8	79423749	ATA	A				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-001374	IGI-SYN-SEQ-01	indel	background	chr8	79423748	CAT	C				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001375	IGI-SYN-SEQ-01	snv	background	chr8	3829046	G	A	CGT			non_coding	1	A	0.4	post_cna	A	0.2154	1.0			na				na				False	False	False
 BG-001376	IGI-SYN-SEQ-01	snv	background	chr8	106642413	C	T	TCC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001377	IGI-SYN-SEQ-01	snv	background	chr8	4440160	G	A	CGT			non_coding	1	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	False
@@ -1394,7 +1394,7 @@ BG-001392	IGI-SYN-SEQ-01	snv	background	chr8	36123398	C	T	ACG			non_coding	1	A	0
 BG-001393	IGI-SYN-SEQ-01	snv	background	chr8	7154201	G	T	TGA			non_coding	1	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	False
 BG-001394	IGI-SYN-SEQ-01	snv	background	chr8	88804125	T	A	GTC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001395	IGI-SYN-SEQ-01	snv	background	chr8	113791237	G	A	AGC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-001396	IGI-SYN-SEQ-01	indel	background	chr8	123162465	C	CACGTC				non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
+BG-001396	IGI-SYN-SEQ-01	indel	background	chr8	123162464	C	CCACGT				non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001397	IGI-SYN-SEQ-01	snv	background	chr8	36569337	C	G	GCC			non_coding	1	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	False
 BG-001398	IGI-SYN-SEQ-01	snv	background	chr8	19037097	C	A	CCA			non_coding	1	A	0.4	post_cna	A	0.2154	1.0			na				na				False	False	False
 BG-001399	IGI-SYN-SEQ-01	snv	background	chr8	100433847	A	T	GAA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
@@ -1490,7 +1490,7 @@ BG-001488	IGI-SYN-SEQ-01	snv	background	chr8	30988264	C	T	GCC			non_coding	1	B	0
 BG-001489	IGI-SYN-SEQ-01	snv	background	chr8	76419188	G	A	TGG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001490	IGI-SYN-SEQ-01	snv	background	chr8	68962281	G	T	TGG			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001491	IGI-SYN-SEQ-01	snv	background	chr8	75386978	G	C	TGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-001492	IGI-SYN-SEQ-01	indel	background	chr8	53084104	TTTT	T				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
+BG-001492	IGI-SYN-SEQ-01	indel	background	chr8	53084103	ATTT	A				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001493	IGI-SYN-SEQ-01	snv	background	chr8	67888806	G	C	TGT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001494	IGI-SYN-SEQ-01	indel	background	chr8	137006682	TC	T				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001495	IGI-SYN-SEQ-01	snv	background	chr8	116309713	A	G	AAC			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
@@ -1503,7 +1503,7 @@ BG-001501	IGI-SYN-SEQ-01	snv	background	chr8	52297058	C	T	ACT			non_coding	1	B	0
 BG-001502	IGI-SYN-SEQ-01	snv	background	chr8	36535211	G	T	GGG			non_coding	1	A	0.4	post_cna	A	0.2154	1.0			na				na				False	False	False
 BG-001503	IGI-SYN-SEQ-01	snv	background	chr8	138601488	G	A	CGT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001504	IGI-SYN-SEQ-01	snv	background	chr8	22086649	G	A	AGC			non_coding	1	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	False
-BG-001505	IGI-SYN-SEQ-01	indel	background	chr8	23869848	TT	T				non_coding	1	A	0.4	post_cna	A	0.2154	1.0			na				na				False	False	False
+BG-001505	IGI-SYN-SEQ-01	indel	background	chr8	23869847	CT	C				non_coding	1	A	0.4	post_cna	A	0.2154	1.0			na				na				False	False	False
 BG-001506	IGI-SYN-SEQ-01	snv	background	chr8	109310351	C	G	ACA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001507	IGI-SYN-SEQ-01	snv	background	chr8	7259077	C	G	TCA			non_coding	1	B	0.25	post_cna	B	0.1346	1.0			na				na				False	False	False
 BG-001508	IGI-SYN-SEQ-01	snv	background	chr8	47553287	T	C	TTC			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
@@ -1573,7 +1573,7 @@ BG-001571	IGI-SYN-SEQ-01	snv	background	chr9	10819247	C	A	TCC			non_coding	0	T	1
 BG-001572	IGI-SYN-SEQ-01	snv	background	chr9	111959760	G	A	TGT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001573	IGI-SYN-SEQ-01	snv	background	chr9	41793185	G	T	TGT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001574	IGI-SYN-SEQ-01	snv	background	chr9	40033520	G	C	TGA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
-BG-001575	IGI-SYN-SEQ-01	indel	background	chr9	133593455	CTC	C				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-001575	IGI-SYN-SEQ-01	indel	background	chr9	133593454	GCT	G				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001576	IGI-SYN-SEQ-01	snv	background	chr9	116253808	T	C	TTA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001577	IGI-SYN-SEQ-01	snv	background	chr9	83975672	C	T	ACG			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001578	IGI-SYN-SEQ-01	indel	background	chr9	81466007	CA	C				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -1586,7 +1586,7 @@ BG-001584	IGI-SYN-SEQ-01	snv	background	chr9	13986893	A	G	CAC			non_coding	0	A	0
 BG-001585	IGI-SYN-SEQ-01	snv	background	chr9	89889366	G	A	CGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001586	IGI-SYN-SEQ-01	snv	background	chr9	75244232	T	G	CTT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001587	IGI-SYN-SEQ-01	snv	background	chr9	100365967	A	T	GAG			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
-BG-001588	IGI-SYN-SEQ-01	indel	background	chr9	29251666	CC	C				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
+BG-001588	IGI-SYN-SEQ-01	indel	background	chr9	29251665	TC	T				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001589	IGI-SYN-SEQ-01	snv	background	chr9	111091424	T	G	ATG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001590	IGI-SYN-SEQ-01	snv	background	chr9	6331423	A	G	AAA			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001591	IGI-SYN-SEQ-01	snv	background	chr9	74676907	G	T	TGG			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
@@ -1628,7 +1628,7 @@ BG-001626	IGI-SYN-SEQ-01	snv	background	chr9	22832052	T	A	TTT			non_coding	0	A	0
 BG-001627	IGI-SYN-SEQ-01	snv	background	chr9	6647436	G	A	GGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001628	IGI-SYN-SEQ-01	snv	background	chr9	9056287	G	A	AGG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001629	IGI-SYN-SEQ-01	snv	background	chr9	69173964	G	C	AGG			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
-BG-001630	IGI-SYN-SEQ-01	indel	background	chr9	24693483	GTG	G				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-001630	IGI-SYN-SEQ-01	indel	background	chr9	24693482	GGT	G				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001631	IGI-SYN-SEQ-01	snv	background	chr9	8688809	A	C	CAT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001632	IGI-SYN-SEQ-01	snv	background	chr9	99500150	A	C	GAG			non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
 BG-001633	IGI-SYN-SEQ-01	snv	background	chr9	10752420	T	G	TTG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
@@ -1668,7 +1668,7 @@ BG-001666	IGI-SYN-SEQ-01	snv	background	chr10	83697051	C	G	TCT			non_coding	0	A1
 BG-001667	IGI-SYN-SEQ-01	indel	background	chr10	90592834	A	ATC				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001668	IGI-SYN-SEQ-01	snv	background	chr10	58330552	T	C	ATT			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001669	IGI-SYN-SEQ-01	snv	background	chr10	82370714	C	G	ACT			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
-BG-001670	IGI-SYN-SEQ-01	indel	background	chr10	101118689	G	GG				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
+BG-001670	IGI-SYN-SEQ-01	indel	background	chr10	101118688	A	AG				non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001671	IGI-SYN-SEQ-01	snv	background	chr10	48519838	C	A	GCT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001672	IGI-SYN-SEQ-01	snv	background	chr10	97572391	A	T	GAG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001673	IGI-SYN-SEQ-01	indel	background	chr10	41206900	GAC	G				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -1695,7 +1695,7 @@ BG-001693	IGI-SYN-SEQ-01	snv	background	chr10	24723701	C	T	GCG			non_coding	0	B	
 BG-001694	IGI-SYN-SEQ-01	snv	background	chr10	41742087	C	T	TCT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001695	IGI-SYN-SEQ-01	snv	background	chr10	62008301	T	C	TTC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001696	IGI-SYN-SEQ-01	snv	background	chr10	112864672	G	C	GGC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-001697	IGI-SYN-SEQ-01	indel	background	chr10	27555847	AA	A				non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
+BG-001697	IGI-SYN-SEQ-01	indel	background	chr10	27555844	GA	G				non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001698	IGI-SYN-SEQ-01	snv	background	chr10	132183896	G	C	TGC			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001699	IGI-SYN-SEQ-01	snv	background	chr10	112447561	C	G	GCG			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001700	IGI-SYN-SEQ-01	snv	background	chr10	86449337	T	C	GTA			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
@@ -1820,7 +1820,7 @@ BG-001818	IGI-SYN-SEQ-01	snv	background	chr11	93965307	A	G	GAG			non_coding	0	T	
 BG-001819	IGI-SYN-SEQ-01	snv	background	chr11	2540346	T	A	CTT			non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
 BG-001820	IGI-SYN-SEQ-01	snv	background	chr11	13255025	A	G	AAG			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001821	IGI-SYN-SEQ-01	indel	background	chr11	46791221	TTTA	T				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-001822	IGI-SYN-SEQ-01	indel	background	chr11	41193723	AGAAA	A				non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
+BG-001822	IGI-SYN-SEQ-01	indel	background	chr11	41193722	TAGAA	T				non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
 BG-001823	IGI-SYN-SEQ-01	indel	background	chr11	10579111	CA	C				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001824	IGI-SYN-SEQ-01	snv	background	chr11	127246782	G	A	GGG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001825	IGI-SYN-SEQ-01	snv	background	chr11	107067763	G	T	TGT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -1831,7 +1831,7 @@ BG-001829	IGI-SYN-SEQ-01	indel	background	chr11	15469479	T	TA				non_coding	1	A	
 BG-001830	IGI-SYN-SEQ-01	snv	background	chr11	8193485	C	T	GCG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001831	IGI-SYN-SEQ-01	snv	background	chr11	104101021	A	T	CAT			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001832	IGI-SYN-SEQ-01	snv	background	chr11	99884622	T	C	ATG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-001833	IGI-SYN-SEQ-01	indel	background	chr11	74382827	AA	A				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
+BG-001833	IGI-SYN-SEQ-01	indel	background	chr11	74382824	CA	C				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001834	IGI-SYN-SEQ-01	snv	background	chr11	96221425	C	G	CCA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001835	IGI-SYN-SEQ-01	snv	background	chr11	50734914	T	A	TTC			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001836	IGI-SYN-SEQ-01	snv	background	chr11	90599890	G	T	GGT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
@@ -1891,7 +1891,7 @@ BG-001889	IGI-SYN-SEQ-01	snv	background	chr11	96040217	C	T	ACA			non_coding	1	T	
 BG-001890	IGI-SYN-SEQ-01	snv	background	chr11	18889207	T	C	GTT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001891	IGI-SYN-SEQ-01	snv	background	chr11	37137983	C	T	ACT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001892	IGI-SYN-SEQ-01	snv	background	chr11	79483673	C	T	GCG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-001893	IGI-SYN-SEQ-01	indel	background	chr11	109958115	A	ATACA				non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
+BG-001893	IGI-SYN-SEQ-01	indel	background	chr11	109958114	T	TATAC				non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001894	IGI-SYN-SEQ-01	snv	background	chr11	109025340	C	G	TCA			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001895	IGI-SYN-SEQ-01	snv	background	chr11	115882975	T	G	GTT			non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
 BG-001896	IGI-SYN-SEQ-01	snv	background	chr11	2651735	G	A	CGT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -1934,7 +1934,7 @@ BG-001932	IGI-SYN-SEQ-01	snv	background	chr12	49233624	G	T	TGA			non_coding	0	B	
 BG-001933	IGI-SYN-SEQ-01	snv	background	chr12	3086545	A	T	AAG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001934	IGI-SYN-SEQ-01	snv	background	chr12	1060182	T	C	TTT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-001935	IGI-SYN-SEQ-01	snv	background	chr12	100519598	A	C	CAG			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
-BG-001936	IGI-SYN-SEQ-01	indel	background	chr12	29069063	ATTA	A				non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
+BG-001936	IGI-SYN-SEQ-01	indel	background	chr12	29069062	AATT	A				non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001937	IGI-SYN-SEQ-01	snv	background	chr12	44439174	T	C	CTT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-001938	IGI-SYN-SEQ-01	indel	background	chr12	112886830	TAGGA	T				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-001939	IGI-SYN-SEQ-01	snv	background	chr12	118422187	C	T	ACT			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
@@ -2258,7 +2258,7 @@ BG-002256	IGI-SYN-SEQ-01	snv	background	chr15	58261583	G	A	CGT			non_coding	0	A1
 BG-002257	IGI-SYN-SEQ-01	snv	background	chr15	44820597	C	A	CCC			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002258	IGI-SYN-SEQ-01	snv	background	chr15	68742271	C	T	GCG			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002259	IGI-SYN-SEQ-01	snv	background	chr15	62296629	C	T	TCC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-002260	IGI-SYN-SEQ-01	indel	background	chr15	37076771	AATA	A				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002260	IGI-SYN-SEQ-01	indel	background	chr15	37076769	TTAA	T				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002261	IGI-SYN-SEQ-01	snv	background	chr15	99444804	G	C	AGG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002262	IGI-SYN-SEQ-01	snv	background	chr15	78107962	G	A	CGG			non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
 BG-002263	IGI-SYN-SEQ-01	snv	background	chr15	39517811	A	C	CAT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
@@ -2273,7 +2273,7 @@ BG-002271	IGI-SYN-SEQ-01	snv	background	chr15	25180953	G	T	TGG			non_coding	0	A1
 BG-002272	IGI-SYN-SEQ-01	snv	background	chr15	65220894	C	T	GCC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002273	IGI-SYN-SEQ-01	snv	background	chr15	69741490	G	A	AGC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002274	IGI-SYN-SEQ-01	snv	background	chr15	82557737	C	A	CCC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-002275	IGI-SYN-SEQ-01	indel	background	chr15	63683724	C	CTC				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002275	IGI-SYN-SEQ-01	indel	background	chr15	63683723	A	ACT				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002276	IGI-SYN-SEQ-01	snv	background	chr15	31651028	A	T	GAC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002277	IGI-SYN-SEQ-01	snv	background	chr15	94143419	T	C	GTT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002278	IGI-SYN-SEQ-01	snv	background	chr15	98355832	C	G	CCT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
@@ -2305,7 +2305,7 @@ BG-002303	IGI-SYN-SEQ-01	snv	background	chr15	40496947	C	G	GCG			non_coding	1	B	
 BG-002304	IGI-SYN-SEQ-01	snv	background	chr15	49047283	T	C	ATA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002305	IGI-SYN-SEQ-01	snv	background	chr15	50265383	G	T	TGA			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-002306	IGI-SYN-SEQ-01	snv	background	chr15	95380358	G	C	TGA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
-BG-002307	IGI-SYN-SEQ-01	indel	background	chr15	44988032	A	AA				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002307	IGI-SYN-SEQ-01	indel	background	chr15	44988029	C	CA				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002308	IGI-SYN-SEQ-01	snv	background	chr16	77964530	A	T	CAT			non_coding	0	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	False
 BG-002309	IGI-SYN-SEQ-01	snv	background	chr16	23191938	G	C	AGA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002310	IGI-SYN-SEQ-01	snv	background	chr16	56003480	T	G	TTT			non_coding	0	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	False
@@ -2356,7 +2356,7 @@ BG-002354	IGI-SYN-SEQ-01	snv	background	chr16	5409649	T	G	CTC			non_coding	1	T	1
 BG-002355	IGI-SYN-SEQ-01	snv	background	chr16	34190047	G	C	AGA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002356	IGI-SYN-SEQ-01	snv	background	chr16	30682135	G	T	GGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002357	IGI-SYN-SEQ-01	snv	background	chr16	70322446	C	G	GCC			non_coding	0	B	0.25	post_cna	B	0.1346	1.0			na				na				False	False	False
-BG-002358	IGI-SYN-SEQ-01	indel	background	chr16	7215445	AA	A				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002358	IGI-SYN-SEQ-01	indel	background	chr16	7215444	TA	T				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002359	IGI-SYN-SEQ-01	snv	background	chr16	63055401	T	A	TTG			non_coding	0	B	0.25	post_cna	B	0.1346	1.0			na				na				False	False	False
 BG-002360	IGI-SYN-SEQ-01	snv	background	chr16	79007244	G	C	AGG			non_coding	0	T	1.0	pre_cna	T_LOH	0.5385	1.0			na				na				False	False	False
 BG-002361	IGI-SYN-SEQ-01	snv	background	chr16	70626854	G	C	AGC			non_coding	0	B	0.25	post_cna	B	0.1346	1.0			na				na				False	False	False
@@ -2528,7 +2528,7 @@ BG-002526	IGI-SYN-SEQ-01	snv	background	chr18	37445081	A	G	GAG			non_coding	1	T	
 BG-002527	IGI-SYN-SEQ-01	snv	background	chr18	35999095	T	A	GTT			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002528	IGI-SYN-SEQ-01	snv	background	chr18	5958033	A	T	GAG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002529	IGI-SYN-SEQ-01	snv	background	chr18	21438477	C	A	ACA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
-BG-002530	IGI-SYN-SEQ-01	indel	background	chr18	63127451	C	CGGAAACCTC				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
+BG-002530	IGI-SYN-SEQ-01	indel	background	chr18	63127450	G	GCGGAAACCT				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002531	IGI-SYN-SEQ-01	snv	background	chr18	14000814	T	A	ATG			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002532	IGI-SYN-SEQ-01	snv	background	chr18	38306826	T	G	TTG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002533	IGI-SYN-SEQ-01	snv	background	chr18	18752297	G	C	CGT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
@@ -2551,7 +2551,7 @@ BG-002549	IGI-SYN-SEQ-01	snv	background	chr18	58563010	G	C	AGG			non_coding	0	B	
 BG-002550	IGI-SYN-SEQ-01	snv	background	chr18	70424926	C	A	ACA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002551	IGI-SYN-SEQ-01	snv	background	chr18	35391479	G	C	AGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002552	IGI-SYN-SEQ-01	snv	background	chr18	16697493	T	A	CTT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-002553	IGI-SYN-SEQ-01	indel	background	chr19	5652935	A	AA				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002553	IGI-SYN-SEQ-01	indel	background	chr19	5652934	T	TA				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002554	IGI-SYN-SEQ-01	snv	background	chr19	48564021	A	G	GAT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002555	IGI-SYN-SEQ-01	snv	background	chr19	21295648	G	C	AGG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002556	IGI-SYN-SEQ-01	snv	background	chr19	13155699	C	T	CCG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -2593,7 +2593,7 @@ BG-002591	IGI-SYN-SEQ-01	indel	background	chr19	42178558	C	CGG				non_coding	1	T
 BG-002592	IGI-SYN-SEQ-01	snv	background	chr19	10810964	G	A	AGG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002593	IGI-SYN-SEQ-01	snv	background	chr19	21051579	C	T	CCA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002594	IGI-SYN-SEQ-01	snv	background	chr19	7544177	T	A	ATC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-002595	IGI-SYN-SEQ-01	indel	background	chr19	56726548	A	AAA				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002595	IGI-SYN-SEQ-01	indel	background	chr19	56726544	C	CAA				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002596	IGI-SYN-SEQ-01	snv	background	chr19	21006704	G	T	AGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002597	IGI-SYN-SEQ-01	indel	background	chr19	37582283	A	ACT				non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002598	IGI-SYN-SEQ-01	snv	background	chr19	8396675	G	C	AGC			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
@@ -2671,9 +2671,9 @@ BG-002669	IGI-SYN-SEQ-01	indel	background	chr20	19335933	TGCCC	T				non_coding	1
 BG-002670	IGI-SYN-SEQ-01	snv	background	chr20	29742765	G	A	CGC			non_coding	0	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
 BG-002671	IGI-SYN-SEQ-01	snv	background	chr20	34971832	A	T	CAA			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-002672	IGI-SYN-SEQ-01	snv	background	chr20	33548526	G	A	TGA			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
-BG-002673	IGI-SYN-SEQ-01	indel	background	chr21	35129615	T	TAT				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002673	IGI-SYN-SEQ-01	indel	background	chr21	35129614	T	TTA				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002674	IGI-SYN-SEQ-01	snv	background	chr21	9943455	T	C	TTA			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
-BG-002675	IGI-SYN-SEQ-01	indel	background	chr21	6100196	GG	G				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002675	IGI-SYN-SEQ-01	indel	background	chr21	6100195	TG	T				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002676	IGI-SYN-SEQ-01	snv	background	chr21	44269584	G	A	TGG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002677	IGI-SYN-SEQ-01	snv	background	chr21	28794840	T	A	CTC			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002678	IGI-SYN-SEQ-01	snv	background	chr21	39056666	C	G	TCT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -2744,7 +2744,7 @@ BG-002742	IGI-SYN-SEQ-01	snv	background	chr22	38998912	G	C	AGA			non_coding	0	T	
 BG-002743	IGI-SYN-SEQ-01	snv	background	chr22	37283833	A	G	GAA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002744	IGI-SYN-SEQ-01	snv	background	chr22	50278579	C	A	CCC			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002745	IGI-SYN-SEQ-01	snv	background	chr22	24630312	G	C	TGG			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
-BG-002746	IGI-SYN-SEQ-01	indel	background	chr22	23502428	CC	C				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
+BG-002746	IGI-SYN-SEQ-01	indel	background	chr22	23502426	TC	T				non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002747	IGI-SYN-SEQ-01	snv	background	chr22	16020736	T	A	TTT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002748	IGI-SYN-SEQ-01	snv	background	chrX	87939125	G	A	CGT			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-002749	IGI-SYN-SEQ-01	snv	background	chrX	79373634	G	C	AGA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
@@ -2791,7 +2791,7 @@ BG-002789	IGI-SYN-SEQ-01	snv	background	chrX	134654879	T	G	GTC			non_coding	1	T	
 BG-002790	IGI-SYN-SEQ-01	snv	background	chrX	152837148	G	C	TGA			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002791	IGI-SYN-SEQ-01	snv	background	chrX	42895033	C	G	ACA			non_coding	0	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-002792	IGI-SYN-SEQ-01	snv	background	chrX	84708605	G	C	TGA			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
-BG-002793	IGI-SYN-SEQ-01	indel	background	chrX	71289914	GG	G				non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
+BG-002793	IGI-SYN-SEQ-01	indel	background	chrX	71289913	AG	A				non_coding	1	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
 BG-002794	IGI-SYN-SEQ-01	snv	background	chrX	151926375	C	T	CCA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002795	IGI-SYN-SEQ-01	snv	background	chrX	24740165	A	T	TAG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002796	IGI-SYN-SEQ-01	snv	background	chrX	146818784	G	A	CGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -2852,7 +2852,7 @@ BG-002850	IGI-SYN-SEQ-01	snv	background	chrX	99914980	C	G	TCT			non_coding	1	T	1
 BG-002851	IGI-SYN-SEQ-01	snv	background	chrX	9738172	G	A	TGC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002852	IGI-SYN-SEQ-01	snv	background	chrX	70340175	C	A	CCC			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002853	IGI-SYN-SEQ-01	snv	background	chrX	136486759	G	A	GGT			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
-BG-002854	IGI-SYN-SEQ-01	indel	background	chrX	142444745	CTC	C				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002854	IGI-SYN-SEQ-01	indel	background	chrX	142444744	ACT	A				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002855	IGI-SYN-SEQ-01	snv	background	chrX	17493854	A	T	AAG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002856	IGI-SYN-SEQ-01	snv	background	chrX	48790097	G	T	TGA			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002857	IGI-SYN-SEQ-01	snv	background	chrX	38423269	C	A	TCG			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -2865,7 +2865,7 @@ BG-002863	IGI-SYN-SEQ-01	snv	background	chrX	153070738	A	C	CAG			non_coding	0	B	
 BG-002864	IGI-SYN-SEQ-01	snv	background	chrX	131997040	G	A	CGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002865	IGI-SYN-SEQ-01	snv	background	chrX	129253248	T	A	TTC			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002866	IGI-SYN-SEQ-01	snv	background	chrX	22042733	C	T	CCG			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
-BG-002867	IGI-SYN-SEQ-01	indel	background	chrX	17502936	TGAGTT	T				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002867	IGI-SYN-SEQ-01	indel	background	chrX	17502934	TTTGAG	T				non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002868	IGI-SYN-SEQ-01	snv	background	chrX	83794038	G	A	AGG			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002869	IGI-SYN-SEQ-01	snv	background	chrX	53179024	C	G	TCA			non_coding	1	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002870	IGI-SYN-SEQ-01	snv	background	chrX	76529260	G	A	GGT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
@@ -2897,7 +2897,7 @@ BG-002895	IGI-SYN-SEQ-01	indel	background	chrX	131863260	G	GA				non_coding	1	A	
 BG-002896	IGI-SYN-SEQ-01	snv	background	chrX	89064683	A	G	CAC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002897	IGI-SYN-SEQ-01	snv	background	chrX	1398879	C	T	GCG			non_coding	0	A	0.4	post_cna	A	0.14	2.0			na				na				False	False	False
 BG-002898	IGI-SYN-SEQ-01	snv	background	chrX	150689689	C	G	ACT			non_coding	0	A1	0.12	post_cna	A1	0.042	2.0			na				na				False	False	False
-BG-002899	IGI-SYN-SEQ-01	indel	background	chrX	62888680	T	TT				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
+BG-002899	IGI-SYN-SEQ-01	indel	background	chrX	62888678	C	CT				non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002900	IGI-SYN-SEQ-01	snv	background	chrX	128380972	A	G	TAT			non_coding	0	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False
 BG-002901	IGI-SYN-SEQ-01	snv	background	chrX	35687001	A	G	TAT			non_coding	1	B	0.25	post_cna	B	0.0875	2.0			na				na				False	False	False
 BG-002902	IGI-SYN-SEQ-01	snv	background	chrX	74395875	C	T	TCC			non_coding	1	T	1.0	pre_cna	T_het	0.35	2.0			na				na				False	False	False

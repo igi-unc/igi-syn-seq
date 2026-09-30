@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from .annotation import CodingModel
 from .binding import NetMHCpan, spanning_peptides
+from .genome import left_align
 from .expression import Expression
 from .context import ContextAnnotator
 from . import diffcards
@@ -298,10 +299,15 @@ class SnvIndelDesigner:
             pre_cna = (clone == "T") and (self.rng.random() < 0.5 if cm.wgd else True)
         vaf, mults, tcn = cm.vaf(c["chrom"], c["pos"], hap, clone, pre_cna=pre_cna)
         a, b, cn_label = cm.cn(clone, c["chrom"], c["pos"])
+        # The emitted coordinates are normalised, the designer's own are not. Consequence and amino-acid
+        # change were computed against the coding position, which must stay where the codon is; the VCF
+        # representation has to be leftmost or it will not match a caller's normalised output. Both
+        # describe the same edit and the builder reproduces the same sequence from either.
+        npos, nref, nalt = left_align(self.env.genome, c["chrom"], c["pos"], c["ref"], c["alt"])
         ev = {
             "event_id": self.next_id("SNV" if len(c["ref"]) == 1 and len(c["alt"]) == 1 else "IND"),
             "dataset": self.ds, "class": "snv" if len(c["ref"]) == 1 and len(c["alt"]) == 1 else "indel", "subclass": subclass,
-            "chrom": c["chrom"], "pos": c["pos"], "ref": c["ref"], "alt": c["alt"], "gene": c["gene"], "transcript": c["transcript"],
+            "chrom": c["chrom"], "pos": npos, "ref": nref, "alt": nalt, "gene": c["gene"], "transcript": c["transcript"],
             "consequence": c["consequence"], "aa_change": c["aa_change"], "nmd": c["nmd"],
             "haplotype": hap, "clone": clone, "ccf": cm.ccf(clone), "timing": "pre_cna" if pre_cna else "post_cna",
             "clonality_tier": cm.clonality_tier(clone, c["chrom"], c["pos"], hap),
@@ -339,13 +345,24 @@ class SnvIndelDesigner:
         cfg = self.cfg["counts"]
         tiers = self.cfg["tiers"]
         clones = list(self.env.clones.clones)
-        # 1. hotspots (flagposts)
+        # 1. hotspots (flagposts). The clone comes from the dataset's driver list where that names the
+        # same change: `drivers` and `hotspots` are two declarations of the same events, and placing
+        # every hotspot on the trunk made the tables contradict the design, which puts PIK3CA H1047R on
+        # clone A in dataset 01.
+        driver_clone = {}
+        for clone, entries in (self.dcfg.get("drivers") or {}).items():
+            for entry in entries:
+                if len(entry) >= 2:
+                    driver_clone[(entry[0], entry[1])] = clone
         for gene, change in self.cfg.get("hotspots", []):
             c = self.hotspot(gene, change)
-            if c:
-                self.place(c, "T", "hotspot", flagpost=True, pre_cna=True)
-            else:
+            if not c:
                 log(f"  hotspot {gene} {change}: not resolvable in representative transcript, skipped")
+                continue
+            clone = driver_clone.get((gene, change), "T")
+            self.place(c, clone, "hotspot", flagpost=True, pre_cna=(clone == "T"))
+            if clone != "T":
+                log(f"  hotspot {gene} {change}: placed on clone {clone} per the driver list")
         # 2. missense pool, scored
         ps = float(self.cfg.get("pool_scale", 1.0))
         P = lambda n: max(20, int(n * ps))

@@ -25,3 +25,24 @@ class Genome:
     def gc(self, chrom, start, end):
         s = self.seq(chrom, start, end); n = len(s)
         return (s.count("G") + s.count("C")) / n if n else 0.0
+
+
+def left_align(genome, chrom, pos1, ref, alt):
+    """Shift an indel to its leftmost equivalent representation, as `bcftools norm` would.
+
+    Inside a repeat the same deletion has several equally valid representations, and a caller's VCF is
+    normalised while a truth table built from the designer's own coordinates is not. An unnormalised
+    truth row does not merely fail to match: it is scored as a false negative for the event that is
+    really there and a false positive for the call that found it.
+    """
+    while len(ref) > 1 and len(alt) > 1:
+        if ref[-1] == alt[-1]:
+            ref, alt = ref[:-1], alt[:-1]
+        elif ref[0] == alt[0]:
+            ref, alt, pos1 = ref[1:], alt[1:], pos1 + 1
+        else:
+            break
+    while pos1 > 1 and (len(ref) == 1 or len(alt) == 1) and ref[-1] == alt[-1]:
+        prev = genome.seq(chrom, pos1 - 2, pos1 - 1)
+        ref, alt, pos1 = prev + ref[:-1], prev + alt[:-1], pos1 - 1
+    return pos1, ref, alt

@@ -10,25 +10,7 @@ from the annotation and checked against the expected codon, wild-type residue an
 written. A hard-coded position would be silently wrong on a different annotation release.
 """
 from .annotation import CodingModel
-
-
-def left_align(genome, chrom, pos1, ref, alt):
-    """Shift an indel to its leftmost equivalent representation, as `bcftools norm` would.
-
-    Two representations of the same deletion inside a repeat compare unequal, so the truth table and the
-    caller's VCF have to agree on which one to write.
-    """
-    while len(ref) > 1 and len(alt) > 1:
-        if ref[-1] == alt[-1]:
-            ref, alt = ref[:-1], alt[:-1]
-        elif ref[0] == alt[0]:
-            ref, alt, pos1 = ref[1:], alt[1:], pos1 + 1
-        else:
-            break
-    while pos1 > 1 and (len(ref) == 1 or len(alt) == 1) and ref[-1] == alt[-1]:
-        prev = genome.seq(chrom, pos1 - 2, pos1 - 1)
-        ref, alt, pos1 = prev + ref[:-1], prev + alt[:-1], pos1 - 1
-    return pos1, ref, alt
+from .genome import left_align
 
 
 class GermlineSpikein:

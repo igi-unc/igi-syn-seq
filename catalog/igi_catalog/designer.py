@@ -3,6 +3,7 @@
     python -m igi_catalog.designer --design design.yaml --paths paths.yaml --dataset IGI-SYN-SEQ-01 --out output/
 """
 import argparse, csv, json, os, random, sys, time
+from collections import Counter, defaultdict
 from types import SimpleNamespace
 
 import yaml
@@ -121,6 +122,76 @@ def write_outputs(events, cards, out_dir, ds_name, design, summary_extra=None, f
     return path, summ
 
 
+def promote_flagposts(events, target, log=print):
+    """Bring the flagpost count up to the design target across every class.
+
+    A flagpost is a positive control: an event a caller has no excuse for missing. Only the twelve
+    hotspot substitutions and four fusions were ever marked, sixteen against a target of forty, so the
+    design's figure described an intent nothing implemented. The shortfall is filled from the events
+    that are already unambiguous rather than by designing new ones: truncal, strongly binding, well
+    expressed and in clean sequence context. Ranking is deterministic, so the same run marks the same
+    events.
+    """
+    have = [e for e in events if e.get("flagpost")]
+    if len(have) >= target:
+        return have
+    rank = {"strong": 0, "weak": 1, "non": 2, "na": 3}
+    expr = {"T1000": 0, "T100": 1, "T10": 2, "T1": 3, "T0": 4}
+
+    def tier_of(e):
+        # Each class records its level under a different name, and a single lookup on expression_tier
+        # silently excluded every CTA, ERV and splice event from promotion. ERVs carry no tier at all,
+        # only a target TPM, so theirs is derived the same way every other tier is.
+        t = e.get("expression_tier") or e.get("target_expression_tier")
+        if t:
+            return t
+        tpm = e.get("target_tumor_tpm") or e.get("target_tumor_junction_tpm") or e.get("gene_tpm")
+        try:
+            return Expression.tier(float(tpm)) if tpm not in (None, "") else ""
+        except (TypeError, ValueError):
+            return ""
+
+    def score(e):
+        return (rank.get(e.get("binding_tier"), 3),
+                expr.get(tier_of(e), 4),
+                0 if e.get("clone") == "T" else 1,
+                0 if e.get("context", "clean") == "clean" else 1,
+                -float(e.get("expected_vaf_tumor") or e.get("expected_vaf_dna") or 0),
+                str(e.get("event_id")))
+
+    pool = [e for e in events
+            if not e.get("flagpost")
+            and e.get("binding_tier") in ("strong", "weak")
+            and tier_of(e) in ("T10", "T100", "T1000")]
+    pool.sort(key=score)
+    # A floor per class before ranking takes over. Ranked purely on binding and expression the list
+    # fills with substitutions, and a caller that handles SNVs but not ERVs would still score perfectly
+    # on the positive controls. Each class that has a qualifying event gets at least PER_CLASS_MIN.
+    PER_CLASS_MIN = 2
+    added = 0
+    by_class = defaultdict(list)
+    for e in pool:
+        by_class[e.get("class", "")].append(e)
+    already = Counter(e.get("class", "") for e in have)
+    for cls in sorted(by_class):
+        for e in by_class[cls][:max(0, PER_CLASS_MIN - already.get(cls, 0))]:
+            if len(have) + added >= target:
+                break
+            e["flagpost"] = True
+            added += 1
+    for e in pool:
+        if len(have) + added >= target:
+            break
+        if e.get("flagpost"):
+            continue
+        e["flagpost"] = True
+        added += 1
+    total = len(have) + added
+    log(f"  flagposts: {len(have)} designed as such, {added} promoted -> {total} of {target}"
+        + ("" if total >= target else "; not enough qualifying events to reach the target"))
+    return [e for e in events if e.get("flagpost")]
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="IGI-SYN-SEQ catalog designer")
     ap.add_argument("--design", required=True)
@@ -155,6 +226,7 @@ def main(argv=None):
     exc.design_ctas(design["counts"]["ctas"], clones, log=log)
     exc.design_ervs(design["counts"]["ervs"], clones, log=log)
     exc.design_splice(design["counts"]["splice"], clones, des, log=log)
+    promote_flagposts(events + fusions + exc.events, design["counts"].get("flagposts", 0), log=log)
     path, summ = write_outputs(events, des.cards, a.out, a.dataset, design,
                                {"runtime_s": round(time.time() - t0), "scale": a.scale},
                                fusions=fusions, fusion_cards=fus.cards,

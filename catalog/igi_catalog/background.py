@@ -21,6 +21,7 @@ import random
 
 from .annotation import CodingModel
 from .binding import NetMHCpan, spanning_peptides
+from .genome import left_align
 from .expression import Expression
 
 CHR1TO6 = {f"chr{i}" for i in range(1, 7)}
@@ -235,6 +236,9 @@ class BackgroundDesigner:
                         break
                     continue
                 pos, r, a = hit
+                cons_pos, cons_ref, cons_alt = pos, r, a     # coding coordinates, for annotation
+                if len(r) != len(a):
+                    pos, r, a = left_align(self.env.genome, chrom, pos, r, a)
                 for p in range(pos - 1, pos + len(r) + 1):
                     self._reserved.add((chrom, p))
                 clone = names[bisect.bisect_left(cums, self.rng.random())]
@@ -260,7 +264,7 @@ class BackgroundDesigner:
                     "best_allele_is_lost": False,
                     "flagpost": False, "chr1to6": chrom in CHR1TO6,
                 }
-                c = self._coding(chrom, pos, r, a)
+                c = self._coding(chrom, cons_pos, cons_ref, cons_alt)
                 if c:
                     tpm = self.env.expr.gene(c["t"].gene_id)
                     ev.update({"gene": c["gene"], "transcript": c["transcript"],
