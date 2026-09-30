@@ -20,6 +20,7 @@ import json
 import os
 import re
 import statistics
+import yaml
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -168,14 +169,45 @@ def check_variants(rep, bam, reference, catalog, chrom, work):
             f"{seen} of {len(ev)} designed events have supporting reads")
 
 
-def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, work):
+def mean_gc_factor(genome, gc, chrom, start, end, capture_bed):
+    """Captured-base-weighted mean GC factor over a region's capture intervals.
+
+    Once capture efficiency varies with GC, the depth ratio between two regions is no longer copy number
+    alone: it also carries the ratio of their GC compositions. Comparing a GC-rich amplicon against a
+    GC-poor baseline without this would read as a copy-number error that is not there.
+    """
+    if not gc.enabled:
+        return 1.0
+    num = den = 0
+    with open(capture_bed) as fh:
+        for line in fh:
+            f = line.split("\t")
+            if len(f) < 3 or f[0] != chrom:
+                continue
+            s0, e0 = int(f[1]), int(f[2])
+            if e0 <= start or s0 >= end:
+                continue
+            lo, hi = max(s0, start), min(e0, end)
+            if hi - lo < 50:
+                continue
+            fac = gc.factor(gc.bin_of(genome.gc(chrom, lo, hi)))
+            num += fac * (hi - lo)
+            den += hi - lo
+    return num / den if den else 1.0
+
+
+def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, work, gc_curve=None):
     """Observed depth ratio between copy-number regions against the purity and copy-number formula."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import yaml
     from igi_catalog.clones import CloneModel
-    from igi_catalog.pipeline import depth_denominator, source_plan
+    from igi_catalog.genome import Genome
+    from igi_catalog.pipeline import GcBias, depth_denominator, source_plan
     cfg = yaml.safe_load(open(design))["datasets"][dataset]
     cm = CloneModel(cfg, arms_bed)
+    paths = yaml.safe_load(open(gc_curve)) if gc_curve and gc_curve.endswith((".yml", ".yaml")) else None
+    gc = GcBias(paths.get("gc_bias_curve") if paths else gc_curve)
+    genome = Genome(paths["reference_fasta"]) if paths else None
     den = depth_denominator(cm, cm.purity)
     regions = []
     for ev in (cfg.get("cna") or {}).get("T", []):
@@ -197,13 +229,19 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
         rep.add("depth by copy number", False, "no copy-number-neutral baseline found on this chromosome")
         return
     mid_n = neutral[len(neutral) // 2]
-    base, n_base = captured_depth(bam, chrom, mid_n - 5_000_000, mid_n + 5_000_000, capture_bed, work)
+    b_lo, b_hi = mid_n - 5_000_000, mid_n + 5_000_000
+    base, n_base = captured_depth(bam, chrom, b_lo, b_hi, capture_bed, work)
+    gc_base = mean_gc_factor(genome, gc, chrom, b_lo, b_hi, capture_bed) if genome else 1.0
     nums, worst = {"baseline": {"depth": round(base, 2) if base else None, "intervals": n_base}}, 0.0
     if not base:
         rep.add("depth by copy number", False, "baseline region has no captured depth")
         return
     for label, s, e in regions:
         want = sum(w for _s, _h, _k, w in source_plan(cm, cm.purity, chrom, (s + e) // 2)) / den
+        # fold in the region's GC composition relative to the baseline's
+        gc_reg = mean_gc_factor(genome, gc, chrom, s, e, capture_bed) if genome else 1.0
+        gc_ratio = (gc_reg / gc_base) if gc_base else 1.0
+        want *= gc_ratio
         got, n_iv = captured_depth(bam, chrom, s, e, capture_bed, work)
         if got is None:
             nums[label] = {"skipped": f"only {n_iv} capture intervals, under the captured-base floor"}
@@ -211,7 +249,7 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
         ratio = got / base
         nums[label] = {"expected_ratio": round(want, 3), "observed_ratio": round(ratio, 3),
                        "captured_depth": round(got, 2), "baseline_depth": round(base, 2),
-                       "intervals": n_iv}
+                       "intervals": n_iv, "gc_factor_ratio": round(gc_ratio, 4)}
         if want:
             worst = max(worst, abs(ratio / want - 1))
     rep.add("depth by copy number", worst <= 0.25,
@@ -275,7 +313,8 @@ def check_read_map(rep, read_map, record_map):
                 {"by_interval_set": dict(sets)})
 
 
-def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, capture_bed=None):
+def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, capture_bed=None,
+                          genome_lengths=None, seed=1, clones=None):
     """Junctions placed against the number this chromosome could place.
 
     The catalog-wide count is the wrong yardstick. A rearrangement reaches an exome only if a breakpoint
@@ -295,16 +334,29 @@ def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, 
 
     expected, detail_extra = None, ""
     if chrom and capture_bed:
-        cap = []
-        with open(capture_bed) as fh:
-            for line in fh:
-                f = line.split("\t")
-                if len(f) >= 3 and f[0] == chrom:
-                    cap.append((int(f[1]) + 1 - 100, int(f[2]) + 100))
-        cap.sort()
+        # the same padded, gap-merged intervals the builder places junctions into. Re-deriving them
+        # from the raw BED without merging under-counted what is placeable: a breakpoint inside a
+        # merged gap is placed by the builder but was not counted here, and the check only passed
+        # because it compares with >=.
+        # Every interval set the builder generates reads from, not just the bait set. Since off-target
+        # bands were added a junction can be placed in one of them -- the one placed on chr8 sits in a
+        # 5 kb distal window -- so counting only capture intervals made "placeable" smaller than what
+        # was actually placed. The check passed anyway because it compares with >=, which is how the
+        # inconsistency stayed invisible.
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import random as _random
+        from igi_catalog.pipeline import merged_capture, off_target_bands
+        cap_by_chrom = merged_capture(capture_bed, {chrom})
+        spans = list(cap_by_chrom.get(chrom, []))
+        if genome_lengths and chrom in genome_lengths:
+            rng = _random.Random(f"{seed}:{dataset}:{chrom}:offtarget")
+            for _name, _rel, band in off_target_bands(cap_by_chrom, chrom, genome_lengths[chrom], rng):
+                spans += band
+        spans.sort()
+
         def inside(pos):
-            i = bisect.bisect_right(cap, (pos, float("inf")))
-            return any(s <= pos <= e for s, e in cap[max(0, i - 4):i + 1])
+            i = bisect.bisect_right(spans, (pos, float("inf")))
+            return any(s <= pos <= e for s, e in spans[max(0, i - 2):i + 1])
         cols = {"sv": [("chrom", "start"), ("end_chrom", "end")],
                 "fusion": [("chrom_5p", "breakpoint_5p"), ("chrom_3p", "breakpoint_3p")],
                 "virus": [("chrom", "integration_pos")]}
@@ -312,11 +364,26 @@ def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, 
         for name, rws in tables.items():
             for r in rws:
                 for cc, pc in cols[name]:
-                    if r.get(cc) == chrom and str(r.get(pc) or "").strip():
-                        if inside(int(r[pc])):
-                            evs.add(r["event_id"])
+                    if r.get(cc) != chrom or not str(r.get(pc) or "").strip():
+                        continue
+                    pos = int(r[pc])
+                    if not inside(pos):
+                        continue
+                    # the builder only emits a junction on a copy the clone still has: a breakpoint on a
+                    # haplotype that clone has lost cannot appear, so counting it would fail the check
+                    # for behaviour that is correct
+                    if clones is not None:
+                        clone, hap = r.get("clone") or "T", str(r.get("haplotype") or "")
+                        retained = clones.retained_haplotypes(clone, chrom, pos) or []
+                        if hap.isdigit() and int(hap) not in retained:
+                            continue
+                    evs.add(r["event_id"])
         expected = len(evs)
+        placed_ids = {r["event_id"].split(":")[0] for r in placed}
+        missed = sorted(evs - placed_ids)
         detail_extra = f" of {expected} placeable on {chrom}"
+        if missed:
+            detail_extra += f"; not placed: {', '.join(missed[:4])}"
 
     ok = len(ids) >= expected if expected is not None else (bool(placed) or present["sv"] == 0)
     rep.add("junction classes reach the library", ok,
@@ -375,6 +442,10 @@ def main():
     ap.add_argument("--read-map")
     ap.add_argument("--record-map")
     ap.add_argument("--work", default="/tmp")
+    ap.add_argument("--seed", type=int, default=1,
+                    help="the seed the library was built with; the off-target windows depend on it")
+    ap.add_argument("--paths", default=None,
+                    help="site paths yaml; supplies the GC bias curve and reference for the depth check")
     ap.add_argument("--report", required=True)
     a = ap.parse_args()
     os.makedirs(a.work, exist_ok=True)
@@ -384,8 +455,20 @@ def main():
         check_variants(rep, a.bam, a.reference, cat, a.chrom, a.work)
         if a.arms_bed and a.capture_bed:
             check_depth_by_cn(rep, a.bam, a.design, a.dataset, a.chrom, a.arms_bed,
-                              a.capture_bed, a.work)
-        check_classes_present(rep, a.catalog_dir, a.dataset, a.junctions, a.chrom, a.capture_bed)
+                              a.capture_bed, a.work, gc_curve=a.paths)
+        lengths = None
+        if a.paths:
+            import pysam as _pysam
+            _p = yaml.safe_load(open(a.paths))
+            _fa = _pysam.FastaFile(_p['reference_fasta'])
+            lengths = dict(zip(_fa.references, _fa.lengths))
+        cmodel = None
+        if a.arms_bed:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            from igi_catalog.clones import CloneModel
+            cmodel = CloneModel(yaml.safe_load(open(a.design))["datasets"][a.dataset], a.arms_bed)
+        check_classes_present(rep, a.catalog_dir, a.dataset, a.junctions, a.chrom,
+                              a.capture_bed, lengths, a.seed, cmodel)
     if a.r1:
         check_read_names(rep, a.r1)
     if a.read_map and a.record_map:

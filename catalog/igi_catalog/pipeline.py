@@ -5,12 +5,48 @@ that retains it, which keeps all edits in reference coordinates and avoids havin
 indels. Reads are drawn from each interval in proportion to the clone's share of sequenced molecules and
 the haplotype's copy number there, so the realised allele fractions follow the truth table by construction.
 """
+import json
 import os
 import subprocess
 from collections import defaultdict
 
 from .genome_build import haplotype_sequence, read_events
 from .simulate import clone_weights
+
+
+class GcBias:
+    """Capture efficiency as a function of interval GC, measured from a real exome.
+
+    Giving every capture interval the same depth is not a small simplification. Measured on 161,618
+    intervals of the IPISRC044 WES normal, coverage runs from 0.40 of baseline at 30-35 % GC to 1.25 at
+    60-65 %, and 28 % of captured bases sit in the 30-40 % band where real coverage is well under
+    baseline. A flat-depth exome hands a caller substantially more evidence than it would really have at
+    a quarter of its targets, which is exactly the thing a sensitivity benchmark measures.
+
+    The factors are normalised so their captured-base-weighted mean is 1, so the curve redistributes
+    depth across GC without changing a library's total.
+    """
+
+    def __init__(self, path=None):
+        self.width = 5
+        self.factors = {}
+        if path and os.path.exists(path):
+            d = json.load(open(path))
+            self.width = int(d.get("bin_width_pct", 5))
+            for k, v in d["factor_by_gc_bin"].items():
+                self.factors[int(k.split("-")[0]) // self.width] = float(v)
+        self.enabled = bool(self.factors)
+
+    def bin_of(self, gc_fraction):
+        return min(int(100 / self.width) - 1, int(gc_fraction * 100) // self.width)
+
+    def factor(self, gc_bin):
+        # bins with no measurement are the extreme tails, where real coverage is near zero; falling back
+        # to 1.0 there would invent depth the capture does not produce
+        return self.factors.get(gc_bin, 0.0) if self.enabled else 1.0
+
+    def label(self, gc_bin):
+        return f"{gc_bin * self.width}-{(gc_bin + 1) * self.width}"
 
 
 def quality_model(paths):
@@ -193,7 +229,7 @@ class WesBuilder:
                 return j
         return None
 
-    def __init__(self, env, events_by_chrom, purity, workdir):
+    def __init__(self, env, events_by_chrom, purity, workdir, gc_bias=None):
         self.env = env
         self.events = events_by_chrom
         self.purity = purity
@@ -207,6 +243,7 @@ class WesBuilder:
         self.jn_by_site = {}
         self.junctions_used = []
         self._jn_placed = set()
+        self.gc = gc_bias or GcBias()
         os.makedirs(workdir, exist_ok=True)
 
     def write_source_fastas(self, capture, tumor=True, max_intervals=None, tag=""):
@@ -223,12 +260,16 @@ class WesBuilder:
                 mid = (start1 + end1) // 2
                 prof = cn_profile(self.env.clones, chrom, mid) if tumor else ("normal",)
                 pid = self._profile_id(prof)
+                gcb = self.gc.bin_of(self.env.genome.gc(chrom, start1 - 1, end1))
+                if self.gc.factor(gcb) <= 0:
+                    continue          # the capture produces essentially nothing at this GC
                 for src, hap, kind, w in source_plan(self.env.clones, self.purity, chrom, mid, tumor=tumor):
-                    key = (src, hap, kind, pid)
+                    key = (src, hap, kind, pid, gcb)
                     if key not in handles:
                         path = os.path.join(
                             self.workdir,
-                            f"{'tumor' if tumor else 'normal'}{tag}_{src}_hap{hap}_{kind}_cn{pid}.fa")
+                            f"{'tumor' if tumor else 'normal'}{tag}_{src}_hap{hap}_{kind}_cn{pid}"
+                            f"_gc{gcb:02d}.fa")
                         handles[key] = (path, open(path, "w"))
                         weights[key] = w
                     use = [] if src == "NORMAL" else evs
@@ -291,15 +332,17 @@ class WesBuilder:
         """Run ART per source at coverage proportional to its weight; returns the FASTQ pieces."""
         pieces = []
         for i, (key, (path, weight)) in enumerate(sorted(sources.items())):
-            src, hap, kind, pid = key
+            src, hap, kind, pid, gcb = key
             # weight is an absolute copy-weighted contribution, so dividing by the baseline makes total
             # depth track local copy number: a deleted region is shallower and an amplicon deeper, rather
             # than every locus receiving the same depth with only the allele mixture changing.
             # ART accepts fractional fold-coverage; rounding to an integer distorts the smallest clones
             # most, turning a 2.33x target into 2x.
-            cov = max(0.01, depth * weight / self.denom)
+            # capture efficiency at this GC, normalised so the curve redistributes depth rather
+            # than rescaling the library
+            cov = max(0.001, depth * weight / self.denom * self.gc.factor(gcb))
             pre = os.path.join(self.workdir,
-                               f"{os.path.basename(out_prefix)}_{src}_h{hap}_{kind}_cn{pid}_")
+                               f"{os.path.basename(out_prefix)}_{src}_h{hap}_{kind}_cn{pid}_gc{gcb:02d}_")
             cmd = art_cmd.format(args=(f"{qual} -i {path} -p -l {read_len} -f {cov:.5f} -m 350 -s 60 "
                                        f"-rs {seed + i} -na -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)

@@ -10,8 +10,8 @@ import yaml
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.junctions import fusion_junctions, sv_junctions, viral_junctions
-from igi_catalog.pipeline import (WesBuilder, merged_capture, off_target_bands, quality_model,
-                                 write_record_map)
+from igi_catalog.pipeline import (GcBias, WesBuilder, merged_capture, off_target_bands,
+                                 quality_model, write_record_map)
 from igi_catalog.readnames import shuffle_and_rename
 
 
@@ -44,7 +44,9 @@ def main():
     os.makedirs(a.out, exist_ok=True)
 
     t0 = time.time()
-    wb = WesBuilder(env, events, purity, work)
+    gc = GcBias(paths.get("gc_bias_curve"))
+    print(f"  GC bias model: {'measured, ' + str(len(gc.factors)) + ' bins' if gc.enabled else 'flat'}", flush=True)
+    wb = WesBuilder(env, events, purity, work, gc_bias=gc)
     # structural variants, fusion breakpoints and viral integrations reach the DNA as junction contigs
     if a.library == "tumor":
         import csv as _csv
@@ -67,7 +69,7 @@ def main():
     print(f"[{a.dataset} {a.chrom} {a.library}] {n_iv} intervals, {len(sources)} sources, "
           f"{time.time() - t0:.0f}s", flush=True)
     for key, (path, w) in sorted(sources.items()):
-        print(f"    {key[0]} hap{key[1]} {key[2]} cn-profile {key[3]}: weight {w:.4f}  "
+        print(f"    {key[0]} hap{key[1]} {key[2]} cn{key[3]} gc{key[4]:02d}: weight {w:.4f}  "
               f"{os.path.getsize(path) / 1e6:.1f} MB", flush=True)
 
     t1 = time.time()
@@ -126,6 +128,7 @@ def main():
 
     meta = {"dataset": a.dataset, "chrom": a.chrom, "library": a.library, "depth": a.depth,
             "intervals": n_iv, "off_target_bands": bands, "quality_model": qual,
+            "gc_bias": "measured" if gc.enabled else "flat",
             "capture_bases": sum(e - s + 1 for s, e in capture.get(a.chrom, [])), "sources": {f"{k[0]}_hap{k[1]}_{k[2]}_cn{k[3]}": w for k, (_p, w) in sources.items()},
             "coverage_per_source": [{"source": s, "hap": h, "coverage": c} for _r1, _r2, s, h, c in pieces],
             "r1": r1, "r2": r2, "read_map": rmap, "record_map": recmap,
