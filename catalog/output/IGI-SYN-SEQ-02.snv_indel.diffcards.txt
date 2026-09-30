@@ -6571,5 +6571,3 @@
   protein   aa 330-354  first change at aa 342 (frameshift)
                         ^
   peptide   HPHRHHQAA HLA-B*08:01 rank 0.111
-
-# reconstructed sequence lines withheld; regenerate locally (D12)

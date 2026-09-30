@@ -340,13 +340,18 @@ class SnvIndelDesigner:
         # nothing is lost by not shipping it (owner decision D12).
         if self.publish_windows:
             ev["wt_hap_window"], ev["mut_hap_window"] = wt_w, mut_w
+            ev["wt_protein_window"], ev["mut_protein_window"] = wt_p, mut_p
         else:
+            # the protein windows go too: the wild-type one is this individual's own protein over the
+            # window and the mutant one is built on their germline background, so both disclose germline
+            # coding variation
             ev["wt_hap_window"] = ev["mut_hap_window"] = "withheld"
-        ev["wt_protein_window"], ev["mut_protein_window"] = wt_p, mut_p
+            ev["wt_protein_window"] = ev["mut_protein_window"] = "withheld"
         if not self.publish_windows:
             # keep the coordinates and the change, drop the reconstructed sequence lines
             dna = [l for l in dna if not any(l.strip().startswith(k) for k in ("ref ", "hap0", "hap1"))]
             dna.append("  sequence  withheld; regenerate locally from the baseline VCF (D12)")
+            prot = [l for l in prot if not any(l.strip().startswith(k) for k in ("WT ", "MUT "))]
         title = f"{ev['gene']} {ev['aa_change']} {ev['consequence']}  clone={ev['clone']} tier={ev['clonality_tier']} VAF={ev['expected_vaf_tumor']} expr={ev['expression_tier']} bind={ev['binding_tier']} ctx={ev['context']}"
         extra = {"peptide": f"{ev['best_peptide']} {ev['best_allele']} rank {ev['best_rank_el']}" if ev["best_peptide"] else "none"}
         if ev.get("wt_peptide"):
