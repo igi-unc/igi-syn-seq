@@ -25,6 +25,10 @@ def main():
     ap.add_argument("--depth", type=float, required=True)
     ap.add_argument("--catalog", required=True, help="the dataset's snv_indel.tsv")
     ap.add_argument("--background", default=None, help="the dataset's background.tsv (passenger mutations)")
+    ap.add_argument("--extra-events", nargs="*", default=[],
+                    help="further somatic tables to apply, e.g. splice_causal.tsv. Generating such a "
+                         "table is not enough: it has to be handed to the builder or the variants it "
+                         "describes never reach the sequence.")
     ap.add_argument("--out", required=True)
     ap.add_argument("--work", required=True)
     ap.add_argument("--max-intervals", type=int, default=None)
@@ -37,7 +41,9 @@ def main():
     paths = yaml.safe_load(open(a.paths))
     env = build_env(paths, design, a.dataset)
     purity = design["datasets"][a.dataset]["purity"]
-    events = read_events(*[t for t in (a.catalog, a.background) if t])
+    tables = [t for t in ([a.catalog, a.background] + list(a.extra_events)) if t and os.path.exists(t)]
+    events = read_events(*tables)
+    print(f"  somatic tables applied: {', '.join(os.path.basename(t) for t in tables)}", flush=True)
     capture = merged_capture(paths["exome_bed"], {a.chrom})
     work = os.path.join(a.work, f"{a.dataset}_{a.chrom}_{a.library}")
     os.makedirs(work, exist_ok=True)

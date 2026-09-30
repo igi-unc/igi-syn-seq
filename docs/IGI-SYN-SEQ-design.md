@@ -184,7 +184,7 @@ clean context, exon center. ~40 flagposts across all classes.
 | Gene fusions | 20 | 4 flagposts; in-frame, out-of-frame, and read-through with no DNA breakpoint (tumor-associated); mechanism follows from the partners' positions and orientations. Exome visibility is not a quota: a breakpoint is visible when it falls in the padded, merged capture intervals used for generation, and each run's junctions table is authoritative. Achieved: -01 17 fusions with 8 visible, -02 20 with 9 |
 | SVs (non-fusion designed) | 100 (achieved 98 per dataset; exome-visible 22 in -01 and 26 in -02, by the same interval rule as fusions) | DEL 25 (50 bp-5 Mb log-spaced), DUP 20, INV 15, TRA 15, INS 15 (10 L1/Alu/SVA MEIs, 5 novel sequence), complex 10; 50 land in coding sequence: exon-deleting in-frame 15, out-of-frame 15, whole-gene loss 10, intragenic exon dup 10 |
 | SVs, structured background | ~160 | chromothripsis cluster (~60) + HRD tandem dups (~100) |
-| Viruses | 3 | HPV16 integrated at 8q24 inside the MYC amplicon, E6/E7 expressed, host-virus fusion transcript, junction visible in WGS/RNA and off-target WES; EBV episomal ~5 copies/cell, low expression, plus trace 0.05 copies/cell in the blood normal (realistic negative); HPV18 episomal in clone B only, unexpressed |
+| Viruses | 3 | HPV16 integrated at 8q24 inside the MYC amplicon, E6/E7 expressed, host-virus fusion transcript, junction visible in WGS/RNA but not WES, the site being outside the bait set (D8); EBV episomal ~5 copies/cell, low expression, plus trace 0.05 copies/cell in the blood normal (realistic negative); HPV18 episomal in clone B only, unexpressed |
 | CTAs | 15 | 5 expression tiers x 3; 4 carry germline coding variants, 3 carry somatic missense, 2 restricted to clone A (single-cell heterogeneity) |
 | ERVs | 30 | split by the measured pan-normal reference rather than a fixed quota: tumor-specific at or below 0.05 TPM in normals, tumor-associated 0.05-5 TPM, the rest unexpressed negatives. Tier sizes are whatever the reference yields for the loci sampled, so these are targets not guarantees and each run records its achieved counts. Observed: 10/4/16 in -01, 10/5/15 in -02. A locus with no measurement is skipped rather than assigned |
 | Splice variants | 30 | tumor-specific 15 = somatic splice-site/cryptic variants causing exon skip 5, intron retention 3, cryptic 5' 3, cryptic 3' 2, novel exon 2; tumor-associated 15 = annotated isoform switch 10 + novel junction with no DNA cause 5 |
@@ -251,12 +251,35 @@ of carrying both.
 | fusion (with DNA breakpoint) | if breakpoint captured | no | chimeric reads | split/spanning reads | no | full-length chimeric | per cell | 5'-end chimeric | no |
 | read-through fusion | no | no | yes | no | no | yes | yes | yes | no |
 | SV | if breakpoint captured | no | if transcribed | yes | no | if transcribed | if transcribed | rarely | no |
-| virus integrated | off-target | no | host-virus + viral transcripts | junction + viral reads | no | yes | yes | yes | no |
+| virus integrated | no (see below) | no | host-virus + viral transcripts | junction + viral reads | no | yes | yes | yes | no |
 | virus episomal | off-target | trace EBV | yes | yes | trace EBV | yes | yes | yes | no |
 | CTA / ERV expression | germline vars only | germline vars only | yes | germline vars only | germline vars only | yes | per cell | per cell | no |
 | splice (somatic-caused) | causal variant | no | junction | causal variant | no | full-length isoform | per cell | 5' only | no |
 | splice (associated) | no | no | junction | no | no | full-length isoform | per cell | 5' only | no |
 | TCR clonotypes | no | no | TRA/TRB reads at bulk level | germline loci | germline loci | some TCR transcripts | some TCR transcripts | 5' TCR reads | yes |
+
+**Cancer-testis antigens are expressed regardless of their cohort baseline (owner decision D6).** A CTA
+is silent in somatic tissue and de-repressed in tumour, and discovering that de-repression is the point of
+including the class. Its tumour expression therefore comes from the designed `target_expression_tier`
+(T1 1.5, T10 15, T100 120, T1000 600 TPM), never from the expression baseline, which reads essentially
+zero for a testis-restricted gene in a breast cohort. A zero baseline suppresses only the gene's ordinary
+reference transcript; it never suppresses the CTA record. Twelve of the fifteen CTAs per dataset are
+expressed at their designed tier.
+
+The remaining three per dataset sit in the T0 tier and are deliberately **not** expressed. They are
+negative controls: a discovery tool that calls them is wrong, and they are there to catch that. They are
+not a gap in coverage.
+
+CTAs are expressed from both haplotypes, because de-repression is epigenetic and acts on both alleles.
+Emitting from one would make every germline heterozygous site inside a CTA read as homozygous, and these
+are variant-dense genes.
+
+**Integrated virus and the exome (owner decision D8).** The HPV16 integration at chr8:127,400,000 sits
+outside the bait set and its flanking bands, so it produces no exome reads at all and the row above reads
+no rather than off-target. The site was chosen to sit inside the MYC amplicon, which is where such an
+integration biologically belongs, and the owner declined to move it to make it capturable. Viral
+integration is therefore detectable from WGS, RNA and the single-cell assays, and not from WES. Where a
+designed convenience and realism conflict, this dataset prefers realism and says so.
 
 ## 8. Single-cell design (4,000 cells)
 
