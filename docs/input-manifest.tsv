@@ -1,0 +1,29 @@
+key	kind	class	basename	bytes	md5	source	complete	durable
+annotation_cache	file	derived	gencode.v37.tx.json.gz	9599628	77b8f9374896cbb82ae86f67e3f544a3	regenerated from the GTF on first run; safe to delete	yes	no
+arms_bed	file	public	hg38.arms.bed	1076	5e347dd2b06faf51c90f313af9757876	UCSC cytoBand-derived chromosome arms, hg38	yes	yes
+art_cmd	container	container	quay.io_biocontainers_art_2016.06.05--h0704011_13.sif	31342592	0bd545ba943e172174683594c6486d2a	container registry; see basename for the exact tag	yes	yes
+art_profile_r1	file	in-repo	ipisrc044_novaseqx_R1.profile.txt	33006	178eddbf52aa0c8ac016166fce4b3ccd	fitted from IPISRC044 NovaSeq X; catalog/resources	yes	yes
+art_profile_r2	file	in-repo	ipisrc044_novaseqx_R2.profile.txt	33023	6eb763cf93ec7d7ec630796c0b646b99	fitted from IPISRC044 NovaSeq X; catalog/resources	yes	yes
+badread_cmd	container	container	badread_0.4.1.sif	142024704	054b8bb18613b4cf7fa84e776821b9ce	container registry; see basename for the exact tag	yes	yes
+ccs_cmd	container	container	quay.io_biocontainers_pbccs_6.4.0.sif	8880128	a89cf23cf23cc4e3f4038fbc5f02238b	container registry; see basename for the exact tag	yes	yes
+cta_gene_list	file	host	cta.pirlygenes.06APR2026.gene_list	1900	615c715084ac64aa804bc52b75434504	PIRL cancer-testis antigen gene list, 06APR2026	yes	yes
+erv_all_loci	file	host	Hsap38.2fc043.txt	9428060	d1556a2ec5ca99791b38eb78fdf3e40b	HERV annotation, digest 2fc043	yes	yes
+erv_loci	file	host	curated_erv_loci.2fc043.tsv	1542	0ab83b4d2a8091a6b57ab5475dc9a17d	curated ERV loci, digest 2fc043	yes	yes
+exome_bed	file	host	hg38_exome.bed	5353961	5c8d28db9bfaf5fb7befc22de0e7b433	generic human exome interval list, not a named capture kit (D11)	yes	yes
+expression_tsv	file	in-repo	tcga_brca_basal.transcript_tpm.tsv.gz	2820259	ec49de843c2b98327c831abebd3d89f6	TCGA-BRCA basal medians via UCSC Xena Toil; catalog/resources	yes	yes
+gc_bias_curve	file	in-repo	ipisrc044_wes_gc_bias.json	924	9efaf4e751636979cbd4545829045fef	measured from IPISRC044 WES; catalog/resources	yes	yes
+germline_vcf.IGI-SYN-SEQ-01	file	derived	IGI-SYN-SEQ-01.germline.vcf.gz	45111376	a1c6c92bf7acc5923c0d841566b02f5c	baseline plus designed alleles; run_germline_spikein.py	yes	yes
+germline_vcf.IGI-SYN-SEQ-02	file	derived	IGI-SYN-SEQ-02.germline.vcf.gz	95012492	e934e19de635f22a91b3422bfb9853a1	baseline plus designed alleles; run_germline_spikein.py	yes	yes
+germline_vcf.HG002	file	derived	IGI-SYN-SEQ-01.germline.vcf.gz	45111376	a1c6c92bf7acc5923c0d841566b02f5c	alias of germline_vcf.IGI-SYN-SEQ-01, the spiked VCF	yes	yes
+germline_vcf.IPISRC044	file	derived	IGI-SYN-SEQ-02.germline.vcf.gz	95012492	e934e19de635f22a91b3422bfb9853a1	alias of germline_vcf.IGI-SYN-SEQ-02, the spiked VCF	yes	yes
+germline_vcf_baseline.HG002	file	public	HG002.Q100v1.1.germline_smvar.vcf.gz	42067644	c71acc71069bf7cd7f51eb8fb0c1a1ab	GIAB HG002 Q100 v1.1 small-variant benchmark, GRCh38	yes	yes
+germline_vcf_baseline.IPISRC044	file	derived	IPISRC044.germline.phased.final.vcf.gz	95004850	87c0c70731f079eaeff05f73ee02f963	called and phased here; see baseline-references.md	yes	yes
+gtf	file	public	gencode.v37.annotation.gtf.gz	45208353	362a1ae2b59bf8a1fcbebb6d626b3a70	GENCODE v37 comprehensive annotation, gencodegenes.org	yes	yes
+netmhcpan_cmd	container	container	spvensko-netmhcpan-4.1b.img	102961152	11f3a013fa4e1607b905f4fcf38642b2	container registry; see basename for the exact tag	yes	yes
+pan_normal_quant	file	host	pan_normal_and_mtec_exp.95th_perc.homo_sapiens.quant.sf	11227285	cbd5d034b347ea5307e4439f7ed156bb	lab pan-normal and mTEC expression, 95th percentile	yes	yes
+reference_fasta	file	public	Homo_sapiens.assembly38.fa	3249912778	7ff134953dcca8c8997453bbb80b6b5e	GRCh38 analysis set; GATK resource bundle / Broad	yes	yes
+rmsk_bed	file	public	hg38.rmsk.bed.gz	66822601	24f5b8d5d283ba92560629c16f35f7c3	UCSC RepeatMasker track, hg38	yes	yes
+samtools_cmd	container	container	quay.io-biocontainers-samtools-1.21--h96c455f_1.img	25509888	e48d49cdd027ecb51653601dad3b1758	container registry; see basename for the exact tag	yes	yes
+segdups_bed	file	public	hg38.segdups.merged.bed	188585	b66751f8406ebc21c95335ca61f81416	UCSC genomicSuperDups track, hg38	yes	yes
+single_cell_whitelist	file	public	737K-august-2016.txt	12533760	f62a276e262fdd85262a889d0f48556b	10x Genomics 737K-august-2016 barcode whitelist	yes	yes
+viral_fasta	file	host	virus_unmasked.02ec8.fa	32665391	02ec8760dd51c46e3252eab4dfde3259	unmasked viral genome set, digest 02ec8	yes	yes

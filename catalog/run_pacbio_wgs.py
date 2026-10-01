@@ -14,7 +14,7 @@ reference so the truth stays checkable.
 Depth follows the clone model exactly as the exome does, so an amplified region is deeper and a lost one
 shallower; there is no capture step, so no GC or bait model applies.
 """
-import argparse, json, os, subprocess, sys, time
+import argparse, concurrent.futures as cf, json, os, subprocess, sys, time
 from collections import defaultdict
 
 import yaml
@@ -100,6 +100,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--work", required=True)
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--jobs", type=int, default=None,
+                    help="concurrent badread processes; defaults to SLURM_CPUS_PER_TASK")
     a = ap.parse_args()
 
     design = yaml.safe_load(open(a.design))
@@ -177,24 +179,38 @@ def main():
     t1 = time.time()
     br = paths["badread_cmd"]
     ident = paths.get("pacbio_identity", "99.4,99.8,0.5")
-    lmean = paths.get("pbsim_length_mean", 16689)
-    lsd = paths.get("pbsim_length_sd", 4593)
+    lmean = paths.get("pacbio_length_mean", 16689)
+    lsd = paths.get("pacbio_length_sd", 4593)
     chunk_bp = int(paths.get("pacbio_chunk_bp", 20_000_000))
-    fq = []
+    # Chunks must run concurrently, not merely exist. subprocess.run blocks, so an earlier version
+    # split the work and then executed it sequentially, which is serialisation with extra steps: 5 chunks
+    # in an hour. A bounded pool sized to the task's cores is what actually parallelises it.
+    jobs = []
     for i, (tag, fa, cov) in enumerate(pieces):
-        for j, sub in enumerate(split_fasta(fa, chunk_bp, work, f"{tag}_c{j:03d}")):
+        for j, sub in enumerate(split_fasta(fa, chunk_bp, work, tag)):
             out = os.path.join(work, f"br_{tag}_{j:03d}.fq.gz")
             args = (f"simulate --reference {sub} --quantity {cov:.4f}x "
                     f"--length {lmean},{lsd} --identity {ident} "
                     f"--error_model {paths.get('pacbio_error_model', 'pacbio2021')} "
                     f"--qscore_model {paths.get('pacbio_qscore_model', 'pacbio2021')} "
                     f"--seed {a.seed + i * 100 + j} --start_adapter_seq '' --end_adapter_seq ''")
-            with open(out, "wb") as fh:
-                pr = subprocess.run(f"{br.format(args=args)} 2>/dev/null | gzip -1",
-                                    shell=True, stdout=fh)
-            if pr.returncode != 0 or os.path.getsize(out) < 100:
-                raise RuntimeError(f"badread produced nothing for {tag} chunk {j}")
-            fq.append(out)
+            jobs.append((f"{tag}/{j}", out, f"{br.format(args=args)} 2>/dev/null | gzip -1 > {out}"))
+
+    n_par = a.jobs or int(os.environ.get("SLURM_CPUS_PER_TASK", 8))
+    print(f"  {len(jobs)} chunk(s) over {n_par} concurrent slot(s)", flush=True)
+    fq, failed = [], []
+
+    def run_one(spec):
+        label, out, cmd = spec
+        rc = subprocess.run(cmd, shell=True).returncode
+        ok = rc == 0 and os.path.exists(out) and os.path.getsize(out) > 100
+        return label, out, ok
+
+    with cf.ThreadPoolExecutor(max_workers=n_par) as ex:
+        for label, out, ok in ex.map(run_one, jobs):
+            (fq if ok else failed).append(out if ok else label)
+    if failed:
+        raise RuntimeError(f"badread produced nothing for {len(failed)} chunk(s): {failed[:5]}")
     print(f"  badread done in {time.time() - t1:.0f}s, {len(fq)} chunk(s)", flush=True)
 
     # HiFi is delivered as an unaligned BAM, which is what a Revio run yields
