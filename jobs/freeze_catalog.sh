@@ -36,7 +36,10 @@ PY
   echo "# Regenerate with: jobs/freeze_catalog.sh"
   echo "# Frozen: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "# Catalog commit: $(git rev-parse HEAD)"
-  echo "# netMHCpan: $(grep -oE 'netmhcpan_cmd.*' "$P" | head -1)"
+  # The image identity and the binary, not the whole command: the command carries a site-specific path and
+  # no tracked file may contain one. What the freeze needs to pin is the netMHCpan VERSION.
+  echo "# netMHCpan image:  $(grep -oE 'netmhcpan_cmd.*' "$P" | grep -oE '[^/]+\.(img|sif)' | head -1)"
+  echo "# netMHCpan binary: $(grep -oE 'netmhcpan_cmd.*' "$P" | grep -oE '/netMHCpan[^ ]*/netMHCpan' | head -1)"
   echo
   echo "## Germline VCFs (inputs, not tracked)"
   while read -r f; do

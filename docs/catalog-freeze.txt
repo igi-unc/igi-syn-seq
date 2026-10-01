@@ -5,9 +5,10 @@
 # reproduce the output checksums exactly; if it does not, something not listed here has changed.
 #
 # Regenerate with: jobs/freeze_catalog.sh
-# Frozen: 2026-10-01T17:49:44Z
-# Catalog commit: 9449efe4d58b2e69debfe239caed7cd51978ef30
-# netMHCpan: netmhcpan_cmd: "singularity exec -B /datastore /datastore/nextgenout5/share/labs/Vincent_Lab/members/spvensko/raft/imgs/spvensko-netmhcpan-4.1b.img /netMHCpan-4.1/Linux_x86_64/bin/netMHCpan -BA -a {alleles} -f {fasta}"
+# Frozen: 2026-10-01T18:39:20Z
+# Catalog commit: 6b399cfbb95cc49bb3197780d0e776106a4e114a
+# netMHCpan image:  spvensko-netmhcpan-4.1b.img
+# netMHCpan binary: /netMHCpan-4.1/Linux_x86_64/bin/netMHCpan
 
 ## Germline VCFs (inputs, not tracked)
 a205e4366b88e260f792c7df15b7c5520c9f661e336c6a132f70b5744f3c7c9b  IGI-SYN-SEQ-01.germline.vcf.gz
