@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+
+# Site job environment (absolute paths)
+jobs/env.sh

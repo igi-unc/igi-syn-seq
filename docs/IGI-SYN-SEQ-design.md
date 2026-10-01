@@ -69,14 +69,38 @@ inputs/metadata/IGI-SYN-SEQ-01/                manifests, truth bundle, design t
 | tumor 10x 5' GEX | scRNA-Seq 5' v2 | Illumina | 4,000 cells, ~40k reads/cell | FASTQ (Cell Ranger naming) |
 | tumor 10x 5' TCR | scTCR-Seq V(D)J | Illumina | ~5k reads/cell | FASTQ |
 | tumor ONT scRNA | single-cell cDNA, 10x 5' structure | Oxford Nanopore R10.4.1 | 4,000 cells, ~10 M reads | FASTQ |
+| tumor ONT bulk RNA | cDNA, full length | Oxford Nanopore R10.4.1 | ~20 M reads | FASTQ |
+| tumor ONT WGS | WGS, long read | Oxford Nanopore R10.4.1 | 30x | FASTQ |
+| normal ONT WGS | WGS, long read | Oxford Nanopore R10.4.1 | 30x | FASTQ |
+
+Fifteen sample types per dataset. Earlier notes in this file and in the channel log said ten, eleven,
+thirteen and fourteen; those predate one or more of the 2026-10-01 decisions to add Illumina bulk WGS
+(samples 4-5) and to mirror all four PacBio sample types in ONT (samples 12-15). Build status per sample
+type is tracked in `build-reference.md` §1, which is the one place to look.
 
 The Kinnex sc, 10x GEX and 10x TCR libraries derive from the same 4,000 cells and share
 barcodes and UMIs (independent molecule sampling from a common per-cell molecule pool).
+ONT scRNA samples that same pool, so a barcode means the same cell in all four single-cell libraries.
 No normal RNA. LENS v2.0.0-dev-alt enters Kinnex sc at the segmented-BAM stage
 (`lens.nf` line ~58), so the segmented BAM is the LENS input and the pre-skera BAM is for
 validating skera itself.
 
-Storage estimate (full, both datasets): ~700 GB, dominated by four 30x HiFi BAMs.
+Storage estimate (full, both datasets): **at least 680 GB** for the sample types costed below, dominated
+by the twelve 30x WGS libraries; the long-read and single-cell RNA assays are on top of that and not yet
+estimated. Derived from measured bytes per base rather than guessed: 0.761 for a HiFi BAM and 0.441 for
+gzipped Illumina FASTQ, both taken from the chr21 validation runs.
+
+| Component | Size |
+|---|---|
+| 4 PacBio HiFi WGS BAMs | 283 GB |
+| 4 ONT WGS FASTQ | ~186 GB (at ~0.50 bytes/base, not yet measured) |
+| 4 Illumina WGS FASTQ | 164 GB |
+| 4 exomes, merged | 29 GB (measured) |
+| 2 bulk RNA | 21 GB (measured) |
+| Kinnex, 10x, ONT RNA | not yet estimated |
+
+The previous figure of ~700 GB predates the six Illumina and ONT WGS libraries and counted only the HiFi
+BAMs; it was coincidentally close for the wrong reason.
 
 ## 4. Germline baselines
 
@@ -301,7 +325,7 @@ Tumor cells' expression reflects CNA dosage (for scevan) and clone-restricted CT
 
 ### 7.1 Illumina short-read WGS (owner decision, 2026-10-01)
 
-An eleventh sample type. The design previously had WGS only as PacBio HiFi, so the only short-read DNA was
+Samples 4 and 5 of fifteen. The design previously had WGS only as PacBio HiFi, so the only short-read DNA was
 the exome pair. Most somatic callers and copy-number tools are tuned on short-read WGS and an exome cannot
 substitute for one off-target, so both tumour and normal are added at 30x.
 
@@ -326,7 +350,7 @@ capture intervals, and for WGS they have to work on genome windows instead.
 
 ### 8.1 ONT single-cell RNA (owner decision, 2026-10-01)
 
-A tenth sample type. Kinnex single cell already covers long-read single cell, so what ONT adds is
+Sample 12 of fifteen. Kinnex single cell already covers long-read single cell, so what ONT adds is
 **platform diversity**: its indel-heavy homopolymer errors break variant calling and isoform assignment
 differently from HiFi's, and a pipeline tuned on one platform is exactly what a benchmark should expose.
 
