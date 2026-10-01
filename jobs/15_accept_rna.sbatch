@@ -12,6 +12,13 @@ d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$A/$d"
 cd "$IGI_REPO/catalog"
-python3 acceptance.py --dataset "$d" --chrom "$CH" --catalog-dir output --design design.yaml   --rna-manifest "$O/$d/${d}_full_rna_transcripts.tsv"   --r1 "$O/$d/${d}_full_rna_R1.fastq.gz"   --work "$A/$d/rna" --report "$A/$d/${d}_rna_release.json"
-python3 class_presence.py --dataset "$d" --catalog-dir output   --rna-manifest "$O/$d/${d}_full_rna_transcripts.tsv"   --records "$M/$d/${d}_tumor_records.tsv.gz"   --junctions "$M/$d/${d}_tumor_junctions.tsv"   --out "$A/$d/${d}_class_presence.json" > "$A/$d/${d}_class_presence.txt"
+python3 acceptance.py --dataset "$d" --chrom "$CH" --catalog-dir output --design design.yaml \
+  --rna-manifest "$O/$d/${d}_full_rna_transcripts.tsv" \
+  --r1 "$O/$d/${d}_full_rna_R1.fastq.gz" \
+  --work "$A/$d/rna" --report "$A/$d/${d}_rna_release.json"
+python3 class_presence.py --dataset "$d" --catalog-dir output \
+  --rna-manifest "$O/$d/${d}_full_rna_transcripts.tsv" \
+  --records "$M/$d/${d}_tumor_records.tsv.gz" \
+  --junctions "$M/$d/${d}_tumor_junctions.tsv" \
+  --out "$A/$d/${d}_class_presence.json" > "$A/$d/${d}_class_presence.txt"
 echo "DONE $d $(date)"

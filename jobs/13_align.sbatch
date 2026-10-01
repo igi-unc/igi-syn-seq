@@ -17,7 +17,9 @@ if [ ! -s "$B" ]; then
   # bwa's stderr is kept: suppressing it once turned a missing index into an unreadable
   # "failed to read header".
   singularity exec -B "$IGI_BIND" "$IGI_BWA_IMG" bash -c "
-    bwa mem -t 24 -R '@RG\tID:${d}_${l}\tSM:${d}_${l}\tPL:ILLUMINA\tLB:${d}_${l}'       $IGI_FASTA_NOALT $M/$d/${d}_${l}_R1.fastq.gz $M/$d/${d}_${l}_R2.fastq.gz 2> $A/$d/${l}.bwa.err       | samtools sort -@6 -m 3G -o $B -" || { tail -20 "$A/$d/${l}.bwa.err"; exit 1; }
+    bwa mem -t 24 -R '@RG\tID:${d}_${l}\tSM:${d}_${l}\tPL:ILLUMINA\tLB:${d}_${l}' \
+      $IGI_FASTA_NOALT $M/$d/${d}_${l}_R1.fastq.gz $M/$d/${d}_${l}_R2.fastq.gz 2> $A/$d/${l}.bwa.err \
+      | samtools sort -@6 -m 3G -o $B -" || { tail -20 "$A/$d/${l}.bwa.err"; exit 1; }
   singularity exec -B "$IGI_BIND" "$IGI_BWA_IMG" samtools index "$B"
 fi
 singularity exec -B "$IGI_BIND" "$IGI_BWA_IMG" samtools flagstat "$B" | head -6
