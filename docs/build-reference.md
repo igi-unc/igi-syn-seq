@@ -229,13 +229,20 @@ changes to what the datasets *are*. Everything about how they are *sequenced* is
 `acceptance.py` runs per chromosome against an aligned BAM and the truth bundle; `class_presence.py`
 checks that every designed antigen class produced reads.
 
-The previously reported **40/40 + 5/5** is being re-established. Defects 12 and 13 (see
-`catalog-design-notes.md` §14) mean the junction check in that run was comparing a merged library's event
-count against a per-chromosome expectation with the wrong seed, so those particular checks were not
-testing what they claimed. The other checks in that run are unaffected and stand: 4/4 alignments at 99.99 % mapped, 78.2 % on-target against an independent 78.0 % prediction, RNA
-truth-vs-realised correlation 0.994, and every designed record of all six classes represented (fusion
-39/39, erv 102/102, splice 132/132, cta 69/69, virus 9/9). The three headline LOH events verified at
-0.897/0.980 (TP53 17p), 0.859/0.925 (BRCA1 17q), 0.700/0.725 (RB1 13q).
+Current state: **44/44 on both datasets, zero failures** — 40 per-chromosome checks (ten chromosomes x
+four) plus four read-level checks. Re-established after fixing defects 12 and 13, and worth stating plainly
+that the earlier reported figure was not fully earned: the junction checks in it were comparing a merged
+library's 87 events against a per-chromosome expectation of 3, under the wrong seed. With correct per-chromosome
+seeds all eighteen junction checks pass on exact equality, and all four of the failures the fix exposed
+were the checker's seed rather than the generator -- in each case the expected set under the build's own
+seed matches what was placed exactly.
+
+The read-level checks: no duplicate names in 400,000 sampled, no name carrying truth information, every one
+of 68.1 M and 68.2 M reads tracing to a source record, and 78.2 % on target, matching an independent 78.0 %
+prediction. Alongside: 4/4 alignments at 99.99 % mapped, RNA truth-vs-realised correlation 0.994, and every
+designed record of all six classes represented (fusion 39/39, erv 102/102, splice 132/132, cta 69/69,
+virus 9/9). The three headline LOH events verified at 0.897/0.980 (TP53 17p), 0.859/0.925 (BRCA1 17q) and
+0.700/0.725 (RB1 13q).
 
 Thirteen defects have been found in the acceptance suite itself, four of them visible only at release
 scale. They are listed in `catalog-design-notes.md` §14. The pattern worth carrying forward: **five of the
@@ -260,16 +267,20 @@ shortfall, and it is not one. 8,671,409 of chr21's 46,709,983 bases are N, and y
 bases. The remaining 2.6 % is ART declining reads near N runs and window edges. Judge any WGS yield
 against callable bases.
 
-**The WGS and long-read assays have no acceptance arm yet.** The depth and allele-fraction checks
-measure over capture intervals and there are none. This is the largest open gap.
+**Short-read WGS has an acceptance arm** (`acceptance.py --assay wgs`, run by `jobs/22_accept_wgs.sbatch`).
+It measures depth over the reference's non-N runs instead of capture intervals, does not apply the GC curve,
+and requires every designed breakpoint on the chromosome to be placed, which is stricter than the exome's
+test. It has not been run at release scale because there is no release-scale WGS yet. **The long-read assays
+still have no acceptance arm**, which is now the largest open gap.
 
 ## 10. Open items
 
-- Acceptance arm for WGS and long reads (§9).
 - Kinnex bulk (MAS 8-mer) and Kinnex sc (**16-mer**, not 8-mer) builders.
 - 10x 5' GEX and TCR builders; ONT scRNA, bulk RNA and WGS builders.
-- ONT WGS identity calibration and length-model verification (§7).
+- ONT WGS identity calibration, and verification that Badread's length model handles sd ~ mean with a
+  551 kb tail (§7).
 - Release-scale runs of Illumina WGS and PacBio HiFi; both are validated only on chr21.
-- Catalog freeze: tag the catalog and both germline VCFs with checksums.
+- An acceptance arm for the long-read assays. The short-read WGS arm exists (`--assay wgs`, §9) but has
+  not yet been run at release scale, because there is no release-scale WGS to run it against.
 - Resolve HG002 haplotype parentage against HG003/HG004.
-- Resolvable source URLs and a netMHCpan version pin in `data-sources.md`.
+- Push the local commits; request GitHub GC for the rewritten history; close the forks and PRs.
