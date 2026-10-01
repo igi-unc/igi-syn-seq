@@ -1,0 +1,50 @@
+# IGI-SYN-SEQ catalog freeze
+#
+# Every input the designed catalog depends on, and every file it produced, with a sha256. A rerun of
+# the designer against the same design.yaml, the same resources and the same germline VCFs must
+# reproduce the output checksums exactly; if it does not, something not listed here has changed.
+#
+# Regenerate with: jobs/freeze_catalog.sh
+# Frozen: 2026-10-01T17:49:44Z
+# Catalog commit: 9449efe4d58b2e69debfe239caed7cd51978ef30
+# netMHCpan: netmhcpan_cmd: "singularity exec -B /datastore /datastore/nextgenout5/share/labs/Vincent_Lab/members/spvensko/raft/imgs/spvensko-netmhcpan-4.1b.img /netMHCpan-4.1/Linux_x86_64/bin/netMHCpan -BA -a {alleles} -f {fasta}"
+
+## Germline VCFs (inputs, not tracked)
+a205e4366b88e260f792c7df15b7c5520c9f661e336c6a132f70b5744f3c7c9b  IGI-SYN-SEQ-01.germline.vcf.gz
+181aa6e352819dbdebbcad16b22b6946bc1ea70cdf156d3e3d10c27623cf1067  IGI-SYN-SEQ-02.germline.vcf.gz
+c7f9d7a4781f1f0a8a42ec54b051d6b95db1935c5e12318bae219740f9c50dc8  HG002.Q100v1.1.germline_smvar.vcf.gz
+c85a267f44708ec4a8776ae6b0a607a8143c10460f126eb44a3210ff1339782c  IPISRC044.germline.phased.final.vcf.gz
+
+## Catalog design parameters, resources and outputs (tracked)
+dd96ce1001f912d6200e965d658cd83bc8278d1801bb8bb1155315a2364ceed9  output/IGI-SYN-SEQ-01.background.tsv
+18cc5bbcaf8d3bb7ef69219419af91c68ee5093ac895151ad38940b91857806e  output/IGI-SYN-SEQ-01.expressed.tsv
+bffc5b6a64b08b7b6839e445b619736c1c726972e236863752473e5a8c35f0d0  output/IGI-SYN-SEQ-01.fusions.tsv
+93af802417eb72e00d75f00dfd9c7b8af8016e73b75ac0230429f1c4d36fd88f  output/IGI-SYN-SEQ-01.germline_spikein.tsv
+42680e5fd041858f046c6bf17a4b9654070a77b8808c73c9521350b5a81d525f  output/IGI-SYN-SEQ-01.hla_loh.tsv
+69196c339998921bcd672d03bb7c1fbb10582a878bf605edf013d2a180be16c6  output/IGI-SYN-SEQ-01.snv_indel.tsv
+d7e20fc09125ddbc68398175f65071e9e150aeed617c18fb1f4f31fa862adbf8  output/IGI-SYN-SEQ-01.splice_causal.tsv
+870f65ccb640b27d9060da9f1dfd6a88728282908d3920ce9ec2893bf63adaa6  output/IGI-SYN-SEQ-01.svs.tsv
+631b69122a136b78e51e175b48c265575ded36cf9a11c18dba60bc67ec89e98f  output/IGI-SYN-SEQ-01.viruses.tsv
+04d70c0bc97af2660cf1d27e2e19bb24ad7c04ffe4520b6a9c41b0c996b889ff  output/IGI-SYN-SEQ-02.background.tsv
+159184171ececc136f96c19536a7c42bd2f8de192d4dec7df4be337cdf5c305e  output/IGI-SYN-SEQ-02.expressed.tsv
+d833a4565ec35cfc5dd2aaedd330d8ac6873cede2eae28e60edf1d45c86c0f32  output/IGI-SYN-SEQ-02.fusions.tsv
+4856d5d41d779cd7c103d777c3a72845aa38dc0e3acd23564d0eea8c2c5e5b89  output/IGI-SYN-SEQ-02.germline_spikein.tsv
+266adab76dd13e6b1fed3b21f524afa95e10624725b72c2f5d636b7440f3fbc9  output/IGI-SYN-SEQ-02.hla_loh.tsv
+dc17e6673f65ab3bb6a91651be19e7171b49536fa3726888c253e314351c41af  output/IGI-SYN-SEQ-02.snv_indel.tsv
+f18dd6281f4cb9950ac0899dbf5d89005308ad286f448ae7170d0045c7d96a06  output/IGI-SYN-SEQ-02.splice_causal.tsv
+90b4518fa881890597f8b1c9f4747631e4d69b1ddb917a4d8deb179a738a1e19  output/IGI-SYN-SEQ-02.svs.tsv
+24a727b58f9d35197bdc864db78fb0c9a8d31626041955388f6599c5fceb64ca  output/IGI-SYN-SEQ-02.viruses.tsv
+49f425a8c1cc1c38e559a6a74aa1e037f345befec94ab18ecc1fc630b6894d4b  output/IGI-SYN-SEQ-01.background.summary.json
+ed924e0c7c3fe64cf79b9ee2f27f38bf74b94c213f5d4cb9e0b6800dc05cb94f  output/IGI-SYN-SEQ-01.snv_indel.summary.json
+53bea9c7c996b2efa8cade87ada52aef4d8079fa41dd403dcf902855eb7bf321  output/IGI-SYN-SEQ-01.splice_causal.summary.json
+5d3828181913f924b231e23a84deafbe86cfbcc85df475b10a758da47e73f5a5  output/IGI-SYN-SEQ-02.background.summary.json
+6eda579c3cd1557aae0981f9c8069b48565aec6274514e9d7ba14890d32f8453  output/IGI-SYN-SEQ-02.snv_indel.summary.json
+f4ed84edb9adc9f35a790ef7037fdbc397c8c215c9acc632fbd9292c06ca2ca1  output/IGI-SYN-SEQ-02.splice_causal.summary.json
+e8a99391a516d7b08d712f6d60f3d587515b3a349010af212c4b810b84468a4a  resources/cosmic_v3.4_sbs_subset.tsv
+71d7f2734128dc616535574178e23843dc94b6ecd8b47ff61a97cf1c8cc06faa  resources/ipisrc044_novaseqx_R1.profile.txt
+98e3f9a854b24ce8d7ba747a47ad22d162c7183056d26d1e6e414ebd3709d11b  resources/ipisrc044_novaseqx_R2.profile.txt
+a00079a3644fe18c96d577cbd8cec48e2371247afb685ccb6efbdc2644bb39eb  resources/ipisrc044_wes_gc_bias.json
+df3202023e6e3100e889c7f3bf3de65f000cc4356ea5a6b85d4f6e4264535d19  resources/README.md
+3c8f867e5a4311a495355d87323f6299a08ade79cae8a1d316b132afb3da7a5a  resources/tcga_brca_basal.samples.txt
+43362f7c4e4130c1c529159f0e01c394ee982a9e1980bfd8261056d91be13c99  resources/tcga_brca_basal.transcript_tpm.tsv.gz
+3d5c4502dec74875d04f019191ea14b2b7c69c4017ec2d83395f76a29109fee4  design.yaml
