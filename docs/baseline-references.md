@@ -176,3 +176,46 @@ elsewhere (Nextflow work dirs do this), stage BAM and index as side-by-side syml
   2 h 45 min wall; minimap2 2.22 `map-ont` on 32 ONT files giving 19.2x autosomal depth, 12x chrX, 3 h;
   WhatsHap 2.4 per chromosome). Results, statistics and the site-specific
   paths are recorded in the untracked site config and the run logs, not in this repository.
+
+## MHC recovery for an alt-aware normal (owner decision D3)
+
+IPISRC044's blood normal was aligned alt-aware, which puts HLA reads on the 525 `HLA-*` contigs and leaves
+the primary chr6 MHC at 7-11x. That is too shallow to genotype the class I loci, and the class I loci are
+exactly where the designed HLA LOH has to be visible. If a baseline is built from such a BAM without this
+step, the MHC is silently under-genotyped and the HLA LOH event has no heterozygous sites to be measured
+against.
+
+`jobs/03_mhc_recover.sbatch` does the recovery in five steps:
+
+1. Build a primary-only reference: keep the primary chromosomes and the unplaced/random/decoy contigs, drop
+   every `*_alt` and `HLA-*` contig so their reads have nowhere else to go. For GRCh38 this keeps 2,580 of
+   3,366 contigs.
+2. Extract the reads that could belong in the MHC — those parked on the HLA and alt contigs, those already on
+   chr6:28-34 Mb, and the unplaced unmapped pool.
+3. Realign them to the primary-only reference.
+4. Recall chr6:28-34 Mb with DeepVariant.
+5. Verify, and **assert** rather than print.
+
+Measured on IPISRC044 (job 11552481, 1h26m):
+
+| | before | after |
+|---|---|---|
+| HLA-A depth | 7-11x | 40.8x |
+| HLA-B depth | 7-11x | 48.9x |
+| PASS records in chr6:28-34 Mb | — | 7,532 |
+| heterozygous | — | 3,991 |
+
+Per locus: HLA-A 32 PASS / 0 het, HLA-B 93/64, HLA-C 105/100.
+
+**HLA-A has no heterozygous calls because IPISRC044 is homozygous there**, `A*01:01/A*01:01`, which
+`design.yaml` records. That is the correct result, not a failure of the recovery, and it has a consequence for
+the benchmark: HLA-A LOH cannot be detected by allelic imbalance in IGI-SYN-SEQ-02, so a caller that reports
+it there is wrong and a caller that stays silent is right. IGI-SYN-SEQ-01 is heterozygous at all three class I
+loci and is the dataset that exercises HLA-A LOH detection. `hla_loss.py` already handles this correctly: for
+dataset 02 it reports only `HLA-B*27:05` and `HLA-C*01:02` as lost, and does not claim HLA-A is.
+
+One trap, because it nearly buried the whole result: the first version of step 5 ran its counts inside the
+bwa/samtools image, which has no `bcftools`. Every count printed `command not found` followed by `0`, so the
+job log said zero records had been recovered when 7,532 had. The counts now run in the bcftools image and are
+asserted -- a recovery that genotypes under 1,000 PASS or under 500 heterozygous sites fails the job rather
+than completing quietly.

@@ -37,3 +37,11 @@ CHROMS_ALL=(chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13
 
 # Public reference datasets used only by the measurement jobs.
 IGI_HG002=/path/to/datasets/HG002
+
+# bcftools, used by the MHC recovery verification. It is a SEPARATE image: the bwa/samtools image has no
+# bcftools, and running the verification inside it silently printed 0 recovered records for every region.
+IGI_BCFTOOLS_IMG=$IGI_REF/imgs/quay.io-biocontainers-bcftools-1.21--h3a4d415_1.img
+
+# The alt-aware normal BAM whose MHC reads need recovering, and the primary-only reference built from it.
+IGI_RECOVER_BAM=/path/to/IPISRC044-blood-normal.sorted.bam
+IGI_FASTA_PRIMARY=$IGI_REF/references/homo_sapiens/fasta/Homo_sapiens.assembly38.fa

@@ -283,4 +283,6 @@ still have no acceptance arm**, which is now the largest open gap.
 - An acceptance arm for the long-read assays. The short-read WGS arm exists (`--assay wgs`, §9) but has
   not yet been run at release scale, because there is no release-scale WGS to run it against.
 - Resolve HG002 haplotype parentage against HG003/HG004.
+- The input manifest's checksums (`catalog-freeze.txt` covers the catalog inputs; the 28-row
+  `input-manifest.tsv` does not yet carry them).
 - Push the local commits; request GitHub GC for the rewritten history; close the forks and PRs.
