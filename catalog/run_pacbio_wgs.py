@@ -185,40 +185,82 @@ def main():
     # Chunks must run concurrently, not merely exist. subprocess.run blocks, so an earlier version
     # split the work and then executed it sequentially, which is serialisation with extra steps: 5 chunks
     # in an hour. A bounded pool sized to the task's cores is what actually parallelises it.
+    # Write uncompressed and without a pipe. Piping badread into gzip left six shells hung with zero CPU
+    # after the container invocation died: gzip held the pipe open, sh waited on gzip, and each stuck shell
+    # held an executor slot until ex.map deadlocked. The gzip was wasted work anyway, since the deliverable
+    # is a BAM and samtools compresses it. Each chunk also gets a timeout, so one bad container start costs
+    # a retry rather than the whole run.
     jobs = []
     for i, (tag, fa, cov) in enumerate(pieces):
         for j, sub in enumerate(split_fasta(fa, chunk_bp, work, tag)):
-            out = os.path.join(work, f"br_{tag}_{j:03d}.fq.gz")
+            out = os.path.join(work, f"br_{tag}_{j:03d}.fq")
             args = (f"simulate --reference {sub} --quantity {cov:.4f}x "
                     f"--length {lmean},{lsd} --identity {ident} "
                     f"--error_model {paths.get('pacbio_error_model', 'pacbio2021')} "
                     f"--qscore_model {paths.get('pacbio_qscore_model', 'pacbio2021')} "
                     f"--seed {a.seed + i * 100 + j} --start_adapter_seq '' --end_adapter_seq ''")
-            jobs.append((f"{tag}/{j}", out, f"{br.format(args=args)} 2>/dev/null | gzip -1 > {out}"))
+            jobs.append((f"{tag}/{j}", out, br.format(args=args)))
 
-    n_par = a.jobs or int(os.environ.get("SLURM_CPUS_PER_TASK", 8))
+    # Container starts contend: sixteen at once on one node was enough to make some fail to start at all.
+    n_par = a.jobs or min(8, int(os.environ.get("SLURM_CPUS_PER_TASK", 8)))
     print(f"  {len(jobs)} chunk(s) over {n_par} concurrent slot(s)", flush=True)
-    fq, failed = [], []
+    per_chunk_timeout = int(paths.get("pacbio_chunk_timeout_s", 3600))
 
-    def run_one(spec):
+    def run_one(spec, attempt=1):
         label, out, cmd = spec
-        rc = subprocess.run(cmd, shell=True).returncode
+        try:
+            with open(out, "wb") as fh:
+                rc = subprocess.run(cmd, shell=True, stdout=fh,
+                                    stderr=subprocess.DEVNULL,
+                                    timeout=per_chunk_timeout).returncode
+        except subprocess.TimeoutExpired:
+            rc = -1
         ok = rc == 0 and os.path.exists(out) and os.path.getsize(out) > 100
-        return label, out, ok
+        if not ok and attempt < 3:
+            return run_one(spec, attempt + 1)
+        return label, out, ok, attempt
 
+    fq, failed = [], []
     with cf.ThreadPoolExecutor(max_workers=n_par) as ex:
-        for label, out, ok in ex.map(run_one, jobs):
-            (fq if ok else failed).append(out if ok else label)
+        for label, out, ok, tries in ex.map(run_one, jobs):
+            if ok:
+                fq.append(out)
+                if tries > 1:
+                    print(f"    {label}: succeeded on attempt {tries}", flush=True)
+            else:
+                failed.append(label)
     if failed:
-        raise RuntimeError(f"badread produced nothing for {len(failed)} chunk(s): {failed[:5]}")
+        raise RuntimeError(f"badread produced nothing for {len(failed)} chunk(s) after 3 attempts: "
+                           f"{failed[:5]}")
     print(f"  badread done in {time.time() - t1:.0f}s, {len(fq)} chunk(s)", flush=True)
 
     # HiFi is delivered as an unaligned BAM, which is what a Revio run yields
     out_bam = os.path.join(a.out, f"{a.dataset}_{a.chrom}_{a.library}_hifi.bam")
     sam = paths["samtools_cmd"]
-    cat = os.path.join(work, "all.fq.gz")
-    with open(cat, "wb") as fh:
-        subprocess.run(["cat"] + fq, stdout=fh, check=True)
+    # Combine with record framing enforced, not with `cat`. Six of 54 badread chunks ended without a
+    # trailing newline, so concatenation glued each one's last line onto the next chunk's first line: the
+    # files were each individually well formed, the combined file was not, and samtools import correctly
+    # refused it. ART terminates its records so the Illumina path was unaffected, but assuming a tool's
+    # output is newline-terminated is the same class of assumption as trusting a flag's name.
+    cat = os.path.join(work, "all.fq")
+    n_fixed = 0
+    with open(cat, "wb") as out:
+        for part in fq:
+            with open(part, "rb") as fh:
+                data = fh.read()
+            if not data:
+                continue
+            if not data.endswith(b"\n"):
+                data += b"\n"
+                n_fixed += 1
+            out.write(data)
+    with open(cat, "rb") as fh:
+        n_lines = sum(1 for _ in fh)
+    if n_lines % 4:
+        raise RuntimeError(f"combined FASTQ has {n_lines} lines, not a multiple of 4; record framing is "
+                           f"broken and the BAM would be corrupt")
+    print(f"  combined {len(fq)} chunk(s), {n_lines // 4:,} reads"
+          + (f", {n_fixed} needed a trailing newline" if n_fixed else ""), flush=True)
     subprocess.run(sam.format(args=f"import -0 {cat} -o {out_bam}"), shell=True, check=True)
     n_reads = int(subprocess.run(sam.format(args=f"view -c {out_bam}"), shell=True,
                                  capture_output=True, text=True).stdout.strip() or 0)

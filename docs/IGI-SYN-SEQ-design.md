@@ -66,6 +66,7 @@ inputs/metadata/IGI-SYN-SEQ-01/                manifests, truth bundle, design t
 | tumor Kinnex scRNA | Kinnex single-cell (MAS 16-mer), 10x 5' v2 cDNA | PacBio Revio | 4,000 cells, ~12 M segmented reads | pre-skera + post-skera BAMs |
 | tumor 10x 5' GEX | scRNA-Seq 5' v2 | Illumina | 4,000 cells, ~40k reads/cell | FASTQ (Cell Ranger naming) |
 | tumor 10x 5' TCR | scTCR-Seq V(D)J | Illumina | ~5k reads/cell | FASTQ |
+| tumor ONT scRNA | single-cell cDNA, 10x 5' structure | Oxford Nanopore R10.4.1 | 4,000 cells, ~10 M reads | FASTQ |
 
 The Kinnex sc, 10x GEX and 10x TCR libraries derive from the same 4,000 cells and share
 barcodes and UMIs (independent molecule sampling from a common per-cell molecule pool).
@@ -295,6 +296,30 @@ power-law expansion (top 10 clonotypes hold ~30 % of T cells); 5 flagpost clonot
 mapped in the truth bundle to specific flagpost neoantigens.
 
 Tumor cells' expression reflects CNA dosage (for scevan) and clone-restricted CTAs.
+
+### 8.1 ONT single-cell RNA (owner decision, 2026-10-01)
+
+A tenth sample type. Kinnex single cell already covers long-read single cell, so what ONT adds is
+**platform diversity**: its indel-heavy homopolymer errors break variant calling and isoform assignment
+differently from HiFi's, and a pipeline tuned on one platform is exactly what a benchmark should expose.
+
+The error model is fitted from IPISRC044's own ONT single-cell RNA, which is the best provenance in the
+dataset: the same individual as IGI-SYN-SEQ-02 and the same assay being simulated, sequenced 2025-07-17 on
+a PromethION with `dna_r10.4.1_e8.2_400bps_sup@v4.3.0`. Measured on 100,000 reads: mean length 910 (sd
+461, median 843), accuracy 0.9822 (Q17.5).
+
+pbsim3 cannot reach modern ONT at all. Both its ONT models produce about 84 % accuracy, a nine-fold higher
+error rate than the real reads, and unlike HiFi there is no consensus step to recover it; the model named
+"HQ" is marginally worse than the plain one. Badread's `nanopore2023` model reproduces the real reads
+closely: length 917 (460), accuracy 0.9800 (Q17.0).
+
+The real reads are used as the target and as parameters only, never as material to edit. Editing them
+would give a perfect error profile but would carry that patient's own somatic variants into the
+background, make the truth set incomplete, and redistribute real patient reads — a larger version of what
+D12 required removing. Nothing of the individual's sequence reaches the release.
+
+This assay shares the per-cell roster with Kinnex single cell, 10x 5' GEX and 10x TCR, so a barcode has
+one cell type, one clone and one clonotype across all four libraries.
 
 ## 9. Expression baseline
 
