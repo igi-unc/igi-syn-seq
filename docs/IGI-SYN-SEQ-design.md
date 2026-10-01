@@ -344,8 +344,11 @@ relative to the on-target depth:
 The depths are means over each band, not the peak at the bait edge, since real flank coverage decays
 within a couple of hundred bases.
 
-Measured on an uncapped chr6 tumour library (3,568,125 pairs, job 11555336): 77.6 % of reads fall inside
-the capture intervals the builder uses, 16.5 % proximal, 5.6 % mid and 0.3 % distal. That figure depends
+Measured on the full release (68,112,282 pairs per tumour library): 78.2 % of reads fall inside the
+capture intervals the builder uses, 15.3 % proximal, 4.9 % mid and 1.6 % distal, identical to within a
+tenth of a point across both datasets and matching the 78.0 % that the band sizes and depths predict
+independently. An uncapped chr6 library gave 77.6 %, so the figure is stable from one chromosome to the
+whole genome. That figure depends
 entirely on which interval list it is measured against, and both numbers matter:
 
 - Against the builder's capture intervals, which are the bait list padded by 100 bp and merged across

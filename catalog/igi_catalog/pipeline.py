@@ -234,7 +234,11 @@ class WesBuilder:
         self.events = events_by_chrom
         self.purity = purity
         self.workdir = workdir
+        # Record ids share the read names' problem: a counter starting at 1 in every per-chromosome run
+        # collides on merge, and the read-name-to-record map then points at up to 24 different sources for
+        # one id. Namespaced per chromosome so the merged map stays unambiguous.
         self._n_rec = 0
+        self.record_prefix = ""
         self.record_map = []       # (record id, chrom, start, end, source, hap, copy kind, interval set)
         self.rejected = []         # designed somatic edits that could not be applied
         self.germline_rejected = 0
@@ -300,8 +304,9 @@ class WesBuilder:
                     # and the copy-number profile, so the "all" and "pre_cna" files produced identical
                     # ART read ids and 860k of 2.0M names collided.
                     self._n_rec += 1
-                    fh.write(f">e{self._n_rec:09d}\n")
-                    self.record_map.append((f"e{self._n_rec:09d}", chrom, start1, end1, src, hap,
+                    rid = f"e{self.record_prefix}{self._n_rec:09d}"
+                    fh.write(f">{rid}\n")
+                    self.record_map.append((rid, chrom, start1, end1, src, hap,
                                             kind, tag.lstrip("_") or "on_target"))
                     for i in range(0, len(seq), 60):
                         fh.write(seq[i:i + 60] + "\n")

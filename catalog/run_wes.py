@@ -53,6 +53,10 @@ def main():
     gc = GcBias(paths.get("gc_bias_curve"))
     print(f"  GC bias model: {'measured, ' + str(len(gc.factors)) + ' bins' if gc.enabled else 'flat'}", flush=True)
     wb = WesBuilder(env, events, purity, work, gc_bias=gc)
+    # the chromosome ordinal namespaces this run's record ids so the merged record map is unambiguous
+    _ord = {f"chr{i}": i for i in range(1, 23)}
+    _ord.update({"chrX": 23, "chrY": 24, "chrM": 25})
+    wb.record_prefix = f"{_ord.get(a.chrom, 0):02d}"
     # structural variants, fusion breakpoints and viral integrations reach the DNA as junction contigs
     if a.library == "tumor":
         import csv as _csv
