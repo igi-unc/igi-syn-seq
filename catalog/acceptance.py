@@ -664,6 +664,14 @@ def main():
     if rep.failed():
         print(f"\n{len(rep.failed())} check(s) failed", flush=True)
         sys.exit(1)
+    if not rep.checks:
+        # A run that checked nothing must not report success. Every input is optional so that one invocation
+        # can do the DNA checks and another the RNA ones, which means a typo in a path, or a --chrom with no
+        # designed events, yields zero checks -- and "all 0 checks passed" in a log that a human skims is
+        # indistinguishable from a real pass. This is the same failure mode as the eleven defects in
+        # catalog-design-notes.md section 14: a check that cannot fail counted as evidence.
+        print("\nno checks ran: nothing to test from the inputs given", flush=True)
+        sys.exit(2)
     print(f"\nall {len(rep.checks)} checks passed", flush=True)
 
 

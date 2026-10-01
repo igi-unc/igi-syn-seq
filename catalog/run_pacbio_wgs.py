@@ -265,7 +265,10 @@ def main():
     n_reads = int(subprocess.run(sam.format(args=f"view -c {out_bam}"), shell=True,
                                  capture_output=True, text=True).stdout.strip() or 0)
 
+    # Every builder records its seed; see the note in run_wes.py for what goes wrong when a checker is
+    # told a different one. For long reads it also pins which chunk boundaries were used.
     meta = {"dataset": a.dataset, "chrom": a.chrom, "library": a.library, "depth": a.depth,
+            "seed": a.seed, "assay": "PacBio HiFi WGS",
             "platform": "PacBio Revio HiFi", "simulator": "badread pacbio2021",
             "reads": n_reads, "bam": out_bam, "sources": plan_rows,
             "identity": ident, "chunk_bp": chunk_bp, "chunks": len(fq),

@@ -201,7 +201,9 @@ def main():
 
     rb.attach_counts(rmap, a.read_len)
     rb.write_manifest(os.path.join(a.out, f"{a.dataset}_{label}_rna_transcripts.tsv"))
-    meta = {"dataset": a.dataset, "chroms": sorted(chroms), "pairs_target": a.pairs,
+    # Every builder records its seed; see the note in run_wes.py.
+    meta = {"dataset": a.dataset, "seed": a.seed, "assay": "bulk RNA", "min_tpm": a.min_tpm,
+            "chroms": sorted(chroms), "pairs_target": a.pairs,
             "pairs_planned": realised, "pairs_written": n_reads, "records": len(rb.records),
             "bins": len(plan), "quality_model": qual, "read_map": rmap,
             "r1": r1, "r2": r2, "runtime_s": round(time.time() - t0)}

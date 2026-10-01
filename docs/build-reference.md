@@ -244,9 +244,9 @@ designed record of all six classes represented (fusion 39/39, erv 102/102, splic
 virus 9/9). The three headline LOH events verified at 0.897/0.980 (TP53 17p), 0.859/0.925 (BRCA1 17q) and
 0.700/0.725 (RB1 13q).
 
-Thirteen defects have been found in the acceptance suite itself, four of them visible only at release
-scale. They are listed in `catalog-design-notes.md` §14. The pattern worth carrying forward: **five of the
-thirteen were checks that passed on data that was wrong.** An interval-count floor of 20 skipped an
+Fourteen defects have been found in the acceptance suite itself, four of them visible only at release
+scale. They are listed in `catalog-design-notes.md` §14. The pattern worth carrying forward: **six of the
+fourteen were checks that passed on data that was wrong.** An interval-count floor of 20 skipped an
 11-interval amplicon; a depth baseline required the same chromosome, which chr13p and chr17 cannot
 satisfy; a baseline neutrality probe tested only a window midpoint and crossed into LOH; the read-map
 integrity check verified resolution rather than uniqueness; and the junction check compared a merged

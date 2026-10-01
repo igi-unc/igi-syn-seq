@@ -315,8 +315,8 @@ either spliceosome - the previous rule could turn a GT donor into AT, which is t
 
 ## 14. Defects found in the acceptance suite
 
-Thirteen so far. They are recorded because of what they have in common: **five of the thirteen were checks
-that passed on data that was wrong.** A check that cannot fail is worse than no check, because it is
+Fourteen so far. They are recorded because of what they have in common: **six of the fourteen were checks that
+passed on data that was wrong.** A check that cannot fail is worse than no check, because it is
 counted as evidence. When adding one, state what it would fail on and then confirm it does.
 
 Four were visible only at release scale, which is the argument for not validating a generator on a slice.
@@ -336,6 +336,7 @@ Four were visible only at release scale, which is the argument for not validatin
 | 11 | Record ids restarted at 1 on every chromosome | 667,090 of 1,000,832 ids were duplicated. The integrity check verified that read names *resolve* to a record, not that record ids are *unique*, so it passed on the broken data |
 | 12 | Junction check compared a merged library's whole event count against a per-chromosome expectation | 87 events across 24 chromosomes against 3 expected on chr13: `87 >= 3` can never fail |
 | 13 | The off-target seed was not propagated from the builder to the checker | See below |
+| 14 | A run whose inputs produced no checks printed "all 0 checks passed" and exited 0 | An empty report is indistinguishable from a real pass in a skimmed log |
 
 Defect 13 is the clearest case of the pattern. The off-target windows are derived from the build seed;
 `release_wes.sbatch` built each chromosome with `5000 + array task` while `release_accept.sbatch` passed
@@ -350,3 +351,10 @@ equality rather than `>=`, and reports both sides of the disagreement (`not plac
 expected:`). The builders record their seed in the per-chromosome meta JSON, and `acceptance.py
 --build-meta` reads it from there so the checker cannot be told a seed the library was not built with; it
 refuses rather than guessing if the meta predates seed recording.
+
+A fourteenth, found while testing the fix for 13: `acceptance.py` printed "all 0 checks passed" and exited 0
+when its inputs produced no checks at all. Every input is optional so that one invocation can do the DNA
+checks and another the RNA ones, which means a mistyped path, or a `--chrom` with no designed events, yields
+an empty report — and in a log a human skims, "all 0 checks passed" is indistinguishable from a real pass. It
+now prints "no checks ran" and exits 2, and the acceptance jobs additionally scan their reports for an empty
+`checks` list, because the per-chromosome loop uses `|| true` and would swallow the exit code.

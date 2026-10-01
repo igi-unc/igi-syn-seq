@@ -43,4 +43,14 @@ python3 acceptance.py --dataset "$d" --catalog-dir output --design design.yaml \
   --r1 "$M/$d/${d}_tumor_R1.fastq.gz" \
   --read-map "$M/$d/${d}_tumor_readmap.tsv.gz" --record-map "$M/$d/${d}_tumor_records.tsv.gz" \
   --work "$O/$d" --report "$O/$d/${d}_reads.json" 2>&1 | sed "s/^/[$d reads] /" || true
+# A zero-check run exits 2 and prints "no checks ran". The per-chromosome loop uses `|| true` so one bad
+# chromosome does not abandon the rest, which means that exit code is swallowed -- so look for it in the
+# reports instead, where it is a report with no checks at all.
+empty=0
+for r in "$O/$d"/*.json; do
+  [ -s "$r" ] || continue
+  n=$(python3 -c "import json;print(len(json.load(open('$r'))['checks']))" 2>/dev/null || echo 0)
+  [ "$n" -eq 0 ] && { echo "EMPTY REPORT: $r ran no checks"; empty=$((empty+1)); }
+done
+[ "$empty" -eq 0 ] || { echo "$empty report(s) ran no checks; that is a failure, not a pass"; exit 1; }
 echo "DONE $d $(date)"
