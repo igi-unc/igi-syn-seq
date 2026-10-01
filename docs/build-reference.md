@@ -30,7 +30,7 @@ reads exist and passed acceptance; "tested" means a single-chromosome run comple
 | 5 | normal bulk WGS 30x Illumina | `run_wgs.py` | tested (chr21) |
 | 6 | tumor WGS 30x PacBio HiFi | `run_pacbio_wgs.py` | tested (chr21) |
 | 7 | normal WGS 30x PacBio HiFi | `run_pacbio_wgs.py` | tested (chr21) |
-| 8 | tumor Kinnex bulk RNA | not written | — |
+| 8 | tumor Kinnex bulk RNA | `run_kinnex_bulk.py` | **validated on chr21** |
 | 9 | tumor Kinnex scRNA (MAS 16-mer) | not written | — |
 | 10 | tumor 10x 5' GEX | not written | — |
 | 11 | tumor 10x 5' TCR | not written | — |
@@ -151,7 +151,77 @@ independently, which is what makes a barcode mean the same cell in all four.
 
 ## 6. Long-read builders
 
-`run_pacbio_wgs.py` is the only long-read driver written. Shape:
+### 6.1 Kinnex bulk RNA (MAS-seq 8-mer)
+
+A Kinnex library ligates several full-length cDNAs into one long molecule separated by known adapters and
+sequences that as a single HiFi read; `skera split` cuts it back into segments. So the builder constructs
+*arrays*, not segments, and hands the splitting to the real skera -- segmenting it ourselves would make the
+pre-skera BAM pointless, since the reason to ship it is that skera's own output is reproduced.
+
+    transcript records (shared with bulk RNA via rna_assembly.assemble)
+      -> molecules sampled by abundance x size selection
+      -> arrays A0 S0 A1 S1 ... S7 A8, forward frame only
+      -> badread, one full-length read per array
+      -> pre-skera BAM with zm/np/rq  ->  real `skera split`  ->  segmented BAM
+
+Each link was tested rather than assumed:
+
+| Assumption | Test | Result |
+|---|---|---|
+| badread emits a whole short reference as one read | 30 synthetic arrays | all 32 reads started at 0 and ran to the end |
+| skera accepts a synthetic BAM | `samtools import` output | **fails**: "Bam record missing the read quality tag". `pacbio_bam.py` writes `zm`/`np`/`rq` |
+| skera recovers what was built | 22 arrays | 22/22 segment counts exact, 153/159 lengths within 2 % |
+| the adapter set is in one frame | build all-forward, ask skera | coherent ascending/descending runs per ZMW |
+
+**The adapter set was recovered from real data**, not transcribed from a kit document, which also guarantees
+the simulated arrays are segmentable by the same skera that produced the reference set. skera writes a
+MessagePack `ds` tag on every segment carrying each adapter's label and observed sequence;
+`jobs/measure/fit_mas_adapters.py` decodes it. The tags also give the grammar, and one of them does not mean
+what it looks like: `dl` is the **left adapter index**, not a segment count, and `di` is the segment index.
+
+Two modelling decisions matter more than they look:
+
+1. **Molecules are sampled by abundance alone, not abundance x length.** Kinnex yields one read per molecule
+   and TPM is already length-normalised. On the release manifest the two weights give mean cDNA lengths of
+   1,788 bp and 4,197 bp, a 2.3x error in which transcripts dominate the library.
+2. **Size selection is fitted and it is doing heavy lifting.** Even with the right weight the molecules run
+   short against real segments (p10 498 bp against 1,355), so
+   `jobs/measure/fit_kinnex_size_selection.py` fits an efficiency per length bin, normalised to an
+   abundance-weighted mean of 1. The corrections reach 50x suppression at 500-750 bp, and they are not pure
+   chemistry: the real segments are HG002 and the molecules come from a TCGA-BRCA basal baseline, so the
+   ratio also carries a transcriptome difference and the low-abundance short tail a 0.01 TPM floor keeps.
+   Checking that the corrected density matches the real one is an identity, not a validation.
+
+Orientation is supplied by badread choosing a strand per read, so arrays are built in the forward frame
+only. Randomising it in both places was a real bug: arrays built with the array-level flip disabled still
+came back from skera 60 % reverse.
+
+**Validated on chr21** (40,000 molecules, 5,791 arrays, 7m53s): the whole chain ran and the output matches
+real Kinnex on every statistic that was not an input.
+
+| | simulated | real |
+|---|---|---|
+| segment length mean / sd | 2,263 / 900 | 2,223 / 935 |
+| median / p90 | 1,854 / 3,283 | 1,974 / 3,374 |
+| reverse-oriented segments | 50.8 % | 52.5 % |
+| complete 8-segment arrays | 74.6 % | 77.1 % |
+| mean segments per array | 6.882 | 6.908 |
+
+The length agreement is the validation the size-selection curve needed, since the identity check could not
+provide one: without the curve the molecules would average 1,788 bp against a real 2,223.
+
+Two residual notes. The p10 comes out at 1,637 bp against a real 1,355, so the curve slightly over-corrects
+the short end. And of 38,903 segments, **none of the 33,728 in complete arrays violate the adapter grammar**;
+530 of the 5,175 in incomplete arrays do, which is expected rather than a defect -- an array that lost a
+middle segment does not follow `dl = k - di` any more than it follows `dl = di`.
+
+The fill passes behaved as predicted to within a few tenths of a percent: 36.94 %, 13.73 % and 4.96 % of
+arrays still missing after each pass against a predicted 36.8 %, 13.5 % and 5.0 %, leaving 2.09 % never
+sequenced, whose molecules the array map records as such.
+
+### 6.2 PacBio HiFi WGS
+
+`run_pacbio_wgs.py`. Shape:
 
 1. `rearrange.py` produces the derived chromosome per clone/haplotype, including SVs.
 2. `split_fasta()` chunks it at `pacbio_chunk_bp` (20 Mb).

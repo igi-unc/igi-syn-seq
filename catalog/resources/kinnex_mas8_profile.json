@@ -1,0 +1,93 @@
+{
+  "source": "GIAB HG002 Kinnex full-length RNA, Revio, 1-Sreads/segmented.bam (skera 1.1.99)",
+  "segments_per_array": 8,
+  "arrays_measured": 21712,
+  "segments_measured": 150000,
+  "array_yield_distribution": {
+    "1": 0.07507,
+    "2": 0.04684,
+    "3": 0.02565,
+    "4": 0.00917,
+    "5": 0.01589,
+    "6": 0.01603,
+    "7": 0.04062,
+    "8": 0.77073
+  },
+  "mean_segments_per_array": 6.9082,
+  "fraction_complete_arrays": 0.7707,
+  "segment_length": {
+    "mean": 2222.7,
+    "median": 1970,
+    "p10": 1354,
+    "p90": 3378,
+    "sd": 935.1
+  },
+  "read_quality_rq_mean": 0.99786,
+  "passes_np_mean": 7.8,
+  "fraction_arrays_reverse_oriented": 0.5248,
+  "adapters": {
+    "0": {
+      "seq": "AGCTTACTTGTGAAGAT",
+      "len": 17,
+      "n": 3710,
+      "min_column_agreement": 0.9881,
+      "frame": "array forward (from dl<dr segments only)"
+    },
+    "2": {
+      "seq": "ACTCTGTCAGGTCCGAT",
+      "len": 17,
+      "n": 7559,
+      "min_column_agreement": 0.9963,
+      "frame": "array forward (from dl<dr segments only)"
+    },
+    "3": {
+      "seq": "ACCTCCTCCTCCAGAAT",
+      "len": 17,
+      "n": 6972,
+      "min_column_agreement": 0.9953,
+      "frame": "array forward (from dl<dr segments only)"
+    },
+    "4": {
+      "seq": "AACCGGACACACTTAGT",
+      "len": 17,
+      "n": 7746,
+      "min_column_agreement": 0.9937,
+      "frame": "array forward (from dl<dr segments only)"
+    },
+    "5": {
+      "seq": "AGAGTCCAATTCGCAGT",
+      "len": 17,
+      "n": 8181,
+      "min_column_agreement": 0.9968,
+      "frame": "array forward (from dl<dr segments only)"
+    },
+    "6": {
+      "seq": "AATCAAGGCTTAACGGT",
+      "len": 17,
+      "n": 8615,
+      "min_column_agreement": 0.9972,
+      "frame": "array forward (from dl<dr segments only)"
+    },
+    "7": {
+      "seq": "ATGTTGAATCCTAGCGT",
+      "len": 17,
+      "n": 9705,
+      "min_column_agreement": 0.9972,
+      "frame": "array forward (from dl<dr segments only)"
+    },
+    "1": {
+      "seq": "ACTTGTAAGCTGTCTAT",
+      "len": 17,
+      "n": 7507,
+      "min_column_agreement": 0.9943,
+      "frame": "array forward (from dl<dr segments only)"
+    },
+    "8": {
+      "seq": "AGTAGCTGTGTGCA",
+      "len": 14,
+      "n": 4999,
+      "min_column_agreement": 0.9856,
+      "frame": "array forward (from dl<dr segments only)"
+    }
+  }
+}

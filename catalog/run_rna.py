@@ -20,71 +20,10 @@ import yaml
 
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
-from igi_catalog import fusion_core
 from igi_catalog.pipeline import quality_model
 from igi_catalog.readnames import shuffle_and_rename
-from igi_catalog.rna import RnaBuilder
+from igi_catalog.rna_assembly import assemble, load_rows
 from igi_catalog.simulate import clone_weights
-from igi_catalog.transcriptome import TranscriptomeBuilder
-
-
-def load_rows(path):
-    if not os.path.exists(path):
-        return []
-    with open(path) as fh:
-        return list(csv.DictReader(fh, delimiter="\t"))
-
-
-def viral_records(paths, viruses, env):
-    """Expressed viral transcripts, taken from the viral reference by accession."""
-    out = []
-    fa = paths.get("viral_fasta")
-    if not fa or not os.path.exists(fa):
-        return out
-    import pysam
-    ref = pysam.FastaFile(fa)
-    names = {r.split("|")[-2].strip() if "|" in r else r: r for r in ref.references}
-    for v in viruses:
-        if str(v.get("expressed", "")).lower() in ("", "false", "none"):
-            continue
-        acc = v.get("accession", "")
-        key = next((r for r in ref.references if acc.split(".")[0] in r), None)
-        if key is None:
-            continue
-        seq = ref.fetch(key)
-        out.append({"id": f"{v['event_id']}|{v['virus']}", "source": "virus", "gene": v["virus"],
-                    "sequence": seq, "tpm": 80.0 if v.get("expressed") == "True" else 8.0,
-                    "clone": v.get("clone", "T"), "hap": 0,
-                    "in_normal": bool(float(v.get("normal_trace_copies") or 0) > 0),
-                    "normal_tpm": 0.5 if float(v.get("normal_trace_copies") or 0) > 0 else 0.0})
-    return out
-
-
-def cta_records(expressed, env):
-    """Cancer-testis antigen transcripts at their designed expression tier."""
-    tier_tpm = {"T0": 0.0, "T1": 1.5, "T10": 15.0, "T100": 120.0, "T1000": 600.0}
-    out = []
-    for e in expressed:
-        if e.get("class") != "cta":
-            continue
-        t = env.tx.get(e.get("transcript", ""))
-        if t is None:
-            continue
-        tpm = tier_tpm.get(e.get("target_expression_tier", "T10"), 15.0)
-        if tpm <= 0:
-            continue
-        # the transcript is passed through rather than a fixed sequence, so the builder can apply this
-        # clone and haplotype's germline and somatic edits: a CTA built from bare reference exons would
-        # carry none of the variants designed into it
-        out.append({"id": f"{e['event_id']}|{e['gene']}", "source": "cta", "gene": e["gene"],
-                    "transcript": t, "tpm": tpm,
-                    "clone": e.get("clone", "T"), "hap": int(e.get("haplotype", 0) or 0),
-                    # de-repression is epigenetic and acts on both alleles, so a CTA is expressed from
-                    # both haplotypes; emitting it from one made every germline het inside it homozygous
-                    "haplotypes": [0, 1], "chrom": t.chrom, "pos": (t.start + t.end) // 2,
-                    "reconcile": "replace",
-                    "normal_gene_tpm": float(e.get("normal_tissue_tpm_p95") or 0)})
-    return out
 
 
 def _chrkey(c):
@@ -125,44 +64,12 @@ def main():
     rng = random.Random(a.seed)
 
     t0 = time.time()
-    snv_rows = load_rows(os.path.join(a.catalog_dir, f"{a.dataset}.snv_indel.tsv"))
     events = read_events(os.path.join(a.catalog_dir, f"{a.dataset}.snv_indel.tsv"))
-    fusions = load_rows(os.path.join(a.catalog_dir, f"{a.dataset}.fusions.tsv"))
-    expressed = load_rows(os.path.join(a.catalog_dir, f"{a.dataset}.expressed.tsv"))
-    viruses = load_rows(os.path.join(a.catalog_dir, f"{a.dataset}.viruses.tsv"))
-
     weights = clone_weights(env.clones, ds_cfg["purity"])
-    rb = RnaBuilder(env, ds_cfg, weights, min_tpm=a.min_tpm)
-    rb.index_events(snv_rows)
-
-    # every transcript of an expressed gene, not just one per gene
-    tx = [t for t in env.tx.values() if t.chrom in chroms and t.exons
-          and t.gene_type in ("protein_coding", "lncRNA")]
-    if a.max_genes:
-        tx = tx[:a.max_genes]
-    rb.add_transcripts(tx, events)
-    print(f"[{a.dataset}] {len(tx)} transcripts considered -> {len(rb.records)} records "
-          f"({time.time() - t0:.0f}s)", flush=True)
-
-    # designed classes
-    tb = TranscriptomeBuilder(env, a.dataset, env.clones, env.expr)
-    for f in fusions:
-        if f.get("chrom_5p") in chroms:
-            tb.add_fusion_transcript(f, fusion_core)
-    for e in expressed:
-        if e.get("chrom") not in chroms:
-            continue
-        if e["class"] == "erv":
-            tb.add_erv_transcript(e)
-        elif e["class"] == "splice":
-            tb.add_splice_isoform(e)
-    designed = [dict(r) for r in tb.records]
-    designed += cta_records(expressed, env)
-    designed += viral_records(paths, viruses, env)
-    rb.add_designed(designed, events)
-    rb.reconcile_designed()
-    print(f"  designed classes: {len(designed)} source transcripts -> {len(rb.records)} total records",
-          flush=True)
+    rb = assemble(env, ds_cfg, paths, a.catalog_dir, a.dataset, chroms, weights, events,
+                  min_tpm=a.min_tpm, max_genes=a.max_genes,
+                  log=lambda m: print(m, flush=True))
+    print(f"  records assembled in {time.time() - t0:.0f}s", flush=True)
 
     rb.assign_record_ids()
     plan, realised = rb.coverage_plan(a.pairs, a.read_len, n_bins=a.bins)

@@ -29,6 +29,8 @@ two places a path belongs.
 ./jobs/submit.sh 15_accept_rna.sbatch              # acceptance, RNA + class presence
 ./jobs/submit.sh 20_wgs_illumina.sbatch            # short-read WGS, 96 tasks
 ./jobs/submit.sh 21_wgs_pacbio.sbatch              # HiFi WGS, 96 tasks
+./jobs/submit.sh 22_accept_wgs.sbatch              # acceptance, short-read WGS
+./jobs/submit.sh 30_kinnex_bulk.sbatch             # Kinnex bulk RNA, pre- and post-skera BAMs
 ```
 
 `02` must follow `01`: the background model reserves the positions the designed catalog occupies so the
@@ -47,6 +49,23 @@ outputs are committed under `catalog/resources/`.
 ./jobs/submit.sh measure/art_profile.sbatch        # Illumina per-cycle quality profile
 ./jobs/submit.sh measure/gc_bias.sbatch            # capture efficiency vs interval GC
 ./jobs/submit.sh measure/longread_measure.sbatch   # PacBio and Kinnex length/accuracy
+```
+
+Two more are run directly rather than through sbatch, because each needs a real BAM streamed through
+`samtools view` and takes minutes rather than hours:
+
+```bash
+# Kinnex MAS adapters and array structure, decoded out of skera's own tags
+samtools view segmented.bam > seg.sam
+python3 jobs/measure/fit_mas_adapters.py --sam seg.sam \
+  --out-fasta catalog/resources/kinnex_mas8_adapters.fasta \
+  --out-profile catalog/resources/kinnex_mas8_profile.json
+
+# Kinnex size selection: real segment lengths against the simulated molecule lengths
+awk -F'\t' '$1!~/^@/{print length($10)}' seg.sam > seglen.txt
+python3 jobs/measure/fit_kinnex_size_selection.py --real-lengths seglen.txt \
+  --manifest <dataset>_full_rna_transcripts.tsv \
+  --out catalog/resources/kinnex_size_selection.json
 ```
 
 `measure/fit_gc_bias.py` and `measure/measure_longread.py` can also be run directly, and the second is

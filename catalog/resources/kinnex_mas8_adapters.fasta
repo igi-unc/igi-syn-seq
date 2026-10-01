@@ -1,0 +1,20 @@
+; Kinnex MAS adapters recovered from GIAB HG002 Kinnex full-length RNA, Revio, 1-Sreads/segmented.bam (skera 1.1.99)
+; by jobs/measure/fit_mas_adapters.py -- see that file for how skera's tags encode them.
+>0
+AGCTTACTTGTGAAGAT
+>1
+ACTTGTAAGCTGTCTAT
+>2
+ACTCTGTCAGGTCCGAT
+>3
+ACCTCCTCCTCCAGAAT
+>4
+AACCGGACACACTTAGT
+>5
+AGAGTCCAATTCGCAGT
+>6
+AATCAAGGCTTAACGGT
+>7
+ATGTTGAATCCTAGCGT
+>8
+AGTAGCTGTGTGCA
