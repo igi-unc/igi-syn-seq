@@ -227,19 +227,25 @@ changes to what the datasets *are*. Everything about how they are *sequenced* is
 ## 9. Validation
 
 `acceptance.py` runs per chromosome against an aligned BAM and the truth bundle; `class_presence.py`
-checks that every designed antigen class produced reads. Current state: **40/40 + 5/5 on both
-datasets**, 4/4 alignments at 99.99% mapped, 78.2% on-target against an independent 78.0% prediction,
-RNA truth-vs-realised correlation 0.994, and every designed record of all six classes represented
-(fusion 39/39, erv 102/102, splice 132/132, cta 69/69, virus 9/9). The three headline LOH events
-verified at 0.897/0.980 (TP53 17p), 0.859/0.925 (BRCA1 17q), 0.700/0.725 (RB1 13q).
+checks that every designed antigen class produced reads.
 
-Eleven defects were found in the acceptance suite itself, four of them visible only at release scale.
-They are listed in `catalog-design-notes.md` §13. The pattern worth carrying forward: **four of the
-eleven were checks that passed on data that was wrong.** An interval-count floor of 20 skipped an
+The previously reported **40/40 + 5/5** is being re-established. Defects 12 and 13 (see
+`catalog-design-notes.md` §14) mean the junction check in that run was comparing a merged library's event
+count against a per-chromosome expectation with the wrong seed, so those particular checks were not
+testing what they claimed. The other checks in that run are unaffected and stand: 4/4 alignments at 99.99 % mapped, 78.2 % on-target against an independent 78.0 % prediction, RNA
+truth-vs-realised correlation 0.994, and every designed record of all six classes represented (fusion
+39/39, erv 102/102, splice 132/132, cta 69/69, virus 9/9). The three headline LOH events verified at
+0.897/0.980 (TP53 17p), 0.859/0.925 (BRCA1 17q), 0.700/0.725 (RB1 13q).
+
+Thirteen defects have been found in the acceptance suite itself, four of them visible only at release
+scale. They are listed in `catalog-design-notes.md` §14. The pattern worth carrying forward: **five of the
+thirteen were checks that passed on data that was wrong.** An interval-count floor of 20 skipped an
 11-interval amplicon; a depth baseline required the same chromosome, which chr13p and chr17 cannot
-satisfy; a baseline neutrality probe tested only a window midpoint and crossed into LOH; and the
-read-map integrity check verified resolution rather than uniqueness. When adding a check, state what it
-would fail on.
+satisfy; a baseline neutrality probe tested only a window midpoint and crossed into LOH; the read-map
+integrity check verified resolution rather than uniqueness; and the junction check compared a merged
+library's 87 events against 3 expected on one chromosome with `>=`, which hid a seed mismatch that had
+made the expected and placed sets completely disjoint. When adding a check, state what it would fail on,
+then confirm that it does.
 
 The two assays validated only on chr21 were each checked against their real-data target rather than
 against themselves:

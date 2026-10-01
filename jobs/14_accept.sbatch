@@ -8,6 +8,7 @@
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 M=$IGI_WORK/release/merged; A=$IGI_WORK/release/bams; O=$IGI_WORK/release/acceptance
+W_WES=$IGI_WORK/release/wes
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 mkdir -p "$O/$d"
 cd "$IGI_REPO/catalog"

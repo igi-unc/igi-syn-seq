@@ -312,3 +312,41 @@ on a minus-strand gene reads as its reverse complement on the plus strand. All 1
 in IGI-SYN-SEQ-02 sit at canonical donors (8 GT, 7 AC). Acceptor disruption is therefore not currently
 exercised, and the substituted base is now chosen so the resulting dinucleotide is not recognised by
 either spliceosome - the previous rule could turn a GT donor into AT, which is the U12 donor.
+
+## 14. Defects found in the acceptance suite
+
+Thirteen so far. They are recorded because of what they have in common: **five of the thirteen were checks
+that passed on data that was wrong.** A check that cannot fail is worse than no check, because it is
+counted as evidence. When adding one, state what it would fail on and then confirm it does.
+
+Four were visible only at release scale, which is the argument for not validating a generator on a slice.
+
+| # | Defect | Why it passed anyway |
+|---|---|---|
+| 1 | `captured_depth` floored on interval *count* (20), not captured bases | The MYC amplicon has 11 intervals but 15 kb of captured sequence; it was skipped, so the amplified arm went unmeasured and the check reported a pass |
+| 2 | Any clonality tier could decide the allele-fraction verdict | A 2-site clone-B tier with ~10 alt reads produced a "failure" that was sampling noise |
+| 3 | Junction check re-derived capture from the raw BED, unmerged, ignoring off-target bands and lost haplotypes | Under-counted what was placeable; compared with `>=`, so it passed |
+| 4 | RNA class check satisfiable with zero ERV, splice or CTA records | It tested that *something* was present, not that each class was |
+| 5 | No read-map integrity check existed | — |
+| 6 | Flat 15 % bound on allele fractions instead of a per-tier sigma | Tier A1 at 21-49 alt reads has a 1-sigma spread of 13-21 %, so the bound was inside the noise |
+| 7 | Depth baseline required the same chromosome | chr13p is acrocentric with zero capture intervals and chr17 has both arms altered, so the two headline LOH events had no usable baseline |
+| 8 | Baseline neutrality tested at the window midpoint only | A chr13 10-20 Mb window has its midpoint on 13p but its upper half inside the 13q LOH, so the check compared LOH against LOH and read RB1 loss as ratio 1.04 against an expected 0.65 |
+| 9 | `mpileup` called without `-r` | Streamed the whole 6.25 GB BAM: 16 min against 2m46s |
+| 10 | Junction "placeable" count under-counted | Compared with `>=`, so the inconsistency was invisible |
+| 11 | Record ids restarted at 1 on every chromosome | 667,090 of 1,000,832 ids were duplicated. The integrity check verified that read names *resolve* to a record, not that record ids are *unique*, so it passed on the broken data |
+| 12 | Junction check compared a merged library's whole event count against a per-chromosome expectation | 87 events across 24 chromosomes against 3 expected on chr13: `87 >= 3` can never fail |
+| 13 | The off-target seed was not propagated from the builder to the checker | See below |
+
+Defect 13 is the clearest case of the pattern. The off-target windows are derived from the build seed;
+`release_wes.sbatch` built each chromosome with `5000 + array task` while `release_accept.sbatch` passed
+`--seed 5000` for all of them. On dataset 01 chr13 the builder used 5013, so the two sides tested
+membership in different windows: the checker expected `{SV-0086, SV-0091, SV-0096}` and the builder had
+placed `{SV-0036}` — **completely disjoint sets** — and the check passed, because defect 12 meant it was
+comparing 87 against 3. Under the correct seed the expected set is exactly `{SV-0036}` and matches. The
+generator was right throughout; only the check was wrong.
+
+The fixes: the junction check now filters the junction file to the chromosome under test, compares with
+equality rather than `>=`, and reports both sides of the disagreement (`not placed:` and `placed but not
+expected:`). The builders record their seed in the per-chromosome meta JSON, and `acceptance.py
+--build-meta` reads it from there so the checker cannot be told a seed the library was not built with; it
+refuses rather than guessing if the meta predates seed recording.

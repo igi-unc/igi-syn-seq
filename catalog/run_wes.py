@@ -141,7 +141,12 @@ def main():
     print(f"  {n_reads:,} pairs, Illumina names, maps in {os.path.basename(rmap)} and "
           f"{os.path.basename(recmap)}", flush=True)
 
+    # The seed is recorded because the off-target windows are derived from it, so a checker that is told
+    # a different seed tests membership in windows this library was never built from. Acceptance was run
+    # with --seed 5000 while chr13 was built with 5013, and expected three events the builder could not
+    # have placed; the check passed anyway because it compared with >=.
     meta = {"dataset": a.dataset, "chrom": a.chrom, "library": a.library, "depth": a.depth,
+            "seed": a.seed,
             "intervals": n_iv, "off_target_bands": bands, "quality_model": qual,
             "gc_bias": "measured" if gc.enabled else "flat",
             "capture_bases": sum(e - s + 1 for s, e in capture.get(a.chrom, [])), "sources": {f"{k[0]}_hap{k[1]}_{k[2]}_cn{k[3]}": w for k, (_p, w) in sources.items()},

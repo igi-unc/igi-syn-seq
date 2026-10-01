@@ -126,7 +126,9 @@ def main():
     for f in (cat1, cat2):
         if os.path.exists(f):
             os.remove(f)
+    # The seed is recorded so a checker cannot be told a different one; see the note in run_wes.py.
     meta = {"dataset": a.dataset, "chrom": a.chrom, "library": a.library, "assay": "WGS",
+            "seed": a.seed,
             "depth": a.depth, "window_bp": WINDOW, "windows": n_iv,
             "gc_bias": "flat (the measured curve is capture efficiency)",
             "quality_model": qual, "pairs_written": n_reads,

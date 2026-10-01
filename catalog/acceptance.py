@@ -62,33 +62,75 @@ def pileup(bam, reference, sites_path, min_bq=15, min_mq=20, max_depth=8000, reg
     return res
 
 
-def captured_depth(bam, chrom, start, end, capture_bed, work, min_bases=5000):
-    """Mean depth over captured bases only, within a region.
+def callable_runs(genome, chrom, start, end, min_run=1000):
+    """Stretches of non-N reference within a region, 0-based half-open.
+
+    This is the WGS analogue of a capture interval. chr21 is 18.6 % N, and a window straddling the
+    acrocentric arm or the centromere reads at a fraction of its true depth simply because much of it
+    cannot be sequenced: chr21:0-6,000,000 is only 11.5 % callable, so measured over the whole window it
+    reads at 11.5 % of true depth, an apparent 8.7x deletion. Comparing such a window against a clean one
+    (chr21:30-36 Mb is 100 % callable) would read as homozygous loss that is not there -- the same mistake
+    as measuring exome depth over a whole window instead of over capture intervals, which once made an
+    arbitrary 2 Mb window look 4.6x shallower than the MHC.
+
+    Runs shorter than `min_run` are dropped: they are the ragged edges of assembly gaps, where mappability
+    is poor for reasons that have nothing to do with copy number.
+    """
+    seq = genome.seq(chrom, start, end)
+    runs, i, n = [], 0, len(seq)
+    while i < n:
+        if seq[i] == "N":
+            i += 1
+            continue
+        j = i
+        while j < n and seq[j] != "N":
+            j += 1
+        if j - i >= min_run:
+            runs.append((start + i, start + j))
+        i = j
+    return runs
+
+
+def captured_depth(bam, chrom, start, end, capture_bed, work, min_bases=5000, genome=None):
+    """Mean depth over the region's measurable bases: captured bases, or non-N bases for WGS.
 
     Mean depth across a whole window is meaningless for an exome: it measures how much of the window is
     captured, not how deeply it is sequenced. An arbitrary 2 Mb window read 3.4x while the gene-dense MHC
     read 15.6x purely because far more of the MHC is on target. Restricting to capture intervals with
     `samtools bedcov` compares like with like.
 
-    The floor is on captured bases, not on interval count. A focal amplicon is small by definition: the
+    With `capture_bed=None` the assay has no capture, so the sub-intervals come from the reference's non-N
+    runs instead (see `callable_runs`). `genome` is then required. Everything downstream is identical, so
+    the copy-number check reads the same whichever assay it is given.
+
+    The floor is on measurable bases, not on interval count. A focal amplicon is small by definition: the
     MYC amplicon holds 11 capture intervals but 15 kb of captured sequence, which at amplicon depth is
     several million read bases and plenty to estimate a mean from. An interval-count floor of 20 skipped
     it, so the amplified arm of the copy-number model went unmeasured while the check reported a pass.
     """
     sub = os.path.join(work, f"cap_{chrom}_{start}_{end}.bed")
     n = bases = 0
-    with open(capture_bed) as fh, open(sub, "w") as out:
-        for line in fh:
-            f = line.split("\t")
-            if len(f) < 3 or f[0] != chrom:
-                continue
-            s0, e0 = int(f[1]), int(f[2])
-            if e0 <= start or s0 >= end:
-                continue
-            lo, hi = max(s0, start), min(e0, end)
-            out.write(f"{chrom}\t{lo}\t{hi}\n")
-            n += 1
-            bases += hi - lo
+    if capture_bed is None:
+        if genome is None:
+            raise ValueError("captured_depth needs either a capture bed or a genome to find non-N runs")
+        with open(sub, "w") as out:
+            for lo, hi in callable_runs(genome, chrom, start, end):
+                out.write(f"{chrom}\t{lo}\t{hi}\n")
+                n += 1
+                bases += hi - lo
+    else:
+        with open(capture_bed) as fh, open(sub, "w") as out:
+            for line in fh:
+                f = line.split("\t")
+                if len(f) < 3 or f[0] != chrom:
+                    continue
+                s0, e0 = int(f[1]), int(f[2])
+                if e0 <= start or s0 >= end:
+                    continue
+                lo, hi = max(s0, start), min(e0, end)
+                out.write(f"{chrom}\t{lo}\t{hi}\n")
+                n += 1
+                bases += hi - lo
     if bases < min_bases:
         return None, n
     res = subprocess.run(["samtools", "bedcov", "-Q", "20", sub, bam], capture_output=True, text=True).stdout
@@ -205,8 +247,12 @@ def mean_gc_factor(genome, gc, chrom, start, end, capture_bed):
     Once capture efficiency varies with GC, the depth ratio between two regions is no longer copy number
     alone: it also carries the ratio of their GC compositions. Comparing a GC-rich amplicon against a
     GC-poor baseline without this would read as a copy-number error that is not there.
+
+    The curve is CAPTURE efficiency, so without a capture there is no such correction to make: the WGS
+    builders use a flat GcBias deliberately, and applying the exome curve here would invent a bias the
+    assay does not have and then "correct" for it.
     """
-    if not gc.enabled:
+    if capture_bed is None or not gc.enabled:
         return 1.0
     num = den = 0
     with open(capture_bed) as fh:
@@ -238,6 +284,13 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
     paths = yaml.safe_load(open(gc_curve)) if gc_curve and gc_curve.endswith((".yml", ".yaml")) else None
     gc = GcBias(paths.get("gc_bias_curve") if paths else gc_curve)
     genome = Genome(paths["reference_fasta"]) if paths else None
+    # Without a capture bed the assay is WGS and depth is measured over non-N reference instead; that
+    # needs the genome, so fail loudly rather than silently measuring over whole windows.
+    unit = "captured" if capture_bed else "callable"
+    if capture_bed is None and genome is None:
+        rep.add("depth by copy number", False,
+                "WGS depth check needs a reference genome (pass --paths) to find non-N runs")
+        return
     den = depth_denominator(cm, cm.purity)
     regions = []
     for ev in (cfg.get("cna") or {}).get("T", []):
@@ -279,7 +332,7 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
                 probes = list(range(lo, hi + 1, step)) + [hi]
                 if any(cm.cn("T", ch, q)[:2] != cm.base for q in probes):
                     continue
-                d, n_iv = captured_depth(bam, ch, lo, hi, capture_bed, work)
+                d, n_iv = captured_depth(bam, ch, lo, hi, capture_bed, work, genome=genome)
                 if d:
                     return ch, lo, hi, d, n_iv
         return None, None, None, None, 0
@@ -288,7 +341,7 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
     b_chrom, b_lo, b_hi, base, n_base = neutral_baseline([chrom] + others)
     if not base:
         rep.add("depth by copy number", False,
-                "no copy-number-neutral, captured baseline found on any chromosome")
+                f"no copy-number-neutral, {unit} baseline found on any chromosome")
         return
     gc_base = mean_gc_factor(genome, gc, b_chrom, b_lo, b_hi, capture_bed) if genome else 1.0
     nums, worst = {"baseline": {"depth": round(base, 2), "intervals": n_base,
@@ -300,9 +353,9 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
         gc_reg = mean_gc_factor(genome, gc, chrom, s, e, capture_bed) if genome else 1.0
         gc_ratio = (gc_reg / gc_base) if gc_base else 1.0
         want *= gc_ratio
-        got, n_iv = captured_depth(bam, chrom, s, e, capture_bed, work)
+        got, n_iv = captured_depth(bam, chrom, s, e, capture_bed, work, genome=genome)
         if got is None:
-            nums[label] = {"skipped": f"only {n_iv} capture intervals, under the captured-base floor"}
+            nums[label] = {"skipped": f"only {n_iv} {unit} interval(s), under the measurable-base floor"}
             continue
         ratio = got / base
         nums[label] = {"expected_ratio": round(want, 3), "observed_ratio": round(ratio, 3),
@@ -311,7 +364,7 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
         if want:
             worst = max(worst, abs(ratio / want - 1))
     rep.add("depth by copy number", worst <= 0.25,
-            f"largest deviation {worst:.0%} over {len(regions)} segment(s), on captured bases", nums)
+            f"largest deviation {worst:.0%} over {len(regions)} segment(s), on {unit} bases", nums)
 
 
 def check_read_names(rep, r1):
@@ -387,11 +440,51 @@ def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, 
                        ("virus", f"{dataset}.viruses.tsv")):
         tables[name] = rows(os.path.join(catalog_dir, path))
         present[name] = len(tables[name])
-    placed = rows(junctions_tsv) if junctions_tsv else []
+    placed_all = rows(junctions_tsv) if junctions_tsv else []
+    # Restrict to this chromosome. The junctions file of a merged library spans every chromosome, so
+    # comparing its whole event count against a per-chromosome `expected` is not a comparison at all:
+    # on dataset 01 chr13 it put 87 events from 24 chromosomes against 3 expected on chr13, passed on
+    # `>=`, and in doing so hid a genuine seed mismatch between the builder and this check. If the file
+    # has no chrom column it is a per-chromosome file already and needs no filtering.
+    placed = [r for r in placed_all if not r.get("chrom") or not chrom or r["chrom"] == chrom]
     ids = {r["event_id"].split(":")[0] for r in placed}
 
-    expected, detail_extra = None, ""
-    if chrom and capture_bed:
+    expected, detail_extra, evs = None, "", set()
+    cols = {"sv": [("chrom", "start"), ("end_chrom", "end")],
+            "fusion": [("chrom_5p", "breakpoint_5p"), ("chrom_3p", "breakpoint_3p")],
+            "virus": [("chrom", "integration_pos")]}
+
+    def retained_here(r, pos):
+        """Whether the clone still holds the haplotype this breakpoint sits on.
+
+        The builder only emits a junction on a copy the clone has: a breakpoint on a lost haplotype
+        cannot appear, so counting it would fail the check for behaviour that is correct.
+        """
+        if clones is None:
+            return True
+        clone, hap = r.get("clone") or "T", str(r.get("haplotype") or "")
+        retained = clones.retained_haplotypes(clone, chrom, pos) or []
+        return not (hap.isdigit() and int(hap) not in retained)
+
+    if chrom and capture_bed is None:
+        # WGS: there is no capture, so every designed breakpoint on this chromosome is placeable. That is
+        # a strictly stronger expectation than the exome's, and skipping the check here instead -- which
+        # is what happens if `capture_bed` is simply absent -- would leave the assay with the weakest
+        # junction check of the three rather than the strongest.
+        evs = set()
+        for name, rws in tables.items():
+            for r in rws:
+                for cc, pc in cols[name]:
+                    if r.get(cc) != chrom or not str(r.get(pc) or "").strip():
+                        continue
+                    if retained_here(r, int(r[pc])):
+                        evs.add(r["event_id"])
+        expected = len(evs)
+        missed = sorted(evs - {r["event_id"].split(":")[0] for r in placed})
+        detail_extra = f" of {expected} designed on {chrom} (WGS: all are placeable)"
+        if missed:
+            detail_extra += f"; not placed: {', '.join(missed[:4])}"
+    elif chrom and capture_bed:
         # the same padded, gap-merged intervals the builder places junctions into. Re-deriving them
         # from the raw BED without merging under-counted what is placeable: a breakpoint inside a
         # merged gap is placed by the builder but was not counted here, and the check only passed
@@ -415,9 +508,6 @@ def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, 
         def inside(pos):
             i = bisect.bisect_right(spans, (pos, float("inf")))
             return any(s <= pos <= e for s, e in spans[max(0, i - 2):i + 1])
-        cols = {"sv": [("chrom", "start"), ("end_chrom", "end")],
-                "fusion": [("chrom_5p", "breakpoint_5p"), ("chrom_3p", "breakpoint_3p")],
-                "virus": [("chrom", "integration_pos")]}
         evs = set()
         for name, rws in tables.items():
             for r in rws:
@@ -425,16 +515,8 @@ def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, 
                     if r.get(cc) != chrom or not str(r.get(pc) or "").strip():
                         continue
                     pos = int(r[pc])
-                    if not inside(pos):
+                    if not inside(pos) or not retained_here(r, pos):
                         continue
-                    # the builder only emits a junction on a copy the clone still has: a breakpoint on a
-                    # haplotype that clone has lost cannot appear, so counting it would fail the check
-                    # for behaviour that is correct
-                    if clones is not None:
-                        clone, hap = r.get("clone") or "T", str(r.get("haplotype") or "")
-                        retained = clones.retained_haplotypes(clone, chrom, pos) or []
-                        if hap.isdigit() and int(hap) not in retained:
-                            continue
                     evs.add(r["event_id"])
         expected = len(evs)
         placed_ids = {r["event_id"].split(":")[0] for r in placed}
@@ -443,10 +525,17 @@ def check_classes_present(rep, catalog_dir, dataset, junctions_tsv, chrom=None, 
         if missed:
             detail_extra += f"; not placed: {', '.join(missed[:4])}"
 
-    ok = len(ids) >= expected if expected is not None else (bool(placed) or present["sv"] == 0)
+    # Equality, not `>=`. Placing more events than are placeable is as much a defect as placing fewer:
+    # it means the two sides disagree about which windows the library was built from. `>=` is what let a
+    # seed mismatch sit undetected.
+    ok = len(ids) == expected if expected is not None else (bool(placed) or present["sv"] == 0)
+    extra = sorted(ids - evs) if expected is not None else []
+    if extra:
+        detail_extra += f"; placed but not expected: {', '.join(extra[:4])}"
     rep.add("junction classes reach the library", ok,
             f"{len(placed)} junctions placed covering {len(ids)} events{detail_extra}",
-            {"catalog": present, "placed": len(placed), "placeable_on_chrom": expected})
+            {"catalog": present, "placed": len(placed), "placeable_on_chrom": expected,
+             "events_on_chrom": len(ids), "unexpected": len(extra)})
 
 
 def check_rna(rep, manifest, expected_sources=None):
@@ -494,26 +583,51 @@ def main():
     ap.add_argument("--chrom")
     ap.add_argument("--design", default="design.yaml")
     ap.add_argument("--arms-bed")
-    ap.add_argument("--capture-bed")
+    ap.add_argument("--capture-bed",
+                    help="capture intervals, for a WES library. Omit it with --assay wgs; depth is then "
+                         "measured over non-N reference instead")
+    ap.add_argument("--assay", default="wes", choices=["wes", "wgs"],
+                    help="wgs drops the capture bed from the depth and placeability checks. The GC curve "
+                         "is capture efficiency and is not applied; every designed site is placeable")
     ap.add_argument("--junctions")
     ap.add_argument("--rna-manifest")
     ap.add_argument("--read-map")
     ap.add_argument("--record-map")
     ap.add_argument("--work", default="/tmp")
     ap.add_argument("--seed", type=int, default=1,
-                    help="the seed the library was built with; the off-target windows depend on it")
+                    help="the seed the library was built with; the off-target windows depend on it. "
+                         "Prefer --build-meta, which reads it from the builder's own output")
+    ap.add_argument("--build-meta",
+                    help="the builder's per-chromosome JSON (<dataset>_<chrom>_<library>.json). The seed "
+                         "is taken from it, so the checker cannot be told a seed the library was not "
+                         "built with. Overrides --seed and warns if the two disagree")
     ap.add_argument("--paths", default=None,
                     help="site paths yaml; supplies the GC bias curve and reference for the depth check")
     ap.add_argument("--report", required=True)
     a = ap.parse_args()
     os.makedirs(a.work, exist_ok=True)
+    if a.build_meta:
+        _m = json.load(open(a.build_meta))
+        if "seed" not in _m:
+            raise SystemExit(f"{a.build_meta} records no seed; it predates seed recording, so pass "
+                             f"--seed explicitly and make sure it matches how the library was built")
+        for k in ("dataset", "chrom", "library"):
+            if a.__dict__.get(k) and _m.get(k) and k != "library" and str(_m[k]) != str(a.__dict__[k]):
+                raise SystemExit(f"--build-meta is for {k}={_m[k]} but --{k} says {a.__dict__[k]}")
+        if a.seed != 1 and a.seed != _m["seed"]:
+            print(f"[acceptance] --seed {a.seed} disagrees with the build's {_m['seed']}; "
+                  f"using {_m['seed']}", file=sys.stderr)
+        a.seed = _m["seed"]
     rep = Report()
     if a.bam and a.reference and a.dataset and a.chrom:
         cat = os.path.join(a.catalog_dir, f"{a.dataset}.snv_indel.tsv")
         check_variants(rep, a.bam, a.reference, cat, a.chrom, a.work)
-        if a.arms_bed and a.capture_bed:
+        cap = None if a.assay == "wgs" else a.capture_bed
+        if a.assay == "wgs" and a.capture_bed:
+            print("[acceptance] --assay wgs: ignoring --capture-bed", file=sys.stderr)
+        if a.arms_bed and (cap or a.assay == "wgs"):
             check_depth_by_cn(rep, a.bam, a.design, a.dataset, a.chrom, a.arms_bed,
-                              a.capture_bed, a.work, gc_curve=a.paths)
+                              cap, a.work, gc_curve=a.paths)
         lengths = None
         if a.paths:
             import pysam as _pysam
@@ -526,7 +640,7 @@ def main():
             from igi_catalog.clones import CloneModel
             cmodel = CloneModel(yaml.safe_load(open(a.design))["datasets"][a.dataset], a.arms_bed)
         check_classes_present(rep, a.catalog_dir, a.dataset, a.junctions, a.chrom,
-                              a.capture_bed, lengths, a.seed, cmodel)
+                              cap, lengths, a.seed, cmodel)
     if a.r1:
         check_read_names(rep, a.r1)
     if a.read_map and a.record_map:
