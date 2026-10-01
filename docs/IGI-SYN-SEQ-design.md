@@ -60,6 +60,8 @@ inputs/metadata/IGI-SYN-SEQ-01/                manifests, truth bundle, design t
 | tumor WES | WES, hg38_exome.bed | Illumina PE150 | 150x on-target | FASTQ R1/R2 |
 | normal WES | WES | Illumina PE150 | 100x | FASTQ |
 | tumor bulk RNA | RNA-Seq, polyA, stranded | Illumina PE150 | 80 M pairs | FASTQ |
+| tumor bulk WGS | WGS, short read | Illumina PE150 | 30x | FASTQ R1/R2 |
+| normal bulk WGS | WGS, short read | Illumina PE150 | 30x | FASTQ |
 | tumor WGS | HiFi WGS | PacBio Revio | 30x | `*.hifi_reads.bam` + `.pbi` + FASTQ |
 | normal WGS | HiFi WGS | PacBio Revio | 30x | same |
 | tumor Kinnex bulk RNA | Kinnex full-length (MAS 8-mer array) | PacBio Revio | 15 M segmented reads | pre-skera `hifi_reads.bam` **and** post-skera `segmented.bam` |
@@ -296,6 +298,31 @@ power-law expansion (top 10 clonotypes hold ~30 % of T cells); 5 flagpost clonot
 mapped in the truth bundle to specific flagpost neoantigens.
 
 Tumor cells' expression reflects CNA dosage (for scevan) and clone-restricted CTAs.
+
+### 7.1 Illumina short-read WGS (owner decision, 2026-10-01)
+
+An eleventh sample type. The design previously had WGS only as PacBio HiFi, so the only short-read DNA was
+the exome pair. Most somatic callers and copy-number tools are tuned on short-read WGS and an exome cannot
+substitute for one off-target, so both tumour and normal are added at 30x.
+
+It is the exome path without the capture step. `WesBuilder` already rebuilds each interval on every clone
+and haplotype that retains it, applies germline and somatic edits in reference coordinates, weights depth
+by absolute copy number, substitutes a junction contig where a rearrangement sits, and names reads uniquely
+across chromosomes; none of that is capture-specific. Three differences:
+
+- Intervals are 5 Mb windows tiling the chromosome rather than bait regions, so there is no on-target or
+  off-target distinction and no flanking bands. Windows keep a chromosome from being held in memory twice.
+- **The GC model is flat.** The measured curve is *capture efficiency*, fitted from how much sequence the
+  baits pulled down at each GC, and applying it without baits would impose a bias with no cause. Real WGS
+  carries a milder PCR-driven GC bias which this does not model: a known limitation, recorded rather than
+  approximated with the wrong curve.
+- Depth is uniform, so copy number is the only thing modulating it.
+
+Read names occupy a different slice of the flowcell coordinate space from the exome's, so an exome and a
+WGS library from the same dataset can be held together without colliding.
+
+Acceptance needs its own arm for this assay: the existing depth and allele-fraction checks measure over
+capture intervals, and for WGS they have to work on genome windows instead.
 
 ### 8.1 ONT single-cell RNA (owner decision, 2026-10-01)
 
