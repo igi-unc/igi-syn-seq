@@ -55,6 +55,37 @@ def mei_sequence_factory(rng):
     return make
 
 
+def split_fasta(path, chunk_bp, work, tag, overlap=60_000):
+    """Split one derived chromosome into overlapping chunks so simulation parallelises past one task.
+
+    The overlap is one maximum read length, and only the chunk that owns a region emits reads for it, so
+    molecules spanning a boundary are not lost and none is duplicated.
+    """
+    name, seq = None, []
+    with open(path) as fh:
+        for line in fh:
+            if line.startswith(">"):
+                name = line[1:].strip()
+            else:
+                seq.append(line.strip())
+    s = "".join(seq)
+    if len(s) <= chunk_bp:
+        return [path]
+    out = []
+    pos = 0
+    while pos < len(s):
+        end = min(len(s), pos + chunk_bp)
+        sub = os.path.join(work, f"{tag}_{pos // chunk_bp:03d}.fa")
+        with open(sub, "w") as fh:
+            fh.write(f">{name}_chunk{pos // chunk_bp}\n")
+            piece = s[pos:min(len(s), end + overlap)]
+            for i in range(0, len(piece), 60):
+                fh.write(piece[i:i + 60] + "\n")
+        out.append(sub)
+        pos = end
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--design", required=True)
@@ -131,51 +162,55 @@ def main():
               f"coverage {cov:.3f}x", flush=True)
     print(f"  derived chromosomes built in {time.time() - t0:.0f}s", flush=True)
 
-    # pbsim3 multi-pass per derived chromosome, then ccs, which is how HiFi accuracy is actually
-    # produced: consensus across passes. `--accuracy-mean` is silently ignored by both pbsim3 methods --
-    # asking for 0.998 and for 0.999 both yield 0.964 -- so a single-pass run would have shipped
-    # CLR-era 3.6%-error reads labelled HiFi.
+    # Badread rather than pbsim3 plus ccs. The ccs route is correct -- consensus over ten simulated
+    # passes gave rq 0.99754 against the real 0.99823 -- but it took 3.61 h for 3x of chr21, which is
+    # 3,247 h per library per dataset at the design's 30x. Badread reaches the same length distribution
+    # 4.2x faster in one pass, so no consensus step is needed. Its identity is calibrated against the
+    # real reads rather than taken from the flag, because the qscore model floors the error rate: asking
+    # for 99.823 yielded 99.908, which is half the true error and would hand a caller cleaner HiFi than
+    # exists.
+    #
+    # Each derived chromosome is split into chunks so the work parallelises past one task per chromosome.
+    # Reads are independent, so the only cost is molecules that would have spanned a chunk boundary; the
+    # chunks overlap by one maximum read length and the overlap region is simulated once, in the chunk
+    # that owns it.
     t1 = time.time()
-    model = paths["pbsim_errhmm"]
-    pb, ccs = paths["pbsim_cmd"], paths["ccs_cmd"]
-    npass = int(paths.get("pbsim_pass_num", 10))
-    bams = []
+    br = paths["badread_cmd"]
+    ident = paths.get("pacbio_identity", "99.4,99.8,0.5")
+    lmean = paths.get("pbsim_length_mean", 16689)
+    lsd = paths.get("pbsim_length_sd", 4593)
+    chunk_bp = int(paths.get("pacbio_chunk_bp", 20_000_000))
+    fq = []
     for i, (tag, fa, cov) in enumerate(pieces):
-        pre = os.path.join(work, f"sim_{tag}")
-        args = (f"--strategy wgs --method errhmm --errhmm {model} --genome {fa} "
-                f"--depth {cov:.4f} --length-mean {paths.get('pbsim_length_mean', 16689)} "
-                f"--length-sd {paths.get('pbsim_length_sd', 4593)} --pass-num {npass} "
-                f"--prefix {pre} --id-prefix {tag} --seed {a.seed + i}")
-        subprocess.run(pb.format(args=args), shell=True, check=True, capture_output=True, text=True)
-        subreads = sorted(f for f in os.listdir(work) if f.startswith(f"sim_{tag}_") and f.endswith(".bam"))
-        if not subreads:
-            raise RuntimeError(f"pbsim3 produced no subread BAM for {tag}; it writes .bam per reference "
-                               f"and .fq.gz only in single-pass mode")
-        for sb in subreads:
-            out = os.path.join(work, f"ccs_{tag}_{sb}")
-            subprocess.run(ccs.format(args=f"--num-threads 8 --min-passes 3 --min-rq 0.99 "
-                                           f"{os.path.join(work, sb)} {out}"),
-                           shell=True, check=True, capture_output=True, text=True)
-            bams.append(out)
-    if not bams:
-        raise RuntimeError("ccs produced no HiFi BAM")
-    print(f"  pbsim3 + ccs done in {time.time() - t1:.0f}s, {len(bams)} HiFi BAM(s)", flush=True)
+        for j, sub in enumerate(split_fasta(fa, chunk_bp, work, f"{tag}_c{j:03d}")):
+            out = os.path.join(work, f"br_{tag}_{j:03d}.fq.gz")
+            args = (f"simulate --reference {sub} --quantity {cov:.4f}x "
+                    f"--length {lmean},{lsd} --identity {ident} "
+                    f"--error_model {paths.get('pacbio_error_model', 'pacbio2021')} "
+                    f"--qscore_model {paths.get('pacbio_qscore_model', 'pacbio2021')} "
+                    f"--seed {a.seed + i * 100 + j} --start_adapter_seq '' --end_adapter_seq ''")
+            with open(out, "wb") as fh:
+                pr = subprocess.run(f"{br.format(args=args)} 2>/dev/null | gzip -1",
+                                    shell=True, stdout=fh)
+            if pr.returncode != 0 or os.path.getsize(out) < 100:
+                raise RuntimeError(f"badread produced nothing for {tag} chunk {j}")
+            fq.append(out)
+    print(f"  badread done in {time.time() - t1:.0f}s, {len(fq)} chunk(s)", flush=True)
 
+    # HiFi is delivered as an unaligned BAM, which is what a Revio run yields
     out_bam = os.path.join(a.out, f"{a.dataset}_{a.chrom}_{a.library}_hifi.bam")
     sam = paths["samtools_cmd"]
-    if len(bams) == 1:
-        subprocess.run(sam.format(args=f"view -b -o {out_bam} {bams[0]}"), shell=True, check=True)
-    else:
-        subprocess.run(sam.format(args=f"merge -f -o {out_bam} " + " ".join(bams)),
-                       shell=True, check=True)
-    subprocess.run(sam.format(args=f"index {out_bam}"), shell=True, check=True)
+    cat = os.path.join(work, "all.fq.gz")
+    with open(cat, "wb") as fh:
+        subprocess.run(["cat"] + fq, stdout=fh, check=True)
+    subprocess.run(sam.format(args=f"import -0 {cat} -o {out_bam}"), shell=True, check=True)
     n_reads = int(subprocess.run(sam.format(args=f"view -c {out_bam}"), shell=True,
                                  capture_output=True, text=True).stdout.strip() or 0)
 
     meta = {"dataset": a.dataset, "chrom": a.chrom, "library": a.library, "depth": a.depth,
-            "platform": "PacBio Revio HiFi", "simulator": "pbsim3 errhmm",
+            "platform": "PacBio Revio HiFi", "simulator": "badread pacbio2021",
             "reads": n_reads, "bam": out_bam, "sources": plan_rows,
-            "pass_num": npass, "ccs_min_passes": 3, "ccs_min_rq": 0.99,
+            "identity": ident, "chunk_bp": chunk_bp, "chunks": len(fq),
             "runtime_s": round(time.time() - t0)}
     with open(os.path.join(a.out, f"{a.dataset}_{a.chrom}_{a.library}_hifi.json"), "w") as fh:
         json.dump(meta, fh, indent=2)
