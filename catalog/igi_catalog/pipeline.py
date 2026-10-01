@@ -264,8 +264,11 @@ class WesBuilder:
                 mid = (start1 + end1) // 2
                 prof = cn_profile(self.env.clones, chrom, mid) if tumor else ("normal",)
                 pid = self._profile_id(prof)
-                gcb = self.gc.bin_of(self.env.genome.gc(chrom, start1 - 1, end1))
-                if self.gc.factor(gcb) <= 0:
+                # With no GC model there is nothing to separate, so every interval shares one bin. Keying
+                # by GC regardless fragmented a WGS chromosome into 126 sources instead of 18, which is
+                # seven times the ART invocations and seven times the files for no difference in output.
+                gcb = self.gc.bin_of(self.env.genome.gc(chrom, start1 - 1, end1)) if self.gc.enabled else 0
+                if self.gc.enabled and self.gc.factor(gcb) <= 0:
                     continue          # the capture produces essentially nothing at this GC
                 for src, hap, kind, w in source_plan(self.env.clones, self.purity, chrom, mid, tumor=tumor):
                     key = (src, hap, kind, pid, gcb)
