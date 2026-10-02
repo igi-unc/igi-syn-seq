@@ -38,8 +38,10 @@ two places a path belongs.
 two can never collide. `10`, `12`, `20` and `21` are independent of each other and can run together; all
 four depend on `01` and `02`. Chain them with `--dependency=afterok:<jobid>`.
 
-Stages `10`–`21` are per-chromosome and resumable: a task that already wrote its output is skipped, so a
-partial failure is re-run by resubmitting the same array with `--array=<failed ids>`.
+Stages `10`-`21` are per-chromosome, so a partial failure is re-run by resubmitting the same array with
+`--array=<failed ids>`. They do **not** skip work that already exists -- a re-run rebuilds and overwrites,
+which is what makes a resubmission clean rather than leaving a mixture of old and new output. An earlier
+version of this file claimed they skip; they do not.
 
 ## Measurement jobs
 
