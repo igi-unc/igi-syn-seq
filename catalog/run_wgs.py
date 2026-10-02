@@ -123,6 +123,16 @@ def main():
     offset = ORDINAL.get(a.chrom, 0) * NAME_SPACE_STRIDE + NAME_SPACE_STRIDE // 2
     n_reads = shuffle_and_rename(cat1, cat2, r1, r2, rmap, work, seed=a.seed, index_offset=offset)
     write_record_map(wb.record_map, recmap)
+    # The junction truth file was missing from this builder while run_wes.py wrote one, so the WGS junction
+    # check -- which is the STRONGER of the two, requiring every designed breakpoint on the chromosome to be
+    # placed -- had nothing to read and could not run at all.
+    if wb.junctions_used:
+        jpath = os.path.join(a.out, f"{a.dataset}_{a.chrom}_{a.library}_wgs_junctions.tsv")
+        with open(jpath, "w") as fh:
+            fh.write("event_id\tchrom\tinterval_start\tinterval_end\tclone\thaplotype\n")
+            for row in wb.junctions_used:
+                fh.write("\t".join(str(x) for x in row) + "\n")
+        print(f"  {len(wb.junctions_used)} junctions placed -> {os.path.basename(jpath)}", flush=True)
     for f in (cat1, cat2):
         if os.path.exists(f):
             os.remove(f)

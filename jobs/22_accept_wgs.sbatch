@@ -18,7 +18,7 @@ d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 mkdir -p "$M/$d" "$A/$d" "$R/$d"
 for m in 1 2; do
   out=$M/$d/${d}_tumor_R${m}.fastq.gz
-  [ -s "$out" ] || cat $O/$d/${d}_chr*_tumor_R${m}.fastq.gz > "$out"
+  [ -s "$out" ] || cat $O/$d/${d}_chr*_tumor_wgs_R${m}.fastq.gz > "$out"
 done
 B=$A/$d/${d}_tumor.bam
 if [ ! -s "$B" ]; then
@@ -30,17 +30,23 @@ if [ ! -s "$B" ]; then
 fi
 cd "$IGI_REPO/catalog"
 for c in chr1 chr2 chr5 chr6 chr8 chr10 chr13 chr17 chr21 chrX; do
+  # The junction file is per chromosome and named with the _wgs_ infix. It is only passed when present:
+  # builds made before run_wgs.py emitted one have no junction truth, and the check must then be absent
+  # rather than silently reading nothing.
+  j=$O/$d/${d}_${c}_tumor_wgs_junctions.tsv
+  jopt=""; [ -s "$j" ] && jopt="--junctions $j"
   python3 acceptance.py --dataset "$d" --chrom $c --catalog-dir output --design design.yaml \
     --assay wgs --bam "$B" --reference "$IGI_FASTA_NOALT" \
-    --arms-bed "$IGI_ARMS_BED" --paths "$IGI_PATHS" \
-    --junctions "$O/$d/${d}_${c}_tumor_junctions.tsv" \
+    --arms-bed "$IGI_ARMS_BED" --paths "$IGI_PATHS" $jopt \
     --work "$R/$d/$c" --report "$R/$d/${d}_${c}.json" 2>&1 | sed "s/^/[$d $c] /" || true
 done
 # A zero-check run exits 2 and prints "no checks ran". The per-chromosome loop uses `|| true` so one bad
 # chromosome does not abandon the rest, which means that exit code is swallowed -- so look for it in the
 # reports instead, where it is a report with no checks at all.
+# This scans $R, the acceptance reports -- not $O, which holds the builder's 48 per-chromosome meta files.
+# Pointed at $O it found no "checks" key in any of them and would have failed every single run.
 empty=0
-for r in "$O/$d"/*.json; do
+for r in "$R/$d"/*.json; do
   [ -s "$r" ] || continue
   n=$(python3 -c "import json;print(len(json.load(open('$r'))['checks']))" 2>/dev/null || echo 0)
   [ "$n" -eq 0 ] && { echo "EMPTY REPORT: $r ran no checks"; empty=$((empty+1)); }
