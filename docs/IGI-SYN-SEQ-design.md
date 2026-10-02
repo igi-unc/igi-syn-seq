@@ -78,6 +78,15 @@ thirteen and fourteen; those predate one or more of the 2026-10-01 decisions to 
 (samples 4-5) and to mirror all four PacBio sample types in ONT (samples 12-15). Build status per sample
 type is tracked in `build-reference.md` §1, which is the one place to look.
 
+**Confirmed 2026-10-02, after a wrong turn worth recording.** The single-cell array really does carry 16
+cDNAs: a real array read contains a median of 16 10x TSOs (mean 15.1, p90 16) over 2,000 reads averaging
+17,092 bp, against a single-cDNA median of 952 bp. On the way to that I briefly concluded it was an 8-mer,
+from weaker evidence -- nine adapters each appearing once per read, and 83 % of skera's segments carrying a
+single TSO -- and edited this table to say so. Both observations were real; the inference was not. 12 % of
+skera's output is whole un-segmented arrays averaging 8.6 TSOs, which is where the other eight cDNAs were
+hiding. The adapter layout remains unresolved and is the one open item for this assay; see
+`build-reference.md` §6.3.
+
 The Kinnex sc, 10x GEX and 10x TCR libraries derive from the same 4,000 cells and share
 barcodes and UMIs (independent molecule sampling from a common per-cell molecule pool).
 ONT scRNA samples that same pool, so a barcode means the same cell in all four single-cell libraries.
@@ -391,7 +400,7 @@ the baseline for their genes (expression tier).
 | Illumina bulk RNA | molecule sampler (per-haplotype, per-clone transcriptome) -> fragmentation -> ART | IPISRC044 RNA reads; positional 3' bias fitted from real data |
 | 10x 5' GEX / TCR | custom molecule sampler writing R1 (BC+UMI+TSO) and R2 with ART qualities | IPISRC044 SCG1/TCR reads |
 | PacBio HiFi WGS | pbsim3 (quality-score model, multi-pass -> ccs) | HG002 Revio HiFi public data |
-| Kinnex bulk / sc | pbsim3 transcript mode on full-length molecules + MAS-Seq adapter concatenation (8-mer / 16-mer arrays), 10x 5' cDNA structure, polyA | HG002 Kinnex bulk and Kinnex sc public data (dataset inventory already in `inputs/metadata/PacBio_Kinnex_scRNA_HG002_10x5p_2024`, files not yet downloaded) |
+| Kinnex bulk / sc | Badread over MAS arrays built from full-length molecules; 8-mer array for both, 10x 5' v2 cDNA structure and polyA for single cell | HG002 Kinnex bulk `segmented.bam` (adapters and array structure decoded from skera's tags) and HG002 Kinnex sc `0-CCS` arrays (10x structure and segment lengths) |
 
 PacBio outputs are written as unaligned BAM with Revio-style read names, `RG`/`PU`,
 and HiFi tags (`np`, `rq`, `ec`), indexed with `pbindex`; skera is run to produce the

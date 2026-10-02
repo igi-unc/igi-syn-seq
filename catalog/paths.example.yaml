@@ -28,3 +28,6 @@ kinnex_adapters_fasta: /path/to/catalog/resources/kinnex_mas8_adapters.fasta
 kinnex_mas_profile: /path/to/catalog/resources/kinnex_mas8_profile.json
 kinnex_size_selection: /path/to/catalog/resources/kinnex_size_selection.json
 skera_cmd: "singularity exec -B /mnt /path/to/pbskera_1.4.0.sif skera {args}"
+# Single-cell size selection, fitted separately from bulk: the 10x 5' cDNA length distribution is both
+# shorter in the median and more heavily tailed.
+kinnex_sc_size_selection: /path/to/catalog/resources/kinnex_sc_size_selection.json

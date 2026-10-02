@@ -31,7 +31,7 @@ reads exist and passed acceptance; "tested" means a single-chromosome run comple
 | 6 | tumor WGS 30x PacBio HiFi | `run_pacbio_wgs.py` | tested (chr21) |
 | 7 | normal WGS 30x PacBio HiFi | `run_pacbio_wgs.py` | tested (chr21) |
 | 8 | tumor Kinnex bulk RNA | `run_kinnex_bulk.py` | **validated on chr21** |
-| 9 | tumor Kinnex scRNA (MAS 16-mer) | not written | — |
+| 9 | tumor Kinnex scRNA (MAS 16-mer, 10x 5' v2) | `run_kinnex_sc.py` | written, adapter layout unresolved |
 | 10 | tumor 10x 5' GEX | not written | — |
 | 11 | tumor 10x 5' TCR | not written | — |
 | 12 | tumor ONT scRNA | not written | — |
@@ -219,6 +219,58 @@ The fill passes behaved as predicted to within a few tenths of a percent: 36.94 
 arrays still missing after each pass against a predicted 36.8 %, 13.5 % and 5.0 %, leaving 2.09 % never
 sequenced, whose molecules the array map records as such.
 
+### 6.3 Kinnex single-cell RNA (MAS 16-mer, 10x 5' v2)
+
+Same array machinery as bulk, with the molecules being 10x 5' v2 cDNAs drawn from the shared per-cell pool
+so a barcode and UMI mean the same molecule here as in 10x gene expression, 10x TCR and ONT single cell.
+
+**The 10x segment architecture was recovered from the real arrays**, not from a kit document, by orienting
+segments against the barcode whitelist and taking a column-wise consensus. 96.1 % of real segments carry a
+whitelist barcode at offset 22 and the layout that follows is exact:
+
+| offset | content | evidence |
+|---|---|---|
+| 0-22 | `CTACACGACGCTCTTCCGATCT` TruSeq R1 primer | 100 % column agreement |
+| 22-38 | 16 bp cell barcode | in the whitelist |
+| 38-48 | 10 bp UMI | 27 % agreement, i.e. random |
+| 48-61 | `TTTCTTATATGGG` 10x 5' v2 TSO | found at offset 48 = 22+16+10 in 96.8 % |
+| 61.. | cDNA, then polyA (median 29 bp), then `GTACTCTGCGTTGATACCACTGCTT` | modal 25 bp tail |
+
+**Sixteen cDNAs per array, and how I got it wrong first.** A real array read carries a median of 16 TSOs
+(mean 15.1, p90 16) over 17,092 bp, against a single-cDNA median of 952 bp. That is direct and settles it.
+
+I first concluded the array was an 8-mer and edited the design specification to say so. The evidence for
+that was real but insufficient: all nine bulk adapters appear about once per read, and 83 % of the segments
+skera returns carry exactly one TSO, one R1 primer and one barcode. What I missed is that 12 % of skera's
+output is whole un-segmented arrays averaging **8.64 TSOs** -- the other eight cDNAs were in there. A base
+check would have caught it earlier: skera's segments cover 96 % of the read bases, so 7.6 segments per read
+at a 952 bp median cannot be the whole story. My first attempt at that check used a 2,000-read file against
+a 3,093-read skera run and so reported an impossible 148 %, which I took as a measurement artifact instead
+of pursuing.
+
+**The adapter layout is not resolved, and that is this assay's open item.** Nine adapters are identified and
+no tenth is detectable: inside the un-segmented blocks every high-multiplicity motif is per-cDNA 10x
+structure -- the R1 primer, the TSO, the polyA-SMART junction at about six copies per block -- rather than a
+distinct array adapter. Nine adapters cannot bracket sixteen segments, so some cDNA boundaries must be
+adapter-free, joined where one cDNA's SMART primer meets the next one's R1 primer. `MasArrays.build_sc`
+therefore brackets the first eight boundaries with the known adapters and joins the rest directly, which
+**reproduces what skera demonstrably does to the real data** -- about six clean single-cDNA segments per read
+plus one large block -- rather than asserting a chemistry. Built arrays come out at 16,924-18,122 bp against
+a real 17,092. Substituting the true MAS-16 adapter list, from PacBio or from any reference segmented BAM
+for the single-cell kit, would remove the assumption.
+
+**Single-cell size selection is fitted separately** (`kinnex_sc_size_selection.json`), because the 10x cDNA
+distribution differs sharply from bulk: median 952 bp against 1,974, mean 1,072 against 2,223, max 4,876.
+The curve is fitted only on segments carrying exactly one TSO and one R1 primer. Fitting it on skera's raw
+output instead put 12 % of density at 7-15 kb and demanded a 6x boost there, which would have reproduced the
+un-segmented-array artifact as though it were biology.
+
+**A defect fixed in the shared machinery.** `MoleculePool.draw` drew from one pool-wide random stream, so the
+molecules a cell received depended on how many cells had been drawn before it. Gene expression and Kinnex
+asking for the same cell got different molecules, and drawing the same cell twice from one pool did not even
+agree with itself -- the exact opposite of the cross-assay consistency the module exists to provide. It is
+now seeded per barcode and is a pure function of the cell, verified across call orders.
+
 ### 6.2 PacBio HiFi WGS
 
 `run_pacbio_wgs.py`. Shape:
@@ -345,7 +397,7 @@ still have no acceptance arm**, which is now the largest open gap.
 
 ## 10. Open items
 
-- Kinnex bulk (MAS 8-mer) and Kinnex sc (**16-mer**, not 8-mer) builders.
+
 - 10x 5' GEX and TCR builders; ONT scRNA, bulk RNA and WGS builders.
 - ONT WGS identity calibration, and verification that Badread's length model handles sd ~ mean with a
   551 kb tail (§7).

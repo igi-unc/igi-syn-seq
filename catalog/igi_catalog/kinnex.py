@@ -151,7 +151,84 @@ class MasArrays:
             yield f"a{idx:09d}", "".join(parts), members
             idx += 1
 
+    def build_sc(self, molecules, rng, n_cdna=16, start_index=0):
+        """Group 10x cDNA molecules into single-cell arrays of `n_cdna` segments.
+
+        The nine known adapters bracket the first eight cDNAs; the remainder are concatenated directly,
+        because the 10x cDNA already carries its own primers at both ends and nine adapters cannot bracket
+        sixteen segments. See the note above: this reproduces skera's observed output on real single-cell
+        arrays rather than claiming to know the MAS-16 adapter layout.
+        """
+        i, idx = 0, start_index
+        n_bracketed = min(self.n_seg, n_cdna)
+        while i < len(molecules):
+            k = min(n_cdna, len(molecules) - i)
+            if k < 1:
+                break
+            members = molecules[i:i + k]
+            i += k
+            parts = []
+            for j, m in enumerate(members):
+                if j < n_bracketed:
+                    parts.append(self.adapters[self.order[j]])
+                    parts.append(self._random_spacer(rng))
+                parts.append(m["sequence"])
+            # the closing adapter goes after the last bracketed cDNA's run, i.e. at the array end
+            parts.append(self.adapters[self.order[n_bracketed]])
+            yield f"s{idx:09d}", "".join(parts), members
+            idx += 1
+
     @staticmethod
     def _random_spacer(rng):
         """The 1-2 bp random run skera reports as the RANDOM adapter at array ends."""
         return "".join(rng.choice("ACGT") for _ in range(rng.choice((1, 2))))
+
+
+# ---------------------------------------------------------------------------
+# 10x 5' v2 single-cell segment structure
+#
+# Recovered from the real HG002 Kinnex single-cell arrays rather than from a kit document, by orienting
+# segments against the barcode whitelist and taking a column-wise consensus. 96.1 % of real segments carry
+# a whitelist barcode at offset 22, and the layout that follows is exact:
+#
+#     [0:22]   CTACACGACGCTCTTCCGATCT    TruSeq Read 1 primer      (100 % column agreement)
+#     [22:38]  16 bp cell barcode        (from the whitelist)
+#     [38:48]  10 bp UMI                 (27 % agreement, i.e. random, as it should be)
+#     [48:61]  TTTCTTATATGGG             10x 5' v2 TSO, found at offset 48 = 22+16+10 in 96.8 %
+#     [61:..]  cDNA
+#     ...      polyA                     median 29 bp, p10 26, p90 33
+#     tail     GTACTCTGCGTTGATACCACTGCTT SMART primer, reverse complement
+#
+# The single-cell array carries SIXTEEN cDNAs, so the design specification's "16-mer" is right. The
+# measurement is direct and robust: a whole array read contains a median of 16 10x TSOs (mean 15.1, p90 16)
+# over 2,000 real reads, and the array averages 17,092 bp against a single-cDNA median of 952 bp.
+#
+# What is NOT resolved is the adapter layout. Nine adapters are identified -- the same nine as bulk, each
+# appearing about once per array -- and an exhaustive 17-mer search finds no tenth: inside the blocks skera
+# leaves unsegmented, every high-multiplicity motif is per-cDNA 10x structure (the R1 primer, the TSO, the
+# polyA-SMART junction at ~6 copies per block), not a distinct array adapter. Nine adapters cannot bracket
+# sixteen segments, so some cDNA boundaries must be adapter-free, joined directly where one cDNA's SMART
+# primer meets the next one's R1 primer.
+#
+# `sc_array_layout` below therefore reproduces what skera demonstrably does to the real data rather than
+# asserting a chemistry: given the nine adapters, skera returns about six clean single-cDNA segments per
+# read plus one large multi-cDNA block, and that is what this layout produces. Replacing it with the true
+# MAS-16 adapter list -- from PacBio, or from any reference segmented BAM for the single-cell kit -- is the
+# one open item for this assay, and is recorded as such in docs/build-reference.md.
+TENX_R1_PRIMER = "CTACACGACGCTCTTCCGATCT"
+TENX_5P_TSO = "TTTCTTATATGGG"
+TENX_SMART_RC = "GTACTCTGCGTTGATACCACTGCTT"
+POLYA_MEDIAN, POLYA_P10, POLYA_P90 = 29, 26, 33
+
+
+def tenx_segment(barcode, umi_seq, cdna, rng):
+    """One full-length 10x 5' v2 cDNA molecule as Kinnex sequences it.
+
+    Built in the orientation the real segments were oriented to, so a consumer that expects the barcode at
+    offset 22 finds it there. Strand is not randomised here: the read simulator picks one per read, and
+    randomising in both places was a bug the bulk builder already paid for.
+    """
+    # polyA is tight around its median, so a triangular draw over the measured decile range fits it better
+    # than a normal and cannot go negative
+    n_a = int(rng.triangular(POLYA_P10, POLYA_P90, POLYA_MEDIAN))
+    return (TENX_R1_PRIMER + barcode + umi_seq + TENX_5P_TSO + cdna + "A" * n_a + TENX_SMART_RC)

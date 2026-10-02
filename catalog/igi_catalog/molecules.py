@@ -35,7 +35,9 @@ class MoleculePool:
         and variable fraction, so the count is drawn per cell around the mean with the given dispersion
         and scaled by the cell type's yield.
         """
+        # kept for anything that needs pool-wide randomness; per-cell draws use their own stream
         self.rng = random.Random(f"{seed}:molecules")
+        self.seed = seed
         self.roster = roster
         self.clones = clones
         self.mean_molecules = mean_molecules
@@ -75,18 +77,30 @@ class MoleculePool:
         return f
 
     def draw(self, cell):
-        """Molecules for one cell: [(transcript_index, umi)]."""
-        n = max(50, int(self.rng.gauss(self.mean_molecules * cell["umi_scale"],
-                                       self.mean_molecules * cell["umi_scale"] * self.dispersion)))
+        """Molecules for one cell: [(transcript_index, umi)]. A pure function of the cell.
+
+        The randomness is seeded from the barcode, not taken from one pool-wide stream, because the whole
+        point of this module is that four assays sample the SAME molecules. With a shared stream the result
+        depended on how many cells had been drawn before, so gene expression and Kinnex asking for the same
+        cell got different molecules and a barcode-UMI pair meant two different things -- the opposite of
+        what the module exists to provide. Drawing the same cell twice from one pool did not even agree with
+        itself.
+
+        Keyed on the barcode rather than on an index so that a run which builds a subset of cells, or builds
+        them in another order, still gets each cell's own molecules.
+        """
+        rng = random.Random(f"{self.seed}:mol:{cell['barcode']}")
+        n = max(50, int(rng.gauss(self.mean_molecules * cell["umi_scale"],
+                                  self.mean_molecules * cell["umi_scale"] * self.dispersion)))
         key = ("tumor", cell["clone"]) if cell["cell_type"] == "tumor" else ("other",)
         cum, tot = self._table(key, self._scale_for(cell))
         if tot <= 0:
             return []
         out = []
         for _ in range(n):
-            i = bisect.bisect_left(cum, self.rng.random() * tot)
+            i = bisect.bisect_left(cum, rng.random() * tot)
             if i < len(self.tx):
-                out.append((i, umi(self.rng)))
+                out.append((i, umi(rng)))
         return out
 
     def write(self, path, cells=None, limit_per_cell=None):

@@ -121,6 +121,9 @@ class RnaBuilder:
                         "id": f"{t.tid}|{src}|hap{hap}", "clone": src, "hap": hap, "source": "reference",
                         "gene": t.gene_name, "sequence": seq,
                         "abundance": base * dose * share * w,
+                        # the single-cell assays scale a molecule's abundance by the cell's clone copy
+                        # number at the locus, so the locus has to travel with the record
+                        "chrom": t.chrom, "pos": (t.start + t.end) // 2,
                     })
 
     def add_designed(self, records, events_by_chrom=None):
@@ -187,6 +190,9 @@ class RnaBuilder:
             "id": f"{rec['id']}|{src}|hap{hap}", "clone": src, "hap": hap,
             "source": rec.get("source", "designed"), "gene": rec.get("gene", ""),
             "sequence": seq, "abundance": tpm * share,
+            # as above: carried for the single-cell assays' copy-number scaling
+            "chrom": rec.get("chrom") or (t.chrom if t is not None else ""),
+            "pos": rec.get("pos") or ((t.start + t.end) // 2 if t is not None else 0),
             "reconcile": rec.get("reconcile", "add"),
             "reconcile_gene": rec.get("reconcile_gene") or rec.get("gene", ""),
             "normal_gene_tpm": rec.get("normal_gene_tpm"),

@@ -31,6 +31,7 @@ two places a path belongs.
 ./jobs/submit.sh 21_wgs_pacbio.sbatch              # HiFi WGS, 96 tasks
 ./jobs/submit.sh 22_accept_wgs.sbatch              # acceptance, short-read WGS
 ./jobs/submit.sh 30_kinnex_bulk.sbatch             # Kinnex bulk RNA, pre- and post-skera BAMs
+./jobs/submit.sh 31_kinnex_sc.sbatch               # Kinnex single cell + cell roster + clonotypes
 ```
 
 `02` must follow `01`: the background model reserves the positions the designed catalog occupies so the

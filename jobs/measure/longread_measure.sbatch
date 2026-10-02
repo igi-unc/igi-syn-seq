@@ -22,8 +22,9 @@ $M --samtools "$ST" --label "WGS HiFi (Revio genomic)" \
 $M --samtools "$ST" --label "Kinnex bulk, segmented (post-skera)" --bam "$K/1-Sreads/segmented.bam"
 $M --samtools "$ST" --label "Kinnex bulk, FLNC" --bam "$K/2-FLNC/flnc.bam"
 
-# Pre-segmentation, for the MAS array structure the Kinnex sc builder has to reproduce. Note the sc array
-# is a 16-mer, not the 8-mer used for bulk.
+# Pre-segmentation, for the MAS array structure the Kinnex sc builder has to reproduce. The sc array holds
+# 16 cDNAs (a median of 16 10x TSOs per read); only nine of its adapters are identified. See
+# build-reference.md section 6.3.
 $M --samtools "$ST" --label "Kinnex single cell, 0-CCS (pre-segmentation)" \
   --bam "$IGI_REF/inputs/bams/PacBio_Kinnex_scRNA_HG002_10x5p_2024/pacbio/0-CCS/m84039_240124_190648_s3.hifi_reads.bcM0002.bam"
 echo "DONE $(date)"
