@@ -429,6 +429,10 @@ still have no acceptance arm**, which is now the largest open gap.
 - ONT WGS identity calibration, and verification that Badread's length model handles sd ~ mean with a
   551 kb tail (§7).
 - Release-scale runs of Illumina WGS and PacBio HiFi; both are validated only on chr21.
+- Whether tumour WES should rise from 150x. At 150x the lowest-CCF subclones are marginal to invisible:
+  IGI-SYN-SEQ-02 clone A1 gives 3.4 expected alt reads and clones A and B about 10-12, which is why
+  acceptance excludes those tiers from the allele-fraction check as too thin. Tumour WGS has been raised
+  from 30x to 100x for the same reason; the exome has not.
 - An acceptance arm for the long-read assays. The short-read WGS arm exists (`--assay wgs`, §9) but has
   not yet been run at release scale, because there is no release-scale WGS to run it against.
 - Resolve HG002 haplotype parentage against HG003/HG004.

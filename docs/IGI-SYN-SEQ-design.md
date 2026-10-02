@@ -60,7 +60,7 @@ inputs/metadata/IGI-SYN-SEQ-01/                manifests, truth bundle, design t
 | tumor WES | WES, hg38_exome.bed | Illumina PE150 | 150x on-target | FASTQ R1/R2 |
 | normal WES | WES | Illumina PE150 | 100x | FASTQ |
 | tumor bulk RNA | RNA-Seq, polyA, stranded | Illumina PE150 | 80 M pairs | FASTQ |
-| tumor bulk WGS | WGS, short read | Illumina PE150 | 30x | FASTQ R1/R2 |
+| tumor bulk WGS | WGS, short read | Illumina PE150 | **100x** | FASTQ R1/R2 |
 | normal bulk WGS | WGS, short read | Illumina PE150 | 30x | FASTQ |
 | tumor WGS | HiFi WGS | PacBio Revio | 30x | `*.hifi_reads.bam` + `.pbi` + FASTQ |
 | normal WGS | HiFi WGS | PacBio Revio | 30x | same |
@@ -93,6 +93,14 @@ ONT scRNA samples that same pool, so a barcode means the same cell in all four s
 No normal RNA. LENS v2.0.0-dev-alt enters Kinnex sc at the segmented-BAM stage
 (`lens.nf` line ~58), so the segmented BAM is the LENS input and the pre-skera BAM is for
 validating skera itself.
+
+**Tumour WGS depth, revised 2026-10-02.** It was 30x and is now 100x. 30x is a germline-grade depth and
+could not see this dataset's own subclones: at 30x the truncal clone yields 10.5 expected alt reads in
+IGI-SYN-SEQ-01 and 6.8 in IGI-SYN-SEQ-02, while clone A at CCF 0.40 yields 4.2 and clone A1 at CCF 0.10
+yields 1.3 and 0.7. A dataset built to test subclonal neoantigen calling cannot ship a WGS arm that only
+exercises truncal calling. At 100x the subclones give 4-14 alt reads and the truncal clone 22-35. Normal
+stays at 30x. Tumour WES at 150x remains marginal for the lowest-CCF subclones -- IGI-SYN-SEQ-02 clone A1
+sits at 3.4 expected alt reads -- and raising it to 250-300x is an open option, not yet taken.
 
 Storage estimate (full, both datasets): **at least 680 GB** for the sample types costed below, dominated
 by the twelve 30x WGS libraries; the long-read and single-cell RNA assays are on top of that and not yet
