@@ -18,8 +18,14 @@ i=$((SLURM_ARRAY_TASK_ID-1))
 c=${CHROMS_ALL[$((i % 24))]}; j=$((i / 24)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j / 2))]}
 mkdir -p "$O/$d"
 cd "$IGI_REPO/catalog"
+# Tumour at 100x, normal at 30x. 30x tumour was a germline-grade depth carried into the tumour arm, and
+# it cannot see the design's own subclones: at 30x the truncal clone yields 7-10 alt reads and every
+# subclone under 5, so clone A at CCF 0.40 gives 4.2 and clone A1 at CCF 0.10 gives 0.7. The dataset exists
+# to test subclonal neoantigen calling, so the depth has to support it. At 100x the subclones give 4-14 alt
+# reads and the truncal clone 22-35. Normal stays at 30x, which is standard for a germline reference.
+DEPTH=100; [ "$l" = normal ] && DEPTH=30
 python3 run_wgs.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" --chrom "$c" --library "$l" \
-  --depth 30 \
+  --depth $DEPTH \
   --catalog output/$d.snv_indel.tsv \
   --background output/$d.background.tsv \
   --extra-events output/$d.splice_causal.tsv \
