@@ -40,15 +40,17 @@ from igi_catalog.simulate import clone_weights
 
 
 def write_arrays(mas, molecules, rng, path, start=0):
-    """Write arrays to FASTA and return the membership map {array_name: [record ids]}."""
-    members = {}
+    """Write arrays to FASTA. Returns ({array_name: [record ids]}, sorted array lengths)."""
+    members, lengths = {}, []
     with open(path, "w") as fh:
         for name, seq, mols in mas.build(molecules, rng, start_index=start):
             members[name] = [m["rec"] for m in mols]
+            lengths.append(len(seq))
             fh.write(f">{name}\n")
             for i in range(0, len(seq), 60):
                 fh.write(seq[i:i + 60] + "\n")
-    return members
+    lengths.sort()
+    return members, lengths
 
 
 def main():
@@ -109,14 +111,21 @@ def main():
     # Arrays, chunked by record count: a chunk boundary inside an array would hand the simulator a
     # fragment as though it were a whole insert.
     fa_all = os.path.join(work, "arrays.fa")
-    members = write_arrays(mas, molecules, rng, fa_all)
-    print(f"  {len(members):,} arrays, mean {len(molecules)/len(members):.2f} segments each", flush=True)
+    members, alen = write_arrays(mas, molecules, rng, fa_all)
+    n_a = len(alen)
+    print(f"  {len(members):,} arrays, mean {len(molecules)/len(members):.2f} segments each; "
+          f"length median {alen[n_a//2]:,} p90 {alen[9*n_a//10]:,} max {alen[-1]:,} bp", flush=True)
 
     br = paths["badread_cmd"]
     n_par = a.jobs or min(8, int(os.environ.get("SLURM_CPUS_PER_TASK", 8)))
     timeout_s = int(paths.get("pacbio_chunk_timeout_s", 3600))
-    # The requested length must exceed the longest array so every read spans its whole array.
-    want_len = int(mas.n_seg * max(mean_len, 1000) * 3) + 50_000
+    # The requested read length must exceed the LONGEST array, not a multiple of the mean. Deriving it
+    # from the mean left arrays above it truncated mid-array, which silently breaks the invariant the whole
+    # design rests on -- one read is one whole array -- and with it the segment truth map, since a truncated
+    # array yields fewer segments than its molecule list claims. The tail is long: on a chr21 test the
+    # median array was 17 kb and the maximum 180 kb, because the size-selection curve admits occasional
+    # very long transcripts at low efficiency and eight of them concatenate.
+    want_len = int(alen[-1] * 1.5) + 20_000
 
     def simulate(fasta, tag, seed0):
         jobs = []
@@ -207,6 +216,8 @@ def main():
             "molecules": len(molecules), "arrays": len(members),
             "arrays_with_a_read": len(covered), "arrays_lost": len(lost),
             "mean_cdna_length": round(mean_len, 1),
+            "array_length": {"median": alen[n_a // 2], "p90": alen[9 * n_a // 10],
+                             "max": alen[-1], "requested_read_length": want_len},
             "size_selection": "measured" if sz.enabled else "flat",
             "reads_pre_skera": n_pre, "segments_post_skera": n_seg,
             "pre_skera_bam": pre_bam, "segmented_bam": seg_bam, "array_map": mpath,
