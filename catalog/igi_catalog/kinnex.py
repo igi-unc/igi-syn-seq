@@ -137,12 +137,15 @@ class MasArrays:
                 break
             members = molecules[i:i + k]
             i += k
+            # No spacer between an adapter and the molecule. skera reports a 1-2 bp "RANDOM" adapter, but
+            # at the array ENDS, and inserting it at every boundary shifts every segment's contents by 1-2
+            # bp. On the single-cell library that put the 10x barcode at offset 23-24 instead of 22, so a
+            # tool indexing the barcode at a fixed offset would have found nothing -- 0 % against a real
+            # 96.1 %, even though 89 % of the barcodes were present and correct.
             parts = []
             for j, m in enumerate(members):
                 parts.append(self.adapters[self.order[j]])
-                parts.append(self._random_spacer(rng))
                 parts.append(m["sequence"])
-                parts.append(self._random_spacer(rng))
             parts.append(self.adapters[self.order[k]])
             # Arrays are written in the forward frame only. The read simulator picks a strand per read --
             # measured at 42/57 and 16/16 on two runs -- so reverse-complementing here as well would
@@ -171,7 +174,6 @@ class MasArrays:
             for j, m in enumerate(members):
                 if j < n_bracketed:
                     parts.append(self.adapters[self.order[j]])
-                    parts.append(self._random_spacer(rng))
                 parts.append(m["sequence"])
             # the closing adapter goes after the last bracketed cDNA's run, i.e. at the array end
             parts.append(self.adapters[self.order[n_bracketed]])
@@ -180,7 +182,12 @@ class MasArrays:
 
     @staticmethod
     def _random_spacer(rng):
-        """The 1-2 bp random run skera reports as the RANDOM adapter at array ends."""
+        """The 1-2 bp random run skera reports as the RANDOM adapter, which occurs at array ENDS only.
+
+        Kept for a caller that wants to model the array terminus. It must not be placed at interior
+        boundaries: doing so shifts every segment's contents and breaks any fixed-offset structure inside
+        them.
+        """
         return "".join(rng.choice("ACGT") for _ in range(rng.choice((1, 2))))
 
 

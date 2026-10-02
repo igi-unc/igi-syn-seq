@@ -265,6 +265,24 @@ The curve is fitted only on segments carrying exactly one TSO and one R1 primer.
 output instead put 12 % of density at 7-15 kb and demanded a 6x boost there, which would have reproduced the
 un-segmented-array artifact as though it were biology.
 
+**Validated against the real single-cell arrays**, on the metrics that were not inputs:
+
+| | synthetic | real |
+|---|---|---|
+| segments per read (skera) | 7.93 | 7.607 |
+| mean segment length | 2,276 | 2,155 |
+| full arrays (skera) | 96.3 % | 92.5 % |
+| single-cDNA fraction | 76.7 % | 81.6 % |
+| single-cDNA median / mean length | 1,036 / 1,140 | 952 / 1,072 |
+| whitelist barcode at offset 22 | 93.3 % | 96.1 % |
+
+That last row was 0.0 % on the first attempt, and it is the one worth remembering. A 1-2 bp random spacer
+inserted at every adapter boundary shifted each segment's contents by 1-2 bp, so the barcode sat at 23 or 24
+and a tool indexing it at a fixed offset would have found nothing -- while 89 % of the barcodes were present
+and correct, so every other check passed. skera reports that spacer, but at array ENDS; it does not belong at
+interior boundaries. The residual 23-25 offsets after the fix are HiFi indels shifting the frame, 21 segments
+of 971.
+
 **A defect fixed in the shared machinery.** `MoleculePool.draw` drew from one pool-wide random stream, so the
 molecules a cell received depended on how many cells had been drawn before it. Gene expression and Kinnex
 asking for the same cell got different molecules, and drawing the same cell twice from one pool did not even
