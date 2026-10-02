@@ -323,6 +323,7 @@ Everything below is fitted from real data. Each row says what to re-run to chang
 | `art_profile_r1/r2` | 4-level Q3/Q13/Q25/Q41 | 4M pairs, IPISRC044 blood-normal WGS, NovaSeq X LH00499, 150 cycles | `jobs/measure/art_profile.sbatch` |
 | `gc_bias_curve` | 0.40 at 30-35% GC to 1.25 at 60-65%, mean-1 normalised | 161,618 capture intervals, IPISRC044 WES normal | `jobs/measure/gc_bias.sbatch`, which calls `fit_gc_bias.py` |
 | `pacbio_length_mean/sd` | 16689 / 4593 | 200k reads, HG002 Revio HiFi | `jobs/measure/longread_measure.sbatch` |
+| *realised* `sd` | ~4,870 | measured across 29 release chromosomes | see the note below |
 | `pacbio_identity` | `99.4,99.8,0.5` (targets 0.99823) | same | same job, then apply the +0.43 offset |
 | `kinnex_segment_length_mean/sd` | 2224 / 933 | 200k post-skera segmented reads | same job |
 | `ont_length_mean/sd`, `ont_identity` | 910 / 461, `98.22,99.6,1.5` | IPISRC044 R10.4.1 SUP scRNA, 2025-07-17 | `measure_longread.py`; no ONT arm wired into the job yet |
@@ -339,6 +340,14 @@ Two notes on these:
   target, which is why the ONT WGS parameters come from ONT's open-data bucket instead.
 - `ont_wgs_length_sd` ≈ `mean` with a 551 kb tail. Badread's length model has not been verified to
   handle that; this is an open item, not a settled parameter.
+- **Badread's realised length spread runs about 6 % wide.** Across 29 release chromosomes the mean read
+  length is 16,768 bp against a target 16,689 (+0.5 %) and the accuracy 0.99830 against 0.99823, both well
+  inside tolerance, but the standard deviation is consistently 4,870 against 4,593. It is a systematic
+  property of Badread's gamma length model rather than sampling noise -- every one of the 29 chromosomes is
+  high, across both datasets and both libraries -- so a caller that is sensitive to the read-length tail
+  will see a slightly broader distribution than a real Revio run gives. Correcting it would mean narrowing
+  the requested `pacbio_length_sd` below the measured value, which trades a documented bias for an
+  undocumented one; it is left as a recorded characteristic.
 - `fit_gc_bias.py` reproduces the committed `ipisrc044_wes_gc_bias.json` exactly from the saved
   `bedcov.txt`, all 15 bins and both the factors and the captured-base shares. Before it was written the
   curve was a one-off computation with no script, so it could not be re-derived or corrected.
