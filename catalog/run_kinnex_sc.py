@@ -50,7 +50,16 @@ def main():
     ap.add_argument("--catalog-dir", default="output")
     ap.add_argument("--cells", type=int, default=4000)
     ap.add_argument("--segments", type=int, default=12_000_000,
-                    help="target segmented reads. One molecule yields one segment")
+                    help="target POST-SKERA segmented reads, which is what the design specifies. Two "
+                         "losses sit between molecules and segments and both are measured, so the molecule "
+                         "count is scaled up by them rather than being set equal to the target: taking "
+                         "--segments as a molecule count delivered 4.0 M segments against a 12 M target")
+    ap.add_argument("--selection-yield", type=float, default=0.69,
+                    help="fraction of molecules surviving size selection (measured 0.69)")
+    ap.add_argument("--skera-yield", type=float, default=0.486,
+                    help="fraction of cDNAs skera returns as clean single-cDNA segments. Measured 0.486 on "
+                         "both real and synthetic arrays: with nine adapters for sixteen cDNAs, skera "
+                         "isolates about half and leaves the rest in multi-cDNA blocks")
     ap.add_argument("--mean-molecules", type=int, default=8000,
                     help="molecules captured per cell before sequencing depth is applied")
     ap.add_argument("--min-tpm", type=float, default=0.01)
@@ -89,8 +98,14 @@ def main():
 
     # The roster and the molecule pool are the shared objects: every single-cell assay must build them the
     # same way from the same seed, or a barcode stops meaning one cell across assays.
+    # The roster seed is scoped to the dataset. Seeding it from --seed alone gave both datasets the SAME
+    # 4,000 barcodes and the same barcode-to-cell-type map, differing only in clone labels: two independent
+    # tumours sharing one cell suspension, and a barcode collision for anyone who pools the datasets. The
+    # scope keeps what matters -- every assay of ONE dataset shares a roster, because they all derive it
+    # from the same string -- while making the two datasets independent.
+    cell_seed = f"{a.seed}:{a.dataset}"
     wl = load_whitelist(paths["single_cell_whitelist"])
-    roster = CellRoster(a.cells, wl, a.seed, env.clones)
+    roster = CellRoster(a.cells, wl, cell_seed, env.clones)
     log(f"  roster: {len(roster.cells):,} cells, {roster.summary()}")
 
     tx = [(r["rec"], r.get("gene", ""), len(r["sequence"]), r["abundance"],
@@ -98,7 +113,7 @@ def main():
            "" if r.get("source") == "reference" else r.get("clone", ""))
           for r in rb.records if r["abundance"] > 0 and r["sequence"]]
     seq_by_rec = {r["rec"]: r["sequence"] for r in rb.records}
-    pool = MoleculePool(roster, tx, env.clones, a.seed, mean_molecules=a.mean_molecules)
+    pool = MoleculePool(roster, tx, env.clones, cell_seed, mean_molecules=a.mean_molecules)
 
     sz = SizeSelection(paths.get("kinnex_sc_size_selection"))
     mas = MasArrays(paths["kinnex_adapters_fasta"], paths["kinnex_mas_profile"], size_selection=sz)
@@ -113,11 +128,18 @@ def main():
             all_mols.append((c["barcode"], u, tx[idx][0]))
     log(f"  pool: {len(all_mols):,} molecules over {len(roster.cells):,} cells "
         f"({len(all_mols)/max(1,len(roster.cells)):.0f} per cell)")
-    if a.segments < len(all_mols):
-        all_mols = rng.sample(all_mols, a.segments)
-    elif a.segments > len(all_mols):
-        log(f"  note: asked for {a.segments:,} segments but the pool holds {len(all_mols):,}; "
-            f"sequencing every molecule once rather than inventing more")
+    # Work backwards from the segment target through both measured losses.
+    need = int(a.segments / max(1e-9, a.selection_yield * a.skera_yield))
+    log(f"  {a.segments:,} target segments needs ~{need:,} molecules "
+        f"(selection {a.selection_yield:.0%} x skera {a.skera_yield:.0%})")
+    if need <= len(all_mols):
+        all_mols = rng.sample(all_mols, need)
+    else:
+        exp = int(len(all_mols) * a.selection_yield * a.skera_yield)
+        log(f"  SHORTFALL: the pool holds {len(all_mols):,} molecules, so the best achievable is about "
+            f"{exp:,} segments, {exp/a.segments:.0%} of target. Raise --mean-molecules to "
+            f"{int(a.mean_molecules * need / len(all_mols)):,} or lower --segments; sequencing the whole "
+            f"pool rather than silently delivering a fraction of what was asked for.")
     rng.shuffle(all_mols)
 
     # size selection acts on the finished molecule, which includes the 10x structure

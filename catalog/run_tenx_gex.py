@@ -75,8 +75,14 @@ def main():
                   min_tpm=a.min_tpm, max_genes=a.max_genes, log=log)
     rb.assign_record_ids()
 
+    # The roster seed is scoped to the dataset. Seeding it from --seed alone gave both datasets the SAME
+    # 4,000 barcodes and the same barcode-to-cell-type map, differing only in clone labels: two independent
+    # tumours sharing one cell suspension, and a barcode collision for anyone who pools the datasets. The
+    # scope keeps what matters -- every assay of ONE dataset shares a roster, because they all derive it
+    # from the same string -- while making the two datasets independent.
+    cell_seed = f"{a.seed}:{a.dataset}"
     wl = load_whitelist(paths["single_cell_whitelist"])
-    roster = CellRoster(a.cells, wl, a.seed, env.clones)
+    roster = CellRoster(a.cells, wl, cell_seed, env.clones)
     log(f"  roster: {len(roster.cells):,} cells (seed {a.seed}; shared with every single-cell assay)")
 
     tx = [(r["rec"], r.get("gene", ""), len(r["sequence"]), r["abundance"],
@@ -84,7 +90,7 @@ def main():
            "" if r.get("source") == "reference" else r.get("clone", ""))
           for r in rb.records if r["abundance"] > 0 and r["sequence"]]
     seq_by_rec = {r["rec"]: r["sequence"] for r in rb.records}
-    pool = MoleculePool(roster, tx, env.clones, a.seed, mean_molecules=a.mean_molecules)
+    pool = MoleculePool(roster, tx, env.clones, cell_seed, mean_molecules=a.mean_molecules)
 
     # Draw the pool, then decide how many times each molecule is sequenced. Reads per cell divided by
     # molecules per cell is the duplicate rate the UMIs exist to collapse; one read per molecule would
