@@ -283,6 +283,17 @@ and correct, so every other check passed. skera reports that spacer, but at arra
 interior boundaries. The residual 23-25 offsets after the fix are HiFi indels shifting the frame, 21 segments
 of 971.
 
+**Captured molecule sets nest across assays rather than overlapping partially.** `mean_molecules` is
+molecules *captured*, so it is legitimately assay-specific -- 10x gene expression uses 8,000 per cell and
+Kinnex single cell 10,600, the latter set so that a 12 M post-skera segment target is reachable. Because
+both draw from one RNG stream keyed on the barcode, the smaller capture is an exact prefix of the larger:
+verified at 100 % overlap, with the 8,000-molecule set a strict subset of the 10,600-molecule set.
+
+That is a simplification, and in the generous direction. Two independent library preps of the same cell
+would overlap partially, not nest; perfect nesting maximises cross-assay agreement, which is what a truth
+set wants but is not what two real captures do. A consumer comparing UMI counts per cell between the two
+assays will see a systematic difference that is capture depth rather than biology.
+
 **A defect fixed in the shared machinery.** `MoleculePool.draw` drew from one pool-wide random stream, so the
 molecules a cell received depended on how many cells had been drawn before it. Gene expression and Kinnex
 asking for the same cell got different molecules, and drawing the same cell twice from one pool did not even
