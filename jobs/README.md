@@ -32,6 +32,7 @@ two places a path belongs.
 ./jobs/submit.sh 22_accept_wgs.sbatch              # acceptance, short-read WGS
 ./jobs/submit.sh 30_kinnex_bulk.sbatch             # Kinnex bulk RNA, pre- and post-skera BAMs
 ./jobs/submit.sh 31_kinnex_sc.sbatch               # Kinnex single cell + cell roster + clonotypes
+./jobs/submit.sh 32_tenx_gex.sbatch                # 10x 5' v2 gene expression (Cell Ranger naming)
 ```
 
 `02` must follow `01`: the background model reserves the positions the designed catalog occupies so the
@@ -73,6 +74,11 @@ python3 jobs/measure/fit_kinnex_size_selection.py --real-lengths seglen.txt \
 
 `measure/fit_gc_bias.py` and `measure/measure_longread.py` can also be run directly, and the second is
 how a simulated long-read output is checked against its target.
+
+Every single-cell assay (`31`, `32`, and the TCR and ONT single-cell arms when written) must run with the
+**same seed, 9100**. The cell roster and the molecule pool are derived from it, so a different seed gives a
+different roster and a barcode stops meaning one cell across assays -- the one property the single-cell
+design exists to provide.
 
 ## Two things that will bite
 
