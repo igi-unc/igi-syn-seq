@@ -31,3 +31,38 @@ skera_cmd: "singularity exec -B /mnt /path/to/pbskera_1.4.0.sif skera {args}"
 # Single-cell size selection, fitted separately from bulk: the 10x 5' cDNA length distribution is both
 # shorter in the median and more heavily tailed.
 kinnex_sc_size_selection: /path/to/catalog/resources/kinnex_sc_size_selection.json
+
+# ---------------------------------------------------------------------------
+# Long-read simulator constants. These are MEASUREMENTS, not site specifics, so they belong in version
+# control even though the paths above do not. Every identity value is the request needed to land on a
+# measured target, never the target itself: Badread's realised identity is offset from the flag, the offset
+# differs per model, and it is not small.
+#
+#   model        target accuracy   realised at face value   request
+#   PacBio HiFi      0.99823            0.99908 (+0.43)      99.4
+#   ONT genomic      0.98676            0.98401 (-0.49)      99.17
+#   ONT cDNA         0.98220            0.98028 (-0.19)      98.41
+#
+# Verified end to end on chr21: ONT genomic lands at 0.98633 with length mean 19,067 and sd 15,485 against
+# targets of 0.98676, 19,117 and 15,530.
+
+pacbio_identity: "99.4,99.8,0.5"          # -> 0.99823, HG002 Revio HiFi
+pacbio_length_mean: 16689
+pacbio_length_sd: 4593
+pacbio_error_model: pacbio2021
+pacbio_qscore_model: pacbio2021
+
+ont_identity: "98.41,99.6,1.5"            # -> 0.9822, IPISRC044 R10.4.1 SUP cDNA
+ont_length_mean: 910                      # applies to ONT scRNA; see build-reference.md on the RNA caveat
+ont_length_sd: 461
+ont_wgs_identity: "99.17,99.6,1.5"        # -> 0.98676, ONT open data HG002 PAW70337
+ont_wgs_length_mean: 19117
+ont_wgs_length_sd: 15530
+ont_error_model: nanopore2023
+ont_qscore_model: nanopore2023
+
+# Chunking. 20 Mb per chunk with a one-read-length overlap. Leaving a derived chromosome whole confined it
+# to one core and pushed each chunk past the timeout, which cost 61 of 96 ONT WGS tasks; the timeout is a
+# backstop, not a substitute for chunking small enough.
+pacbio_chunk_bp: 20000000
+pacbio_chunk_timeout_s: 10800
