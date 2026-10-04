@@ -16,15 +16,20 @@ O=$IGI_WORK/release/wgs; M=$IGI_WORK/release/wgs_merged
 A=$IGI_WORK/release/wgs_bams; R=$IGI_WORK/release/wgs_acceptance
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 mkdir -p "$M/$d" "$A/$d" "$R/$d"
-for m in 1 2; do
-  out=$M/$d/${d}_tumor_R${m}.fastq.gz
-  [ -s "$out" ] || cat $O/$d/${d}_chr*_tumor_wgs_R${m}.fastq.gz > "$out"
-done
+# Use 50_merge_longread.sbatch's output rather than merging again. Both scripts wrote the same libraries
+# into this directory under different names and duplicated 234 GB: this one as ${d}_tumor_R1.fastq.gz and
+# the merge job as ${d}_tumor_wgs_R1.fastq.gz. Fall back to merging only if the merge job has not run.
+R1=$M/$d/${d}_tumor_wgs_R1.fastq.gz
+R2=$M/$d/${d}_tumor_wgs_R2.fastq.gz
+if [ ! -s "$R1" ]; then
+  echo "  merge job output absent; merging here instead"
+  for m in 1 2; do cat $O/$d/${d}_chr*_tumor_wgs_R${m}.fastq.gz > $M/$d/${d}_tumor_wgs_R${m}.fastq.gz; done
+fi
 B=$A/$d/${d}_tumor.bam
 if [ ! -s "$B" ]; then
   singularity exec -B "$IGI_BIND" "$IGI_BWA_IMG" bash -c "
     bwa mem -t 16 -R '@RG\tID:${d}_tumor_wgs\tSM:${d}_tumor\tPL:ILLUMINA\tLB:${d}_tumor_wgs' \
-      $IGI_FASTA_NOALT $M/$d/${d}_tumor_R1.fastq.gz $M/$d/${d}_tumor_R2.fastq.gz 2> $A/$d/bwa.err \
+      $IGI_FASTA_NOALT $R1 $R2 2> $A/$d/bwa.err \
       | samtools sort -@4 -m 3G -o $B -" || { tail -20 "$A/$d/bwa.err"; exit 1; }
   singularity exec -B "$IGI_BIND" "$IGI_BWA_IMG" samtools index "$B"
 fi
