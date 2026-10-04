@@ -33,6 +33,10 @@ two places a path belongs.
 ./jobs/submit.sh 30_kinnex_bulk.sbatch             # Kinnex bulk RNA, pre- and post-skera BAMs
 ./jobs/submit.sh 31_kinnex_sc.sbatch               # Kinnex single cell + cell roster + clonotypes
 ./jobs/submit.sh 32_tenx_gex.sbatch                # 10x 5' v2 gene expression (Cell Ranger naming)
+./jobs/submit.sh 33_tenx_tcr.sbatch                # 10x 5' V(D)J (TCR)
+./jobs/submit.sh 40_ont_wgs.sbatch                 # ONT WGS, 96 tasks
+./jobs/submit.sh 41_ont_bulk_rna.sbatch            # ONT bulk cDNA
+./jobs/submit.sh 42_ont_sc_rna.sbatch              # ONT single-cell cDNA
 ```
 
 `02` must follow `01`: the background model reserves the positions the designed catalog occupies so the
