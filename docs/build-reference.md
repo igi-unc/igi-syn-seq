@@ -337,7 +337,8 @@ Everything below is fitted from real data. Each row says what to re-run to chang
 | *realised* `sd` | ~4,870 | measured across 29 release chromosomes | see the note below |
 | `pacbio_identity` | `99.4,99.8,0.5` (targets 0.99823) | same | same job, then apply the +0.43 offset |
 | `kinnex_segment_length_mean/sd` | 2224 / 933 | 200k post-skera segmented reads | same job |
-| `ont_length_mean/sd`, `ont_identity` | 910 / 461, `98.22,99.6,1.5` | IPISRC044 R10.4.1 SUP scRNA, 2025-07-17 | `measure_longread.py`; no ONT arm wired into the job yet |
+| `ont_identity` | request `98.41` for a 0.9822 target | IPISRC044 R10.4.1 SUP scRNA, 2025-07-17 | `measure_longread.py`; the ONT cDNA model runs ~0.19 points low |
+| `ont_length_mean/sd` | 910 / 461 | same | **applies to ONT scRNA only; see the caveat below** |
 | `ont_wgs_length_mean/sd`, `..._identity_target` | 19117 / 15530, 0.98676 | ONT open-data `giab_2025.01/basecalling/sup/HG002/PAW70337` | `measure_longread.py`; the BAM is remote, see `ont_wgs_bam` |
 | expression baseline | per-transcript median TPM | 191 TCGA-BRCA basal-like tumours, UCSC Xena Toil recompute | not yet tracked; the original job is in scratch |
 | `background_mut_per_mb`, `signatures` | 1.0 mut/Mb; SBS3 0.6 / SBS1 0.15 / SBS5 0.15 / SBS13 0.1 | COSMIC v3.4, TNBC-typical | edit `design.yaml` |
@@ -353,6 +354,14 @@ Two notes on these:
   19,117/15,530 the realised distribution is mean 18,554 and sd 15,378 -- within 2.9 % and 1.0 % -- with a
   median of 14,134, a p90 of 38,554 and a maximum of 129,812, which is the shape real ONT gives. The gamma
   length model therefore handles sd ≈ mean, which had been the open risk for this assay.
+- **ONT RNA read length is set by the molecule, not by a parameter, and only the single-cell target is
+  measured.** For the ONT RNA assays one molecule is one read, so the read-length distribution comes from
+  the transcript and the size-selection curve rather than from `ont_length_mean`. Against the real
+  IPISRC044 ONT scRNA median of 910 bp, the simulated single-cell reads come out at 1,129 bp -- 24 % long,
+  because the size curve is fitted on Kinnex single cell rather than on ONT. The bulk ONT arm has **no real
+  reference at all**: the only IPISRC044 ONT data is single cell, so bulk uses the Kinnex bulk size curve as
+  the best available proxy and comes out at 2,216 bp against nothing to compare it with. Neither figure
+  should be quoted as validated; obtaining real ONT bulk cDNA would settle it.
 - ONT genomic identity is calibrated like PacBio's and in the opposite direction: Badread's realised value
   runs about **0.49 points below** the request (98.409 for a requested 98.9), against PacBio's +0.43 above.
   `ont_wgs_identity` is therefore 99.17 to land on the measured 0.98676. Three models, three different
