@@ -38,7 +38,7 @@ from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.derived import build_derived
 from igi_catalog.kinnex import SizeSelection, ont_cdna
-from igi_catalog.longread import chunk_fasta, combine_fastq, run_chunks
+from igi_catalog.longread import chunk_fasta, combine_fastq, run_chunks, split_fasta_bp
 from igi_catalog.molecules import MoleculePool
 from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
@@ -164,12 +164,14 @@ def main():
     want = max(lmean * 6, 200_000) if a.assay != "wgs" else lmean
     jobs = []
     if a.assay == "wgs":
-        # Each derived copy carries its own coverage, so it is simulated separately; chunking a copy is
-        # what lets one chromosome use more than one core.
-        from igi_catalog.longread import chunk_fasta as _cf
+        # Each derived copy carries its own coverage, so it is simulated separately, and each copy is split
+        # by BASE PAIRS. An earlier version passed one chunk per copy, which left a 249 Mb chromosome whole:
+        # 14 chunks over 48 slots, each needing about 4 hours against a 1 hour timeout. That cost 61 of 96
+        # tasks. At 20 Mb a chunk, chr1 becomes ~13 chunks per copy and every slot is used.
+        chunk_bp = int(paths.get("pacbio_chunk_bp", 20_000_000))
         k = 0
         for tag, pfa, cov in pieces:
-            for sub in _cf(pfa, 10**9, work, f"w_{tag}"):   # one chunk per copy; badread parallelises by job
+            for sub in split_fasta_bp(pfa, chunk_bp, work, f"w_{tag}"):
                 out = os.path.join(work, f"ont_{k:05d}.fq")
                 args = (f"simulate --reference {sub} --quantity {cov:.4f}x "
                         f"--length {lmean},{lsd} --identity {ident} "

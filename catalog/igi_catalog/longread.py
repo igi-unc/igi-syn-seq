@@ -104,3 +104,39 @@ def chunk_fasta(path, chunk_records, work, tag):
     if fh:
         fh.close()
     return out
+
+
+def split_fasta_bp(path, chunk_bp, work, tag, overlap=60_000):
+    """Split one long sequence into overlapping chunks of `chunk_bp` bases.
+
+    Distinct from `chunk_fasta`, which splits by RECORD count. Use this when the records are whole
+    chromosomes: a 249 Mb chromosome is one record, so record-count chunking leaves it whole, which both
+    confines it to a single core and makes the chunk take hours. That is exactly how the ONT WGS arm lost
+    61 of 96 tasks -- every chunk was a whole derived chromosome, 14 chunks over 48 slots, and badread
+    needed about 4 hours per chunk against a 1 hour timeout.
+
+    The overlap is one maximum read length so molecules spanning a boundary are not lost; only the chunk
+    that owns a region emits reads for it, so none is duplicated.
+    """
+    name, seq = None, []
+    with open(path) as fh:
+        for line in fh:
+            if line.startswith(">"):
+                name = line[1:].strip()
+            else:
+                seq.append(line.strip())
+    s = "".join(seq)
+    if len(s) <= chunk_bp:
+        return [path]
+    out, pos = [], 0
+    while pos < len(s):
+        end = min(len(s), pos + chunk_bp)
+        sub = os.path.join(work, f"{tag}_{pos // chunk_bp:03d}.fa")
+        with open(sub, "w") as fh:
+            fh.write(f">{name}_chunk{pos // chunk_bp}\n")
+            piece = s[pos:min(len(s), end + overlap)]
+            for i in range(0, len(piece), 60):
+                fh.write(piece[i:i + 60] + "\n")
+        out.append(sub)
+        pos = end
+    return out

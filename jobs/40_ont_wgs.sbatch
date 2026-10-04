@@ -18,6 +18,9 @@ i=$((SLURM_ARRAY_TASK_ID-1))
 c=${CHROMS_ALL[$((i % 24))]}; j=$((i / 24)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j / 2))]}
 mkdir -p "$O/$d"
 cd "$IGI_REPO/catalog"
+# Chunks are 20 Mb of derived chromosome, so chr1 becomes ~13 per copy and all 48 slots are used. The
+# first attempt left each copy whole: 14 chunks of 249 Mb, about 4 hours each against a 1 hour timeout,
+# which lost 61 of 96 tasks. The timeout is raised as a second line of defence, not as the fix.
 python3 -u run_ont.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" --assay wgs \
   --chrom "$c" --library "$l" --depth 30 --jobs 48 \
   --out "$O/$d" --work "$W" --seed $((9500 + SLURM_ARRAY_TASK_ID))
