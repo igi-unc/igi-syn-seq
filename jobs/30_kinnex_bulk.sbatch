@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_kinnex_bulk
-#SBATCH -c 16 --mem=320G -t 72:00:00
+#SBATCH -c 48 --mem=320G -t 72:00:00
 #SBATCH --array=1-2
 # Kinnex bulk RNA (PacBio MAS-seq, 8-mer array), one task per dataset. Produces both the pre-skera
 # hifi_reads BAM, where one read is one whole array, and the segmented BAM from the real `skera split`.
@@ -18,6 +18,6 @@ CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$O/$d"
 cd "$IGI_REPO/catalog"
 python3 run_kinnex_bulk.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" --chroms "$CH" \
-  --segments 15000000 --min-tpm 0.01 --jobs 8 --label full \
+  --segments 15000000 --min-tpm 0.01 --jobs 48 --label full \
   --out "$O/$d" --work "$W" --seed $((9000 + SLURM_ARRAY_TASK_ID))
 echo "DONE $d $(date)"

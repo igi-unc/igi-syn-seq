@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_pacbio
-#SBATCH -c 16 --mem=48G -t 48:00:00
+#SBATCH -c 48 --mem=64G -t 48:00:00
 #SBATCH --array=1-96
 # PacBio HiFi WGS at 30x via Badread, tumour and normal. Same array layout as 10_wes.sbatch.
 #
@@ -20,7 +20,7 @@ c=${CHROMS_ALL[$((i % 24))]}; j=$((i / 24)); l=${LB[$((j % 2))]}; d=${DATASETS[$
 mkdir -p "$O/$d"
 cd "$IGI_REPO/catalog"
 python3 run_pacbio_wgs.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" --chrom "$c" \
-  --library "$l" --depth 30 --jobs 8 \
+  --library "$l" --depth 30 --jobs 48 \
   --catalog-dir output \
   --background output/$d.background.tsv \
   --extra-events output/$d.splice_causal.tsv \
