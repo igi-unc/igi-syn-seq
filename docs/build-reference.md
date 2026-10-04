@@ -349,8 +349,14 @@ Two notes on these:
   and capture is modelled separately by the GC curve.
 - GIAB's own HG002 ONT is all R9.4-era (2D reads from 2016, Guppy v2/v3) and unusable as an R10.4.1
   target, which is why the ONT WGS parameters come from ONT's open-data bucket instead.
-- `ont_wgs_length_sd` ≈ `mean` with a 551 kb tail. Badread's length model has not been verified to
-  handle that; this is an open item, not a settled parameter.
+- `ont_wgs_length_sd` ≈ `mean` with a long tail. **Verified**: Badread reproduces it. At a requested
+  19,117/15,530 the realised distribution is mean 18,554 and sd 15,378 -- within 2.9 % and 1.0 % -- with a
+  median of 14,134, a p90 of 38,554 and a maximum of 129,812, which is the shape real ONT gives. The gamma
+  length model therefore handles sd ≈ mean, which had been the open risk for this assay.
+- ONT genomic identity is calibrated like PacBio's and in the opposite direction: Badread's realised value
+  runs about **0.49 points below** the request (98.409 for a requested 98.9), against PacBio's +0.43 above.
+  `ont_wgs_identity` is therefore 99.17 to land on the measured 0.98676. Three models, three different
+  offsets, none of them the flag's face value.
 - **Badread's realised length spread runs about 6 % wide.** Across 29 release chromosomes the mean read
   length is 16,768 bp against a target 16,689 (+0.5 %) and the accuracy 0.99830 against 0.99823, both well
   inside tolerance, but the standard deviation is consistently 4,870 against 4,593. It is a systematic

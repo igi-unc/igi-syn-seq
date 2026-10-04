@@ -239,3 +239,16 @@ def tenx_segment(barcode, umi_seq, cdna, rng):
     # than a normal and cannot go negative
     n_a = int(rng.triangular(POLYA_P10, POLYA_P90, POLYA_MEDIAN))
     return (TENX_R1_PRIMER + barcode + umi_seq + TENX_5P_TSO + cdna + "A" * n_a + TENX_SMART_RC)
+
+
+def ont_cdna(barcode, umi_seq, cdna, rng, single_cell=True):
+    """A full-length cDNA as an ONT run sequences it.
+
+    ONT single-cell cDNA carries the same 10x structure as the Kinnex single-cell segment -- the libraries
+    are the same chemistry read on a different instrument -- so the construction is shared rather than
+    duplicated. Bulk ONT cDNA has no barcode or UMI: just the transcript, polyA and the SMART primer.
+    """
+    if single_cell:
+        return tenx_segment(barcode, umi_seq, cdna, rng)
+    n_a = int(rng.triangular(POLYA_P10, POLYA_P90, POLYA_MEDIAN))
+    return cdna + "A" * n_a + TENX_SMART_RC
