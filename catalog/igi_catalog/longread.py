@@ -20,6 +20,30 @@ import subprocess
 import time
 
 
+def _framed(path, tail_bytes=1 << 16):
+    """Whether a FASTQ ends on a record boundary. Reads only the tail, so it costs nothing on a 170 MB file.
+
+    A complete FASTQ has a line count divisible by four and ends with a newline. Checking the tail catches
+    the truncation a killed simulator leaves behind; a full line count would be exact but would mean reading
+    every chunk twice.
+    """
+    try:
+        size = os.path.getsize(path)
+        with open(path, "rb") as fh:
+            fh.seek(max(0, size - tail_bytes))
+            tail = fh.read()
+        if not tail.endswith(b"\n"):
+            return False
+        # the last four lines should be header, sequence, plus, quality, with matching lengths
+        lines = tail.split(b"\n")[:-1]
+        if len(lines) < 4:
+            return True
+        h, seq, plus, qual = lines[-4:]
+        return h.startswith(b"@") and plus.startswith(b"+") and len(seq) == len(qual)
+    except OSError:
+        return False
+
+
 def run_chunks(jobs, n_parallel, timeout_s, attempts=3, log=print):
     """Run (label, out_path, command) jobs concurrently. Returns the list of outputs that produced data.
 
@@ -37,7 +61,11 @@ def run_chunks(jobs, n_parallel, timeout_s, attempts=3, log=print):
                                     timeout=timeout_s).returncode
         except subprocess.TimeoutExpired:
             rc = -1
-        ok = rc == 0 and os.path.exists(out) and os.path.getsize(out) > 100
+        # Judge on the OUTPUT, not only the return code. A timeout kills the simulator mid-record, so a
+        # truncated chunk can be large and still useless: the ONT bulk ds-01 run left 500 chunks totalling
+        # 82 GB of which 19 in 20 had a line count that was not a multiple of four. Size alone would have
+        # accepted them, and concatenating them would have produced a corrupt library that looked right.
+        ok = rc == 0 and os.path.exists(out) and os.path.getsize(out) > 100 and _framed(out)
         if not ok and attempt < attempts:
             return run_one(spec, attempt + 1)
         return label, out, ok, attempt
