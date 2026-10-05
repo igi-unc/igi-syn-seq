@@ -522,3 +522,72 @@ it (949 of 949 reads), `pbindexdump` reads the index, `extracthifi` keeps 949 of
 the hole numbers and `bam2fastq` round-trips it. `skera split` on a repaired Kinnex BAM produces
 `m84000_260101_000000_s0/1/ccs/17_1856` with the segment coordinates unchanged from the original run, so
 the arrays still line up with their truth rows.
+
+---
+
+## 10. Focal copy-number events, and why they were missing
+
+Found by acceptance, not by review: `PTEN_homdel` came back with an observed depth ratio of **1.0** against
+an expected 0.30, and `RB1_homdel` **1.03** against 0.379. The expectation was right -- 0.30 is 1 minus
+purity, which is exactly what a homozygous deletion should leave -- so the libraries were wrong.
+
+Three builders had the same defect in three different sizes.
+
+| Arm | Copy number evaluated | Consequence |
+|---|---|---|
+| Illumina WGS | once per 5 Mb window, at the midpoint | a 0.3 Mb event has a 6 % chance of containing the midpoint, so focal events were absent |
+| PacBio HiFi WGS | **once per chromosome**, at `chrom_len // 2` | no CNA represented at all unless it spans the chromosome midpoint |
+| ONT WGS | **once per chromosome**, at `chrom_len // 2` | same |
+
+The windows and the whole-chromosome plan were both shortcuts that assumed copy number is constant over
+the span they stand for. That assumption is what was never checked.
+
+### 10.1 The fix
+
+`Clones.cn_boundaries(chrom)` returns every 1-based coordinate where copy number can change, across all
+clones and both the CNA and designed-SV interval indexes.
+
+- **Illumina**: `run_wgs.whole_chromosome` splits at those boundaries before tiling. Every window is now
+  copy-number-uniform, which is the property the midpoint shortcut always assumed. chr10 goes from 27
+  windows to 29, and the new 0.40 Mb window at 87,700,001 is `PTEN_homdel` itself.
+- **Long read**: `derived.cn_slices` cuts the *derived* chromosome into copy-number-uniform pieces and
+  `build_derived` computes a coverage per piece. A piece whose weight is zero is not simulated, which is
+  what a deletion is. Mapping reference boundaries onto derived coordinates goes through
+  `rearrange.coordinate_map`, so it survives inversions and insertions.
+
+`run_pacbio_wgs.py` also stopped carrying its own copy of the derived-chromosome loop. The copies had
+drifted: this fix landed in `derived.py` and would silently have missed PacBio.
+
+### 10.2 Verification
+
+Summed plan weight at the event over the same at a control locus on the same chromosome:
+
+| Event | at event | control | ratio | expected | old (midpoint, whole chromosome) |
+|---|---|---|---|---|---|
+| PTEN_homdel | 0.3000 | 1.0000 | 0.300 | 0.30 | 1.0000 |
+| RB1_homdel | 0.3793 | 1.0000 | 0.379 | 0.379 | 1.0000 |
+| MYC_amp | 4.5000 | 0.6500 | 6.923 | — | 1.0000 |
+
+End to end on chr10, PacBio: `T_hap0_all_s000` spans 1-87,700,000 and stops exactly at the boundary;
+slice `s001` is skipped for T, A, A1 and B on both haplotypes; `NORMAL` keeps every slice. 46 slices
+across the ten derived copies, 38 simulated, 8 with no copies.
+
+`check_cn_windows.py` asserts the Illumina property permanently. It tests boundary **containment**
+(`start < c <= end`), not sampled copy-number states: a first version sampled each window's start,
+midpoint and end and reported zero straddled windows on chr10 and chr13 -- the two chromosomes whose
+focal deletions were entirely missing -- because the event sits in the window's interior and none of the
+three points touches it. On the old tiling the containment check fails 14 of 264 windows over five
+chromosomes; on the new one, 0 of 275.
+
+### 10.3 What this cost
+
+Rebuilding all three WGS arms is 504 task-hours, measured from the previous runs rather than estimated:
+48 Illumina tumour tasks at 4.23 h, 48 normal at 1.30 h, 96 PacBio at 1.41 h, 96 ONT at 1.08 h. Wall
+clock is set by how much of the 105-job association limit is free, not by the work: 29.7 h at 17
+concurrent slots, 7.2 h at 70.
+
+`50_merge_longread.sbatch` had to be fixed before any of it could land. All three merges were guarded with
+`[ -s "$out" ] ||`, so with the previous merged libraries in place the merge would have skipped all twelve
+tasks and reported success, leaving the deliverables identical to the ones the rebuild existed to replace
+-- and acceptance would then have passed against the old data. `stale()` rebuilds when the output is
+missing, empty, or older than its newest input.
