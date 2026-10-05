@@ -220,12 +220,11 @@ def main():
 
     label = a.label or "full"
     cat = os.path.join(work, "all.fq")
-    combine_fastq(parts, cat, log=log)
+    # keep_description: see the note in run_kinnex_bulk.py -- this FASTQ never leaves the work dir
+    combine_fastq(parts, cat, log=log, keep_description=True)
     pre_bam = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_sc_hifi_reads.bam")
-    n_pre, by_src = write_hifi_bam([cat], pre_bam, one_per_source=True,
-                                   np_passes=int(round(float(
-                                       json.load(open(paths["kinnex_mas_profile"]))
-                                       .get("passes_np_mean") or 8))),
+    # np drawn per read from the real Kinnex distribution; see the note in run_kinnex_bulk.py
+    n_pre, by_src = write_hifi_bam([cat], pre_bam, one_per_source=True, kind="kinnex", seed=a.seed,
                                    sample=a.dataset, library=f"{a.dataset}_kinnex_sc")
     log(f"  pre-skera: {n_pre:,} reads (one per array) -> {os.path.basename(pre_bam)}")
 

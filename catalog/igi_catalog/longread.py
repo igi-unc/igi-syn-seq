@@ -15,6 +15,7 @@ them. Each line of it was paid for:
   combination was not. Framing is enforced and then asserted.
 """
 import concurrent.futures as cf
+import gzip
 import os
 import subprocess
 import time
@@ -86,26 +87,63 @@ def run_chunks(jobs, n_parallel, timeout_s, attempts=3, log=print):
     return done
 
 
-def combine_fastq(parts, out_path, log=print):
-    """Concatenate FASTQ chunks with record framing enforced, then assert it. Returns the read count."""
+def combine_fastq(parts, out_path, log=print, map_path=None, keep_description=False):
+    """Concatenate FASTQ chunks with record framing enforced, then assert it. Returns the read count.
+
+    By default the simulator's description is STRIPPED from every header and, if `map_path` is given,
+    written to a separate gzipped map instead.
+
+    Badread puts the answer in the header. A genomic read carries the reference it came from, the strand
+    and the coordinates:
+
+        @a1887f88-... chr10_T_hap0_all,-strand,89396886-89421712 length=24764 error-free_length=24792 read_identity=99.593%
+
+    which names the chromosome, the clone, the haplotype and the copy, and gives the true position; an RNA
+    read carries the source molecule id, which joins straight to `*_molecules.tsv.gz` and so hands over the
+    cell, the clone and the transcript. `error-free_length` and `read_identity` do not exist in real data
+    at all. A benchmark whose reads carry their own truth is not a benchmark, and the Illumina path was
+    fixed for exactly this (see `readnames.shuffle_and_rename`) while the long-read path was not.
+
+    The map keeps the link for whoever needs it, in the one place a tool under test will not read.
+    """
     n_fixed = 0
-    with open(out_path, "wb") as out:
-        for part in parts:
-            with open(part, "rb") as fh:
-                data = fh.read()
-            if not data:
-                continue
-            if not data.endswith(b"\n"):
-                data += b"\n"
-                n_fixed += 1
-            out.write(data)
+    n_reads = 0
+    gm = gzip.open(map_path, "wt") if map_path else None
+    try:
+        if gm:
+            gm.write("read_name\tsource\n")
+        with open(out_path, "wb") as out:
+            for part in parts:
+                tail_nl = True
+                with open(part, "rb") as fh:
+                    for i, line in enumerate(fh):
+                        if i % 4 == 0 and not keep_description:
+                            raw = line.rstrip(b"\n")
+                            sp = raw.split(b" ", 1)
+                            line = sp[0] + b"\n"
+                            if gm and len(sp) > 1:
+                                gm.write(f"{sp[0][1:].decode()}\t{sp[1].decode()}\n")
+                        if i % 4 == 0:
+                            n_reads += 1
+                        tail_nl = line.endswith(b"\n")
+                        if not tail_nl:
+                            line += b"\n"
+                            n_fixed += 1
+                        out.write(line)
+    finally:
+        if gm:
+            gm.close()
     with open(out_path, "rb") as fh:
         n_lines = sum(1 for _ in fh)
     if n_lines % 4:
         raise RuntimeError(f"combined FASTQ has {n_lines} lines, not a multiple of 4; record framing is "
                            f"broken and any BAM built from it would be corrupt")
+    if n_lines // 4 != n_reads:
+        raise RuntimeError(f"counted {n_reads} headers but wrote {n_lines // 4} records")
     log(f"  combined {len(parts)} chunk(s), {n_lines // 4:,} reads"
-        + (f", {n_fixed} needed a trailing newline" if n_fixed else ""))
+        + (f", {n_fixed} needed a trailing newline" if n_fixed else "")
+        + ("" if keep_description else ", headers stripped")
+        + (f", map -> {os.path.basename(map_path)}" if map_path else ""))
     return n_lines // 4
 
 

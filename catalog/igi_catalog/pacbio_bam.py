@@ -1,25 +1,86 @@
 """Write a PacBio-style unaligned HiFi BAM that the real PacBio tools will accept.
 
-`samtools import` produces a valid unaligned BAM, but not one skera will read: it refuses with
-"Bam record missing the read quality tag". PacBio tools expect the per-read tags a Revio run carries, so
-they are written here.
+`samtools import` produces a valid unaligned BAM, but not one any PacBio tool will read: it carries
+eleven fields and no tags at all. PacBio tools expect what a Revio run carries, so it is written here.
 
     zm  the ZMW: one per insert, and for Kinnex one per array
     np  number of passes behind the consensus
+    ec  effective coverage, a float that tracks np
     rq  predicted read accuracy
+    qs  query start and qe query end, which skera uses to name segments
 
-`rq` is computed from the simulated base qualities rather than asserted from a constant, so it describes the
-read that was actually produced. It is a mean error PROBABILITY converted once at the end, not a mean of
-Phred scores: Phred is a logarithm, and averaging it then converting reports 98.92 % where the true answer is
-92.15 %.
+Three details were each paid for by a defect in delivered data:
+
+- **`rq` is computed from the simulated base qualities** rather than asserted from a constant, so it
+  describes the read that was actually produced. It is a mean error PROBABILITY converted once at the end,
+  not a mean of Phred scores: Phred is a logarithm, and averaging it then converting reports 98.92 % where
+  the true answer is 92.15 %.
+
+- **`np` is drawn per read, not fixed.** Every synthetic read carried `np:i:8` while `rq` varied per read,
+  so a tool filtering on pass count saw no variation at all across a library. np now comes from the
+  empirical CDF measured off the real HG002 BAMs (`resources/pacbio_np_model.json`) and ec from np times
+  the measured ec/np ratio, which is how the two relate in real data.
+
+- **`@RG` must carry `PU`.** skera names each segment `<movie>/<zmw>/ccs/<qs>_<qe>` and takes the movie
+  from the read group's PU field, not from the read name it was handed. With no PU it emitted
+  `/1/ccs/17_2371` -- a leading slash where the movie belongs -- across every delivered Kinnex segment,
+  which is not a name any PacBio tool will parse.
 """
-import math
+import bisect
+import hashlib
+import json
 import os
 import re
+import subprocess
 
 import pysam
 
 SRC = re.compile(r"([A-Za-z0-9_.|-]+),([+-])strand,(\d+)-(\d+)")
+
+# Revio ZMW hole numbers are large and sparsely spread rather than counted from one; the real movie
+# measured for the np model spans 201,329,666 - 266,145,206. Synthetic ZMWs are drawn from that range so
+# that a hole number looks like one, while staying unique and reproducible (see zmw_for).
+ZMW_LO, ZMW_HI = 201_329_666, 266_145_206
+
+_MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "resources", "pacbio_np_model.json")
+_MODELS = {}
+
+
+def np_model(kind="hifi_wgs"):
+    """The empirical np CDF and ec/np ratio measured from real HG002 data."""
+    if not _MODELS:
+        with open(os.path.abspath(_MODEL_PATH)) as fh:
+            _MODELS.update(json.load(fh))
+    m = _MODELS[kind]
+    return [p[0] for p in m["np_cdf"]], [p[1] for p in m["np_cdf"]], m["ec_over_np"]
+
+
+def _u(seed, *parts):
+    """A uniform in [0,1) from a name. Deterministic and independent of read order, so a rerun or a
+    reordered merge gives a read the same np it had before."""
+    h = hashlib.blake2b(":".join([str(seed)] + [str(p) for p in parts]).encode(), digest_size=8)
+    return int.from_bytes(h.digest(), "big") / 2 ** 64
+
+
+def draw_np(seed, key, kind="hifi_wgs"):
+    """(np, ec) for one read, from the empirical distribution."""
+    vals, cdf, ratio = np_model(kind)
+    n = vals[min(bisect.bisect_left(cdf, _u(seed, "np", key)), len(vals) - 1)]
+    # ec scatters about np*ratio in real data; a tenth of a pass of jitter reproduces that without
+    # pretending to a precision the measurement does not support
+    ec = n * ratio * (1.0 + 0.04 * (_u(seed, "ec", key) - 0.5))
+    return int(n), round(ec, 5)
+
+
+def zmw_for(index, seed=0):
+    """A plausible, unique, reproducible ZMW hole number for the index-th read of a library.
+
+    Uniqueness matters more than realism here: two reads sharing a hole number would make the library
+    self-inconsistent, and pbindex would index one of them away. The index is therefore mapped into the
+    real hole-number range by a stride that is coprime with the range, which is a permutation.
+    """
+    span = ZMW_HI - ZMW_LO
+    return ZMW_LO + (index * 7_919 + int(seed) * 104_729) % span
 
 
 def mean_accuracy(qual):
@@ -36,26 +97,74 @@ def source_of(description):
     return m.group(1) if m else None
 
 
-def write_hifi_bam(fastq_paths, out_bam, movie="m84000_260101_000000_s0", one_per_source=False,
-                   np_passes=8, sample="SAMPLE", library=None):
-    """Convert Badread FASTQ(s) into a HiFi-style unaligned BAM.
+def rg_id(movie, read_type="CCS"):
+    """The read-group ID, which must be EIGHT HEXADECIMAL DIGITS.
 
-    Returns (n_written, {source: read_name}). With `one_per_source` only the first read from each reference
-    sequence is kept, which is what a Kinnex array needs: one ZMW yields one HiFi read, and Badread's
-    sampling can hand the same array two reads and another none.
+    pbbam parses an @RG ID as a hex number -- real ones look like `b0776b05` or `b0776b05/0--0` -- and
+    `ID:synthetic` made pbindex abort with "ERROR: stoul" and leave behind a 65-byte index reporting zero
+    reads. The same ID was in every delivered Kinnex BAM. Eight hex digits off the movie name reproduce
+    pbbam's own scheme closely enough that the whole toolchain accepts it; verified against pbindex,
+    pbindexdump, extracthifi and zmwfilter.
     """
-    header = {
-        "HD": {"VN": "1.6", "SO": "unknown"},
-        "RG": [{"ID": "synthetic", "PL": "PACBIO", "SM": sample,
-                "LB": library or sample,
+    return hashlib.blake2b(f"{movie}//{read_type}".encode(), digest_size=4).hexdigest()
+
+
+def header(movie, sample, library=None, kind="hifi_wgs"):
+    """A Revio-shaped BAM header. PU is the movie name and is what skera reads to name segments."""
+    return {
+        "HD": {"VN": "1.6", "SO": "unknown", "pb": "5.0.0"},
+        "RG": [{"ID": rg_id(movie), "PL": "PACBIO", "PM": "REVIO", "PU": movie,
+                "SM": sample, "LB": library or sample,
                 "DS": "READTYPE=CCS;BINDINGKIT=102-739-100;SEQUENCINGKIT=102-118-800;"
                       "BASECALLERVERSION=5.0;FRAMERATEHZ=100.000000"}],
-        "PG": [{"ID": "igi-syn-seq", "PN": "igi-syn-seq", "DS": "synthetic HiFi reads"}],
+        "PG": [{"ID": "igi-syn-seq", "PN": "igi-syn-seq", "DS": f"synthetic {kind} reads"}],
     }
+
+
+def movie_for(sample, library=None):
+    """A stable Revio-style movie name per library, so merging two libraries cannot collide ZMWs.
+
+    Every field after the instrument must be DECIMAL. A real name is m<instrument>_<YYMMDD>_<HHMMSS>_s<N>
+    and pbindex parses those fields as numbers: a hex digest here put a letter in the date field and
+    pbindex died with "ERROR: stoul", leaving a 65-byte index reporting zero reads.
+    """
+    h = int(hashlib.blake2b(f"{sample}/{library or ''}".encode(), digest_size=8).hexdigest(), 16)
+    mon, day = h % 12 + 1, (h // 12) % 28 + 1
+    hh, mm, ss = (h // 400) % 24, (h // 10_000) % 60, (h // 1_000_000) % 60
+    return f"m84000_26{mon:02d}{day:02d}_{hh:02d}{mm:02d}{ss:02d}_s{(h // 7) % 4 + 1}"
+
+
+def _emit(out, name, seq, qual, zmw, np_passes, ec, rq, qs=8, rg="synthetic"):
+    a = pysam.AlignedSegment()
+    a.query_name = name
+    a.query_sequence = seq
+    a.flag = 4
+    a.query_qualities = pysam.qualitystring_to_array(qual) if isinstance(qual, str) else qual
+    # qs/qe bracket the insert inside the ZMW read; real Revio HiFi has qs=8 and qe=qs+len for every
+    # read of the 300,000 measured, and skera uses them to name segments
+    a.set_tags([("zm", int(zmw), "i"), ("np", int(np_passes), "i"), ("ec", float(ec), "f"),
+                ("rq", round(float(rq), 6), "f"), ("qs", int(qs), "i"),
+                ("qe", int(qs) + len(seq), "i"), ("RG", rg, "Z")])
+    out.write(a)
+
+
+def write_hifi_bam(fastq_paths, out_bam, movie=None, one_per_source=False,
+                   np_passes=None, sample="SAMPLE", library=None, kind="hifi_wgs", seed=0,
+                   index_offset=0):
+    """Convert Badread FASTQ(s) into a HiFi-style unaligned BAM.
+
+    Returns (n_written, {source: read_name}). With `one_per_source` only the first read from each
+    reference sequence is kept, which is what a Kinnex array needs: one ZMW yields one HiFi read, and
+    Badread's sampling can hand the same array two reads and another none.
+
+    `np_passes` fixes the pass count for every read; leaving it None draws per read from the measured
+    distribution, which is what real data looks like and what callers filtering on np need.
+    """
+    movie = movie or movie_for(sample, library)
+    rg = rg_id(movie)
     seen = {}
     n = 0
-    zmw = 0
-    with pysam.AlignmentFile(out_bam, "wb", header=header) as out:
+    with pysam.AlignmentFile(out_bam, "wb", header=header(movie, sample, library, kind)) as out:
         for fq in fastq_paths:
             if not fq or not os.path.exists(fq):
                 continue
@@ -65,18 +174,90 @@ def write_hifi_bam(fastq_paths, out_bam, movie="m84000_260101_000000_s0", one_pe
                     if one_per_source:
                         if src is None or src in seen:
                             continue
-                    zmw += 1
+                    idx = index_offset + n
+                    # For Kinnex the ZMW is the array index, counted from 1, because skera's segment
+                    # names and the di/dl tags are read per ZMW; for WGS it is a real-looking hole number.
+                    zmw = idx + 1 if kind == "kinnex" else zmw_for(idx, seed)
                     name = f"{movie}/{zmw}/ccs"
                     if src is not None:
                         seen.setdefault(src, name)
-                    a = pysam.AlignedSegment()
-                    a.query_name = name
-                    a.query_sequence = rec.sequence
-                    a.flag = 4
-                    a.query_qualities = pysam.qualitystring_to_array(rec.quality)
-                    rq = mean_accuracy(a.query_qualities)
-                    a.set_tags([("zm", zmw, "i"), ("np", int(np_passes), "i"),
-                                ("rq", round(rq, 6), "f"), ("RG", "synthetic", "Z")])
-                    out.write(a)
+                    qual = pysam.qualitystring_to_array(rec.quality)
+                    rq = mean_accuracy(qual)
+                    if np_passes is None:
+                        npass, ec = draw_np(seed, f"{library or sample}:{idx}", kind)
+                    else:
+                        npass, ec = int(np_passes), round(int(np_passes) * np_model(kind)[2], 5)
+                    _emit(out, name, rec.sequence, qual, zmw, npass, ec, rq, rg=rg)
                     n += 1
     return n, seen
+
+
+def movie_in(bam):
+    """The movie name already used by a BAM's read names, or None. Preserving it matters: the Kinnex truth
+    tables key arrays by ZMW, so a repair must not renumber or rename anything a truth file points at."""
+    with pysam.AlignmentFile(bam, "rb", check_sq=False) as fh:
+        for rec in fh.fetch(until_eof=True):
+            parts = (rec.query_name or "").split("/")
+            return parts[0] or None
+    return None
+
+
+def repair_bam(in_bam, out_bam, sample, library=None, kind="hifi_wgs", seed=0, movie=None,
+               preserve_names=False, progress=None):
+    """Rewrite an existing unaligned BAM into a Revio-shaped one.
+
+    Two different repairs go through here.
+
+    `preserve_names=False` is the HiFi WGS case. Those BAMs came from `samtools import`, which keeps
+    sequence and qualities and discards everything else: eleven fields, no tags, no read group, and
+    Badread's UUIDs for read names. Sequence and qualities are the expensive part and they are intact, so
+    the libraries are repaired from the BAM rather than re-simulated -- one streaming pass instead of 96
+    badread jobs -- and the reads are renamed and tagged on the way through.
+
+    `preserve_names=True` is the Kinnex case. There the read names and ZMWs are already right and the
+    truth tables point at them, so only the per-read np/ec and the header's PU are rebuilt. Renaming would
+    silently detach every array from its truth row.
+    """
+    movie = movie or (preserve_names and movie_in(in_bam)) or movie_for(sample, library)
+    rg = rg_id(movie)
+    n = 0
+    with pysam.AlignmentFile(in_bam, "rb", check_sq=False, threads=4) as src:
+        with pysam.AlignmentFile(out_bam, "wb", header=header(movie, sample, library, kind),
+                                 threads=6) as out:
+            for rec in src.fetch(until_eof=True):
+                if preserve_names:
+                    name = rec.query_name
+                    zmw = rec.get_tag("zm") if rec.has_tag("zm") else n + 1
+                    qs = rec.get_tag("qs") if rec.has_tag("qs") else 8
+                else:
+                    zmw = n + 1 if kind == "kinnex" else zmw_for(n, seed)
+                    name, qs = f"{movie}/{zmw}/ccs", 8
+                npass, ec = draw_np(seed, f"{library or sample}:{n}", kind)
+                _emit(out, name, rec.query_sequence, rec.query_qualities, zmw, npass, ec,
+                      mean_accuracy(rec.query_qualities), qs=qs, rg=rg)
+                n += 1
+                if progress and n % 1_000_000 == 0:
+                    progress(n)
+    return n
+
+
+def pbindex(bam, cmd=None):
+    """Build the .pbi index the design calls for. Returns the index path, or None if pbindex is absent.
+
+    A failed run still leaves a stub index behind -- 65 bytes reporting zero reads -- which looks like a
+    .pbi to anything that only checks for the file. It is removed rather than shipped.
+    """
+    if not cmd:
+        return None
+    pbi = bam + ".pbi"
+    try:
+        subprocess.run(cmd.format(args=bam), shell=True, check=True)
+    except subprocess.CalledProcessError:
+        if os.path.exists(pbi):
+            os.remove(pbi)
+        raise
+    if os.path.exists(pbi) and os.path.getsize(pbi) > 128:
+        return pbi
+    if os.path.exists(pbi):
+        os.remove(pbi)
+    raise RuntimeError(f"pbindex produced an empty index for {bam}")

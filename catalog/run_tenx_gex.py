@@ -33,6 +33,7 @@ from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
 from igi_catalog.tenx import (R1_LEN, R2_LEN, cellranger_names, five_prime_window,
                               r1_quality, r1_sequence, reads_for_molecule)
+from igi_catalog.readnames import NAME_SPACE_STRIDE, illumina_name
 
 
 def main():
@@ -81,6 +82,10 @@ def main():
     # scope keeps what matters -- every assay of ONE dataset shares a roster, because they all derive it
     # from the same string -- while making the two datasets independent.
     cell_seed = f"{a.seed}:{a.dataset}"
+    # Ordinary Illumina names, the same scheme WES, WGS and bulk RNA use, each library in
+    # its own slice of the name space. These two arms were writing "@<dataset>:<n>", which is
+    # not a name any instrument produces and not a name Cell Ranger or a QC tool expects.
+    name_base = NAME_SPACE_STRIDE * 20 + (0 if a.dataset.endswith("01") else NAME_SPACE_STRIDE // 2)
     wl = load_whitelist(paths["single_cell_whitelist"])
     roster = CellRoster(a.cells, wl, cell_seed, env.clones)
     log(f"  roster: {len(roster.cells):,} cells (seed {a.seed}; shared with every single-cell assay)")
@@ -142,8 +147,8 @@ def main():
                         if k >= len(chunk):
                             break
                         bc, u, rec = chunk[k]
-                        name = f"{a.dataset}:{n_reads + k + 1}"
-                        f1.write(f"@{name} 1:N:0:1\n{r1_sequence(bc,u)}\n+\n{r1_quality(rng)}\n")
+                        name = illumina_name(name_base + n_reads + k)
+                        f1.write(f"@{name} 1:N:0:1\n{r1_sequence(bc,u)}\n+\n{r1_quality(rng, kind='gex')}\n")
                         f2.write(f"@{name} 2:N:0:1\n{s}\n+\n{q}\n")
                         fm.write(f"{name}\t{bc}\t{u}\t{rec}\n")
                         k += 1

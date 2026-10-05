@@ -182,12 +182,14 @@ def main():
 
     label = a.label or "full"
     cat = os.path.join(work, "all.fq")
-    combine_fastq(parts, cat, log=lambda m: print(m, flush=True))
+    # keep_description: write_hifi_bam reads the source array out of each header to take one read per
+    # array. This FASTQ is an intermediate; the delivered BAM carries no comment field at all.
+    combine_fastq(parts, cat, log=lambda m: print(m, flush=True), keep_description=True)
 
     pre_bam = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_bulk_hifi_reads.bam")
-    n_pre, by_src = write_hifi_bam([cat], pre_bam, one_per_source=True,
-                                   np_passes=int(round(float(
-                                       json.load(open(pr)).get("passes_np_mean") or 8))),
+    # np is drawn per read from the real Kinnex distribution, not pinned to the profile's mean: a single
+    # constant np across a library leaves a caller filtering on pass count with nothing to filter on.
+    n_pre, by_src = write_hifi_bam([cat], pre_bam, one_per_source=True, kind="kinnex", seed=a.seed,
                                    sample=a.dataset, library=f"{a.dataset}_kinnex_bulk")
     print(f"  pre-skera: {n_pre:,} reads (one per array) -> {os.path.basename(pre_bam)}", flush=True)
 

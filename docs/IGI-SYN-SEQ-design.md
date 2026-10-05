@@ -338,6 +338,21 @@ TCR: ~1,200 T cells with productive paired alpha/beta (10 % alpha-dual), ~300 cl
 power-law expansion (top 10 clonotypes hold ~30 % of T cells); 5 flagpost clonotypes
 mapped in the truth bundle to specific flagpost neoantigens.
 
+Junctions are recombined from the real germline rather than invented. A CDR3 runs from the conserved
+cysteine at IMGT 104, contributed by the V gene, to the phenylalanine of the J gene's `FGXG` motif at
+IMGT 118; `catalog/resources/vdj_germline.json` holds exactly those nucleotides, plus the framework either
+side, for the 58 functional V and 63 functional J genes GENCODE v37 carries over GRCh38. `vdj.recombine`
+trims each end by whole codons, inserts a GC-rich N region free of stops and cysteines, and keeps the
+result in frame. Measured over 3,000 draws: beta CDR3 length mean 13.9 (real ~14), alpha 13.5 (real
+~13.5), 100 % anchored C..F, 0 % internal cysteine, 0 stops.
+
+This replaced random peptides -- the literal string `CAS` or `CAV`, uniform draws over all twenty amino
+acids, then `F`. That produced junctions like `CASCAWCQESIIYPATQVF`, which no selected repertoire
+contains, and worse, left the junction unrelated to the V and J genes the truth table named, so a caller
+that correctly recovered the V gene from the framework would have been scored wrong. The N-region
+nucleotides are still drawn rather than taken from a real repertoire, so junction length and composition
+are realistic but the clonotypes are not any individual's.
+
 Tumor cells' expression reflects CNA dosage (for scevan) and clone-restricted CTAs.
 
 ### 7.1 Illumina short-read WGS (owner decision, 2026-10-01)
@@ -413,6 +428,32 @@ the baseline for their genes (expression tier).
 PacBio outputs are written as unaligned BAM with Revio-style read names, `RG`/`PU`,
 and HiFi tags (`np`, `rq`, `ec`), indexed with `pbindex`; skera is run to produce the
 segmented BAM so the delivered pair is exactly what a Revio run yields.
+
+Three constraints of that format are not optional and were each found by a tool refusing the output
+rather than by reading a specification:
+
+- The `@RG` `ID` must be **eight hexadecimal digits** (real ones look like `b0776b05`). pbbam parses it as
+  a number, so `ID:synthetic` aborts `pbindex` with `ERROR: stoul` and leaves a 65-byte index reporting
+  zero reads.
+- The `@RG` must carry **`PU`**, the movie name. skera names each segment `<movie>/<zmw>/ccs/<qs>_<qe>`
+  and takes the movie from `PU`, not from the read name it was handed; without it every segment name
+  begins with a slash.
+- Every field of the movie name after the instrument must be **decimal**, because pbbam parses the date
+  and time fields as numbers.
+
+`np` is drawn per read from the empirical distribution measured off the real HG002 BAMs
+(`catalog/resources/pacbio_np_model.json`: median 7, mean 7.60, p10 4, p90 13) and `ec` is `np` times the
+measured `ec/np` ratio of 1.130. A single constant `np` leaves a caller filtering on pass count with
+nothing to filter on. `np` is not derived from each read's own `rq`, even though that would be more
+self-consistent, because Badread's per-read accuracy spread is narrower than Revio's -- sd 0.00089 against
+a p10-p90 span 2.6x wider in the real data -- so deriving it would give a far too tight `np` distribution.
+The read's `rq` remains computed from its own simulated qualities.
+
+**Long-read FASTQ headers carry no truth.** Badread writes the source reference, strand and coordinates
+into every genomic read's description and the source molecule id into every RNA read's, plus
+`error-free_length` and `read_identity`, which do not exist in real data. The description is stripped and
+written to `*_read_map.tsv.gz` instead, which is the same thing `readnames.shuffle_and_rename` does for
+the Illumina arms.
 
 All simulators run from containers (none are installed on the cluster; only wgsim,
 samtools and bcftools are on PATH). Workload runs under SLURM.

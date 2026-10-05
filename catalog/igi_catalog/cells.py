@@ -14,6 +14,8 @@ import bisect
 import csv
 import random
 
+from igi_catalog import vdj
+
 # Cell types and their share of the suspension, from design section 8.
 DEFAULT_COMPOSITION = [
     ("tumor", 0.35), ("CD8_T", 0.18), ("CD4_T", 0.09), ("Treg", 0.03), ("B", 0.05),
@@ -91,6 +93,7 @@ class CellRoster:
                  doublet_rate=0.06, ambient_rate=0.03, n_clonotypes=300, tcr_cells=1200,
                  alpha_dual_rate=0.10):
         self.rng = random.Random(f"{seed}:cells")
+        self.seed = seed
         self.n_cells = n_cells
         self.doublet_rate = doublet_rate
         self.ambient_rate = ambient_rate
@@ -128,6 +131,8 @@ class CellRoster:
             self.cells.append({"barcode": bc, "cell_type": t, "clone": clone,
                                "umi_scale": UMI_SCALE.get(t, 1.0),
                                "clonotype": "", "trb": "", "tra": "", "tra2": "",
+                               "trb_v": "", "trb_j": "", "tra_v": "", "tra_j": "",
+                               "tra2_v": "", "tra2_j": "",
                                "is_doublet": False, "partner_barcode": ""})
 
         self._assign_clonotypes(n_clonotypes, tcr_cells, alpha_dual_rate)
@@ -154,28 +159,61 @@ class CellRoster:
         pos = 0
         for ci, size in enumerate(sizes, start=1):
             name = f"clonotype{ci}"
-            trb = self._cdr3(self.rng, "TRB")
-            tra = self._cdr3(self.rng, "TRA")
+            # Each clonotype recombines from its OWN stream, keyed by name, so a junction is a pure
+            # function of the clonotype and does not depend on how many clonotypes came before it.
+            trb = vdj.recombine("TRB", random.Random(f"{self.seed}:vdj:{name}:TRB"))
+            tra = vdj.recombine("TRA", random.Random(f"{self.seed}:vdj:{name}:TRA"))
+            self._burn_legacy_cdr3(2)
             members = take[pos:pos + size]
             pos += size
             for i in members:
                 c = self.cells[i]
-                c["clonotype"], c["trb"], c["tra"] = name, trb, tra
+                c["clonotype"] = name
+                c["trb"], c["tra"] = trb["cdr3_aa"], tra["cdr3_aa"]
+                c["trb_v"], c["trb_j"] = trb["v"], trb["j"]
+                c["tra_v"], c["tra_j"] = tra["v"], tra["j"]
                 if self.rng.random() < alpha_dual_rate:
-                    c["tra2"] = self._cdr3(self.rng, "TRA")
-            self.clonotypes.append({"clonotype": name, "size": len(members), "trb": trb, "tra": tra})
+                    a2 = vdj.recombine("TRA", random.Random(f"{self.seed}:vdj:{name}:TRA2:{c['barcode']}"))
+                    c["tra2"] = a2["cdr3_aa"]
+                    c["tra2_v"], c["tra2_j"] = a2["v"], a2["j"]
+                    self._burn_legacy_cdr3(1)
+            self.clonotypes.append({
+                "clonotype": name, "size": len(members),
+                "trb": trb["cdr3_aa"], "trb_v": trb["v"], "trb_j": trb["j"], "trb_c": trb["c"],
+                "trb_cdr3_nt": trb["cdr3_nt"],
+                "tra": tra["cdr3_aa"], "tra_v": tra["v"], "tra_j": tra["j"], "tra_c": tra["c"],
+                "tra_cdr3_nt": tra["cdr3_nt"],
+                "flagpost_antigen": ""})
+        self._link_flagpost_clonotypes()
 
-    @staticmethod
-    def _cdr3(rng, chain):
-        """A CDR3 amino-acid sequence of plausible length and composition.
+    def _burn_legacy_cdr3(self, times):
+        """Advance the shared stream exactly as the old random-peptide generator did.
 
-        These are synthetic sequences, not real V(D)J recombinants: the design uses clonotypes to test
-        clustering and expansion, not germline gene assignment, and inventing a real-looking V-J pairing
-        would imply a fidelity this does not have. Documented rather than hidden.
+        This is deliberate, and it is not dead code. `self.rng` is the roster's one shared stream, and
+        after the clonotype loop it assigns doublets and partner barcodes. Those draws are already baked
+        into four delivered libraries -- Kinnex single cell, ONT single cell and 10x GEX for both datasets
+        -- which share this roster. Replacing the junction generator without replacing its consumption of
+        the stream would shift every later draw and silently change which cells are doublets, making the
+        roster disagree with libraries that are expensive to rebuild and were not at fault.
+
+        So the old generator's draws are still taken, and its value is thrown away.
         """
-        n = rng.randint(10, 18)
-        mid = "".join(rng.choice("ACDEFGHIKLMNPQRSTVWY") for _ in range(n - 3))
-        return ("CAS" if chain == "TRB" else "CAV") + mid + "F"
+        for _ in range(times):
+            n = self.rng.randint(10, 18)
+            for _ in range(n - 3):
+                self.rng.choice("ACDEFGHIKLMNPQRSTVWY")
+
+    def _link_flagpost_clonotypes(self):
+        """Map the largest clonotypes to flagpost neoantigens, as the design's truth bundle requires.
+
+        The design asks for five flagpost clonotypes "mapped in the truth bundle to specific flagpost
+        neoantigens". The link is by rank: the expanded clonotypes are the ones a user will find, so they
+        are the ones worth asserting an antigen for. `designer` owns which events are flagposts, so the
+        antigen names are filled in by the TCR builder, which has the catalog; the column exists here so
+        the roster and the clonotype table carry it from the start.
+        """
+        for c in sorted(self.clonotypes, key=lambda x: -x["size"])[:5]:
+            c.setdefault("flagpost_antigen", "")
 
     def _assign_doublets(self):
         n = int(round(self.n_cells * self.doublet_rate))
@@ -186,7 +224,8 @@ class CellRoster:
 
     # ---------------------------------------------------------------- output
     def write(self, path):
-        cols = ["barcode", "cell_type", "clone", "umi_scale", "clonotype", "trb", "tra", "tra2",
+        cols = ["barcode", "cell_type", "clone", "umi_scale", "clonotype",
+                "trb", "trb_v", "trb_j", "tra", "tra_v", "tra_j", "tra2", "tra2_v", "tra2_j",
                 "is_doublet", "partner_barcode"]
         with open(path, "w", newline="") as fh:
             w = csv.DictWriter(fh, fieldnames=cols, delimiter="\t", extrasaction="ignore")
@@ -196,7 +235,11 @@ class CellRoster:
 
     def write_clonotypes(self, path):
         with open(path, "w", newline="") as fh:
-            w = csv.DictWriter(fh, fieldnames=["clonotype", "size", "trb", "tra"], delimiter="\t")
+            w = csv.DictWriter(fh, fieldnames=[
+                "clonotype", "size",
+                "trb", "trb_v", "trb_j", "trb_c", "trb_cdr3_nt",
+                "tra", "tra_v", "tra_j", "tra_c", "tra_cdr3_nt",
+                "flagpost_antigen"], delimiter="\t", extrasaction="ignore")
             w.writeheader()
             w.writerows(sorted(self.clonotypes, key=lambda c: -c["size"]))
         return path

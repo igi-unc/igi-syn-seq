@@ -66,3 +66,16 @@ ont_qscore_model: nanopore2023
 # backstop, not a substitute for chunking small enough.
 pacbio_chunk_bp: 20000000
 pacbio_chunk_timeout_s: 10800
+
+# pbindex builds the .pbi index the design calls for (pbtk >= 3.5.0). Absent from the pbskera and pbccs
+# images, so it needs its own container. Leave unset to skip indexing.
+pbindex_cmd: "singularity exec --no-home -B /path /path/to/pbtk_3.5.0.sif pbindex {args}"
+
+# ONT bulk RNA is a separate length fit from the single-cell one. 910/461 above is IPISRC044 10x 5p
+# single-cell cDNA: 5-prime biased and deliberately truncated, which is right for the sc assay and wrong
+# for a library the design calls "cDNA, full length". Measured on 400,000 reads of the real HG002 Kinnex
+# FLNC BAM, which is a genuine full-length cDNA library of the same transcriptome:
+#   mean 2091  sd 843  median 1859  p10 1265  p90 3192  >=1kb 96.7%  >=2kb 42.5%
+# That independently agrees with the 2224 post-skera segment mean recorded above from the same library.
+ont_bulk_rna_length_mean: 2091
+ont_bulk_rna_length_sd: 843

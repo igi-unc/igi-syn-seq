@@ -22,6 +22,7 @@ recombinants, so this library tests clonotype clustering and expansion, not germ
 """
 import argparse
 import collections
+import csv
 import gzip
 import json
 import os
@@ -37,7 +38,56 @@ from igi_catalog.molecules import umi
 from igi_catalog.pipeline import quality_model
 from igi_catalog.tenx import (R1_LEN, R2_LEN, cellranger_names, five_prime_window,
                               r1_quality, r1_sequence, reads_for_molecule)
-from igi_catalog.vdj import assemble, cdr3_nucleotide, load_segments
+from igi_catalog.readnames import NAME_SPACE_STRIDE, illumina_name
+from igi_catalog.vdj import assemble, genes
+
+
+
+
+def link_flagposts(roster, catalog_dir, dataset, log, n=5):
+    """Attach flagpost neoantigens to the largest clonotypes, and report how many landed.
+
+    By rank, because an expanded clonotype is the one a user will actually recover, so it is the one worth
+    asserting an antigen for. The antigens come from the catalog's own flagpost column rather than from a
+    list repeated here, so the two cannot drift apart.
+    """
+    path = os.path.join(catalog_dir, f"{dataset}.snv_indel.tsv")
+    if not os.path.exists(path):
+        log(f"  no catalog at {path}; flagpost_antigen left empty")
+        return 0
+    flag = []
+    with open(path) as fh:
+        rd = csv.DictReader(fh, delimiter="\t")
+        for row in rd:
+            if str(row.get("flagpost", "")).lower() in ("1", "true", "yes") and row.get("best_peptide"):
+                flag.append((row.get("gene", ""), row.get("best_peptide", ""),
+                             row.get("best_allele", "")))
+    if not flag:
+        log("  catalog has no flagpost peptides; flagpost_antigen left empty")
+        return 0
+    top = sorted(roster.clonotypes, key=lambda c: -c["size"])[:n]
+    for i, c in enumerate(top):
+        gene, pep, allele = flag[i % len(flag)]
+        c["flagpost_antigen"] = f"{gene}:{pep}:{allele}"
+    log(f"  linked {len(top)} flagpost clonotypes to antigens, largest first "
+        f"({', '.join(c['clonotype'] for c in top)})")
+    return len(top)
+
+
+def cdr3_nt_for(roster, clonotype, prefix, cell):
+    """The nucleotide junction for one chain of one clonotype.
+
+    The roster's clonotype table carries it for the beta and the primary alpha. A second alpha is per
+    cell, so it is recombined again from the same keyed stream the roster used, which reproduces it
+    exactly rather than guessing.
+    """
+    from igi_catalog import vdj
+    if prefix in ("trb", "tra"):
+        for row in roster.clonotypes:
+            if row["clonotype"] == clonotype:
+                return row[f"{prefix}_cdr3_nt"]
+    r = vdj.recombine("TRA", random.Random(f"{roster.seed}:vdj:{clonotype}:TRA2:{cell['barcode']}"))
+    return r["cdr3_nt"]
 
 
 def main():
@@ -45,6 +95,9 @@ def main():
     ap.add_argument("--design", default="design.yaml")
     ap.add_argument("--paths", required=True)
     ap.add_argument("--dataset", required=True)
+    ap.add_argument("--catalog-dir", default="output",
+                    help="where the designer wrote <dataset>.snv_indel.tsv; the flagpost "
+                         "antigen link is read from its flagpost and best_peptide columns")
     ap.add_argument("--cells", type=int, default=4000)
     ap.add_argument("--reads-per-cell", type=int, default=5000,
                     help="10x's own recommendation for V(D)J, and far fewer than gene expression needs "
@@ -71,29 +124,38 @@ def main():
     log = lambda m: print(m, flush=True)
 
     cell_seed = f"{a.seed}:{a.dataset}"
+    # Ordinary Illumina names, the same scheme WES, WGS and bulk RNA use, each library in
+    # its own slice of the name space. These two arms were writing "@<dataset>:<n>", which is
+    # not a name any instrument produces and not a name Cell Ranger or a QC tool expects.
+    name_base = NAME_SPACE_STRIDE * 21 + (0 if a.dataset.endswith("01") else NAME_SPACE_STRIDE // 2)
     roster = CellRoster(a.cells, load_whitelist(paths["single_cell_whitelist"]),
                         cell_seed, env.clones)
     tcells = [c for c in roster.cells if c.get("clonotype")]
     log(f"  roster {len(roster.cells):,} cells (seed {cell_seed}); "
         f"{len(tcells):,} carry a clonotype")
 
-    segs = load_segments(paths["gtf"], env.genome)
-    log(f"  {len(segs)} TR segments from the GTF (the annotation cache keeps only 1 of 202)")
+    log(f"  germline: {len(genes('TRB', 'v'))} TRBV, {len(genes('TRB', 'j'))} TRBJ, "
+        f"{len(genes('TRA', 'v'))} TRAV, {len(genes('TRA', 'j'))} TRAJ functional genes")
 
-    # One transcript per chain per clonotype, so expanded cells share a junction exactly.
+    # One transcript per chain per clonotype, so expanded cells share a junction exactly. The roster
+    # already recombined each clonotype from the real germline anchors and recorded which V and J it used,
+    # so the transcript here is assembled from those same genes: the V gene a caller recovers from the
+    # framework is the V gene the truth table names, which is the whole point of doing it this way.
     by_clono = {}
     for c in tcells:
         k = c["clonotype"]
         if k in by_clono:
             continue
-        crng = random.Random(f"{cell_seed}:vdj:{k}")
         chains = []
-        for chain, pep in (("TRB", c.get("trb")), ("TRA", c.get("tra")), ("TRA", c.get("tra2"))):
-            if not pep:
+        for chain, pre in (("TRB", "trb"), ("TRA", "tra"), ("TRA", "tra2")):
+            if not c.get(pre):
                 continue
-            seq, used = assemble(segs, chain, cdr3_nucleotide(pep), crng)
+            rec = {"v": c[f"{pre}_v"], "j": c[f"{pre}_j"],
+                   "c": "TRBC2" if chain == "TRB" else "TRAC",
+                   "cdr3_aa": c[pre], "cdr3_nt": cdr3_nt_for(roster, k, pre, c)}
+            seq = assemble(rec)
             if seq:
-                chains.append((chain, pep, seq, used))
+                chains.append((chain, c[pre], seq, rec))
         by_clono[k] = chains
     n_ch = sum(len(v) for v in by_clono.values())
     log(f"  {len(by_clono):,} clonotypes -> {n_ch:,} chain transcripts "
@@ -119,7 +181,7 @@ def main():
     n_reads = n_chunks = 0
 
     with gzip.open(r1_out, "wt") as f1, gzip.open(r2_out, "wt") as f2, gzip.open(mpath, "wt") as fm:
-        fm.write("read\tbarcode\tumi\tchain\tcdr3_aa\tv\tj\tc\n")
+        fm.write("read\tbarcode\tumi\tchain\tcdr3_aa\tcdr3_nt\tv\tj\tc\n")
         chunk, ci = [], 0
 
         def flush(chunk, ci):
@@ -146,10 +208,10 @@ def main():
                             break
                         s = fh.readline().strip(); fh.readline(); q = fh.readline().strip()
                         bc, u, chain, pep, _seq, used = chunk[k]
-                        nm = f"{a.dataset}:{n_reads + k + 1}"
-                        f1.write(f"@{nm} 1:N:0:1\n{r1_sequence(bc,u)}\n+\n{r1_quality(rng)}\n")
+                        nm = illumina_name(name_base + n_reads + k)
+                        f1.write(f"@{nm} 1:N:0:1\n{r1_sequence(bc,u)}\n+\n{r1_quality(rng, kind='tcr')}\n")
                         f2.write(f"@{nm} 2:N:0:1\n{s}\n+\n{q}\n")
-                        fm.write(f"{nm}\t{bc}\t{u}\t{chain}\t{pep}\t"
+                        fm.write(f"{nm}\t{bc}\t{u}\t{chain}\t{pep}\t{used['cdr3_nt']}\t"
                                  f"{used['v']}\t{used['j']}\t{used['c']}\n")
                         k += 1
                 n_reads += k
@@ -166,6 +228,11 @@ def main():
         flush(chunk, ci)
 
     log(f"  {n_reads:,} read pairs over {n_chunks} ART chunk(s) -> {os.path.basename(r2_out)}")
+
+    # The design asks for five flagpost clonotypes "mapped in the truth bundle to specific flagpost
+    # neoantigens". The catalog owns which events are flagposts, so the link is made here, where it is
+    # readable, and written into the clonotype table rather than left for a user to guess at.
+    n_linked = link_flagposts(roster, a.catalog_dir, a.dataset, log)
     roster.write_clonotypes(os.path.join(a.out, f"{a.dataset}_{a.label or 'full'}_tcr_clonotypes.tsv"))
 
     sizes = collections.Counter(c["clonotype"] for c in tcells)
@@ -177,9 +244,15 @@ def main():
             "mean_reads_per_molecule": round(mean_reads, 2),
             "read_pairs_written": n_reads,
             "largest_clonotype": max(sizes.values()) if sizes else 0,
-            "segments_available": len(segs),
-            "caveat": ("CDR3s are synthetic peptides, not real recombinants; this library tests clonotype "
-                       "clustering and expansion, not germline V-J assignment"),
+            "trbv_genes": len(genes("TRB", "v")), "trbj_genes": len(genes("TRB", "j")),
+            "trav_genes": len(genes("TRA", "v")), "traj_genes": len(genes("TRA", "j")),
+            "flagpost_clonotypes_linked": n_linked,
+            "caveat": ("junctions are recombined from the real GENCODE V and J germline anchors -- the "
+                       "conserved Cys at IMGT 104 and the Phe of the J FGXG motif -- with a trimmed, "
+                       "GC-rich N region, so the V and J a caller recovers are the ones the truth table "
+                       "names. N-region nucleotides are drawn rather than taken from a real repertoire, "
+                       "so junction length and composition are realistic but the clonotypes are not any "
+                       "individual's"),
             "r1": r1_out, "r2": r2_out, "molecule_map": mpath,
             "runtime_s": round(time.time() - t0)}
     with open(os.path.join(a.out, f"{a.dataset}_{a.label or 'full'}_tenx_tcr.json"), "w") as fh:

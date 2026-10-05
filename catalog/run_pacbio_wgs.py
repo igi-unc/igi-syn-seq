@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.pipeline import depth_denominator, source_plan
+from igi_catalog.pacbio_bam import pbindex, write_hifi_bam
 from igi_catalog import rearrange
 
 
@@ -261,16 +262,20 @@ def main():
                            f"broken and the BAM would be corrupt")
     print(f"  combined {len(fq)} chunk(s), {n_lines // 4:,} reads"
           + (f", {n_fixed} needed a trailing newline" if n_fixed else ""), flush=True)
-    subprocess.run(sam.format(args=f"import -0 {cat} -o {out_bam}"), shell=True, check=True)
-    n_reads = int(subprocess.run(sam.format(args=f"view -c {out_bam}"), shell=True,
-                                 capture_output=True, text=True).stdout.strip() or 0)
+    # NOT `samtools import`. That produces a valid unaligned BAM and a useless HiFi one: eleven fields,
+    # no tags, no read group, and Badread's UUIDs for read names. pbmm2, pbindex, extracthifi and
+    # DeepVariant's HiFi model all either reject it or mishandle it, which made 251 GB of delivered BAM
+    # unusable. write_hifi_bam gives it Revio read names, zm/np/ec/rq/qs/qe and an @RG carrying PU.
+    n_reads, _ = write_hifi_bam([cat], out_bam, sample=a.dataset, seed=a.seed,
+                                library=f"{a.dataset}_{a.library}_hifi", kind="hifi_wgs")
+    pbi = pbindex(out_bam, paths.get("pbindex_cmd"))
 
     # Every builder records its seed; see the note in run_wes.py for what goes wrong when a checker is
     # told a different one. For long reads it also pins which chunk boundaries were used.
     meta = {"dataset": a.dataset, "chrom": a.chrom, "library": a.library, "depth": a.depth,
             "seed": a.seed, "assay": "PacBio HiFi WGS",
             "platform": "PacBio Revio HiFi", "simulator": "badread pacbio2021",
-            "reads": n_reads, "bam": out_bam, "sources": plan_rows,
+            "reads": n_reads, "bam": out_bam, "pbi": pbi, "sources": plan_rows,
             "identity": ident, "chunk_bp": chunk_bp, "chunks": len(fq),
             "runtime_s": round(time.time() - t0)}
     with open(os.path.join(a.out, f"{a.dataset}_{a.chrom}_{a.library}_hifi.json"), "w") as fh:

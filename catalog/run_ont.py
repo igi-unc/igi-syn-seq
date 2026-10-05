@@ -12,7 +12,8 @@ one molecule is one read. That is the whole difference, and it is why these are 
 
 Model constants are measured, not guessed, and the two RNA assays and WGS use different ones:
 
-    ont_length_mean / _sd        910 / 461    IPISRC044 R10.4.1 SUP scRNA, 2025-07-17
+    ont_length_mean / _sd        910 / 461    IPISRC044 R10.4.1 SUP scRNA, 2025-07-17 (sc only)
+    ont_bulk_rna_length_mean/_sd 2091/ 843    HG002 Kinnex FLNC, real full-length cDNA
     ont_identity                 98.22,...    same, calibrated for Badread's -0.22 point cDNA offset
     ont_wgs_length_mean / _sd    19117/15530  ONT open data, HG002 PAW70337 R10.4.1 SUP
     ont_wgs_identity_target      0.98676      same
@@ -92,6 +93,17 @@ def main():
         lmean = int(paths.get("ont_wgs_length_mean", 19117))
         lsd = int(paths.get("ont_wgs_length_sd", 15530))
         ident = paths.get("ont_wgs_identity", "98.9,99.6,1.5")
+    elif a.assay == "bulk_rna":
+        # A separate fit from the single-cell one. The sc model (910/461) is fitted from IPISRC044's 10x
+        # 5' single-cell cDNA, which is a 5'-biased, deliberately truncated library -- correct for the sc
+        # assay and wrong for this one, which the design calls "cDNA, full length". At 910 bp most
+        # transcripts are not covered end to end, so isoform detection, which is the whole reason to have
+        # long-read RNA and what the 30 designed splice events are measured by, had nothing to work with.
+        lmean = int(paths.get("ont_bulk_rna_length_mean", 2091))
+        lsd = int(paths.get("ont_bulk_rna_length_sd", 843))
+        # Identity is shared with the single-cell fit: both are cDNA on the same R10.4.1 SUP chemistry,
+        # and it is length, not accuracy, that separates a full-length library from a 5'-biased one.
+        ident = paths.get("ont_identity", "98.41,99.6,1.5")
     else:
         lmean = int(paths.get("ont_length_mean", 910))
         lsd = int(paths.get("ont_length_sd", 461))
@@ -193,7 +205,11 @@ def main():
 
     label = a.label or (f"{a.chrom}_{a.library}" if a.assay == "wgs" else "full")
     cat = os.path.join(work, "all.fq")
-    n_reads = combine_fastq(parts, cat, log=log)
+    # The ONT FASTQ *is* the deliverable, so the simulator's description is stripped and written to
+    # a separate map: Badread's header names the source reference, strand and coordinates for a
+    # genomic read and the source molecule for an RNA one. See combine_fastq's docstring.
+    map_path = os.path.join(a.out, f"{a.dataset}_{label}_ont_{a.assay}_read_map.tsv.gz")
+    n_reads = combine_fastq(parts, cat, log=log, map_path=map_path)
     out_fq = os.path.join(a.out, f"{a.dataset}_{label}_ont_{a.assay}.fastq.gz")
     with open(cat, "rb") as src, gzip.open(out_fq, "wb") as dst:
         while True:

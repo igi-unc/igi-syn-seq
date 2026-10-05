@@ -465,3 +465,60 @@ still have no acceptance arm**, which is now the largest open gap.
 - The input manifest's checksums (`catalog-freeze.txt` covers the catalog inputs; the 28-row
   `input-manifest.tsv` does not yet carry them).
 - Push the local commits; request GitHub GC for the rewritten history; close the forks and PRs.
+
+---
+
+## 9. Review findings of 2026-10-05 and what each one changed
+
+Eight defects were found by review of the delivered data. Four were in the packaging and were repaired in
+place; three needed the reads simulated again; one was a measurement that turned out to be right once the
+correct target was used. The distinction is worth keeping: a packaging defect costs one streaming pass
+over the library, a read defect costs the whole arm.
+
+| # | Defect | Root cause | Fix | Cost |
+|---|---|---|---|---|
+| B1 | Every ONT read header carried the source reference, strand and position, or the source molecule id | Badread's default description, never stripped; `readnames` fixed this for the Illumina arms only | `longread.combine_fastq(map_path=...)` strips it into `*_read_map.tsv.gz`; `repair_longread.py --what ont` for delivered files | 1 pass over 396 GB |
+| B2 | HiFi BAMs had 11 fields, no tags, UUID names, no `@RG`, no `.pbi` | `run_pacbio_wgs.py` built them with `samtools import` while `pacbio_bam.write_hifi_bam` sat unused next to it | `write_hifi_bam` in the builder; `repair_longread.py --what hifi` for the 4 delivered BAMs | 1 pass over 290 GB |
+| B3 | Kinnex segment names were `/1/ccs/17_2371` | `@RG` had no `PU`, and skera takes the movie from `PU` | `pacbio_bam.header` sets `PU`/`PM`; repair then re-runs `skera split` | 1 pass + 4 skera runs |
+| B4 | `np:i:8` constant across a library while `rq` varied per read | `np_passes` pinned to the profile's mean | `draw_np` from `resources/pacbio_np_model.json` | same pass as B2/B3 |
+| B5 | ONT bulk RNA reads averaged 910 bp in a library the design calls "cDNA, full length" | `run_ont.py` applied the single-cell model, fitted from 10x 5' sc cDNA, to `bulk_rna` as well | `ont_bulk_rna_length_mean/_sd` = 2091/843, measured on real HG002 Kinnex FLNC | **re-simulate 2 libraries** |
+| B6 | 10x read names were `@IGI-SYN-SEQ-01:1`; R1 qualities had 663 distinct strings in 20,000 reads | the two 10x builders never used `readnames.illumina_name`; `r1_quality` was a flat two-level draw | `illumina_name` with a name-space slice; `r1_quality` draws per cycle from `resources/tenx_r1_quality.json` | **re-simulate 4 libraries** |
+| B7 | CDR3s were random peptides with internal cysteines, unrelated to the V/J the truth table named | `cells.CellRoster._cdr3` drew uniformly over 20 amino acids | `vdj.recombine` from `resources/vdj_germline.json`; clonotype table gains V/J/C, `cdr3_nt` and `flagpost_antigen` | **re-simulate 2 libraries** |
+
+### 9.1 The R1 quality target was R1, not R2
+
+The review compared 10x R1's 663 distinct quality strings against R2's 19,461 and read the gap as a
+defect in R1. Half right. Measuring the real IPISRC044 library gives **2,819** distinct strings in 20,000
+reads over the first 26 cycles, because real R1 is only 26 four-level-binned cycles (`#*9I`, so
+Q2/Q9/Q24/Q40) and genuinely has low variety. R2's 19,461 was never the right target. The per-cycle model
+now gives 2,947 against that real 2,819, and the old 663 was indeed wrong.
+
+### 9.2 Why the roster did not have to be rebuilt for B7
+
+`CellRoster` has one shared random stream, and after the clonotype loop it uses it to assign doublets and
+partner barcodes. Those draws are already inside four delivered libraries -- Kinnex single cell, ONT
+single cell and 10x GEX, both datasets -- which share the roster. Swapping the junction generator without
+replacing its consumption of that stream would have shifted every later draw and silently changed which
+cells are doublets.
+
+`CellRoster._burn_legacy_cdr3` therefore still takes the old generator's draws and throws the value away.
+Verified by rebuilding the roster and diffing it against the delivered `IGI-SYN-SEQ-01_full_cells.tsv`:
+`barcode`, `cell_type`, `clone`, `umi_scale`, `clonotype`, `is_doublet` and `partner_barcode` differ in
+**0 of 4,000** cells, while `trb`, `tra` and `tra2` differ in all of them. Only the 10x TCR arm needed
+rebuilding.
+
+### 9.3 Fitted resources added
+
+| File | Measured from | Holds |
+|---|---|---|
+| `resources/pacbio_np_model.json` | 300k reads of `HG002_PacBio-Revio_m84039_230928_213653_s3.hifi_reads.bam`; 200k of the Kinnex `segmented.bam` | empirical `np` CDF and `ec/np` ratio, separately for HiFi WGS and Kinnex |
+| `resources/tenx_r1_quality.json` | 500k R1 reads each of `DSCOLAB_IPISRC044_T3_SCG1` and `..._T3_TCR1` | per-cycle quality distributions for GEX and TCR |
+| `resources/vdj_germline.json` | GENCODE v37 TR segments over GRCh38 | per V the CDR3 nucleotides from the conserved Cys, per J those to the conserved Phe, plus framework |
+
+### 9.4 Verification
+
+The repaired HiFi BAM was put through the PacBio toolchain rather than inspected by eye: `pbindex` indexes
+it (949 of 949 reads), `pbindexdump` reads the index, `extracthifi` keeps 949 of 949, `zmwfilter` parses
+the hole numbers and `bam2fastq` round-trips it. `skera split` on a repaired Kinnex BAM produces
+`m84000_260101_000000_s0/1/ccs/17_1856` with the segment coordinates unchanged from the original run, so
+the arrays still line up with their truth rows.
