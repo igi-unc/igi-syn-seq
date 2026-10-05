@@ -36,12 +36,30 @@ ORDINAL = {f"chr{i}": i for i in range(1, 23)}
 ORDINAL.update({"chrX": 23, "chrY": 24, "chrM": 25})
 
 
-def whole_chromosome(chrom, length, window=WINDOW):
-    """Fixed windows tiling a chromosome, 1-based inclusive."""
-    out, pos = [], 1
-    while pos <= length:
-        out.append((pos, min(length, pos + window - 1)))
-        pos += window
+def whole_chromosome(chrom, length, window=WINDOW, clones=None):
+    """Windows tiling a chromosome, 1-based inclusive, never straddling a copy-number boundary.
+
+    The windows exist so one `source_plan` call can stand for a few megabases of reads. That is only
+    sound if copy number is constant across the window, and with plain 5 Mb tiles it was not: the plan was
+    evaluated at `(start + end) // 2`, so a focal event was represented only when the midpoint happened to
+    fall inside it. It almost never did. Measured on the delivered libraries, PTEN_homdel (0.40 Mb) and
+    RB1_homdel (0.30 Mb) were entirely absent -- acceptance saw a depth ratio of 1.0 and 1.03 against an
+    expected 0.30 and 0.379 -- and MYC_amp (2.00 Mb) was invisible for the same reason. A 0.3 Mb event has
+    a 6 % chance of containing the midpoint of the window it lands in, so this was not bad luck.
+
+    Splitting at the boundaries makes every window copy-number-uniform, which is the property the midpoint
+    shortcut assumed all along. It costs more windows only near events: a chromosome with four CNAs gains
+    at most eight.
+    """
+    cuts = sorted({1, length + 1} | {c for c in (clones.cn_boundaries(chrom) if clones else ())
+                                     if 1 < c <= length})
+    out = []
+    for i in range(len(cuts) - 1):
+        seg_start, seg_end = cuts[i], cuts[i + 1] - 1
+        pos = seg_start
+        while pos <= seg_end:
+            out.append((pos, min(seg_end, pos + window - 1)))
+            pos += window
     return {chrom: out}
 
 
@@ -79,7 +97,7 @@ def main():
     print(f"  somatic tables applied: {', '.join(os.path.basename(t) for t in tables)}", flush=True)
 
     length = env.genome.lengths[a.chrom]
-    windows = whole_chromosome(a.chrom, length)
+    windows = whole_chromosome(a.chrom, length, clones=env.clones)
     work = os.path.join(a.work, f"{a.dataset}_{a.chrom}_{a.library}_wgs")
     os.makedirs(work, exist_ok=True)
     os.makedirs(a.out, exist_ok=True)

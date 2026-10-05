@@ -98,6 +98,24 @@ class CloneModel:
                 label = f"{label}+{eid}"
         return a, b, label
 
+    def cn_boundaries(self, chrom):
+        """Every 1-based coordinate on `chrom` where copy number can change, across all clones.
+
+        `cn` evaluates copy number at a point. Any caller that tiles a chromosome into fixed windows and
+        asks about one position per window therefore sees a focal event only if that position happens to
+        land inside it -- and a 0.3 Mb deletion inside a 5 Mb window almost never does. This returns the
+        breakpoints so a caller can tile without ever straddling one.
+        """
+        cuts = set()
+        for ix in list(self.seg.values()) + list(self.sv_seg.values()):
+            if ix is None:
+                continue
+            for s, e, _ in ix.overlaps(chrom, 0, 1 << 62):
+                cuts.add(int(s) + 1)        # the index is 0-based half-open; cn() takes 1-based
+                cuts.add(int(e) + 1)
+        return sorted(c for c in cuts if c > 1)
+
+
     def vaf(self, chrom, pos1, hap, clone, pre_cna=True):
         """Expected bulk-tumor VAF for an event on haplotype `hap` acquired in `clone`.
         Truncal events with pre_cna=True predate the copy-number changes (multiplicity = current copies of
