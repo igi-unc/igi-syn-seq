@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_pacbio
-#SBATCH -c 48 --mem=64G -t 48:00:00
+#SBATCH -c 48 --mem=24G -t 48:00:00
 #SBATCH --array=1-96
 # PacBio HiFi WGS at 30x via Badread, tumour and normal. Same array layout as 10_wes.sbatch.
 #
@@ -11,6 +11,10 @@
 # -0.22 for ONT cDNA, so the offset is not a constant). pacbio_identity in the site paths file is already
 # calibrated for that; it is not the target accuracy. Validated on chr21: length 16,788 sd 4,916 and
 # accuracy 0.99830, against real HG002 Revio at 16,689 sd 4,593 and 0.99823.
+# Memory is 24G against a measured peak of 11.6 G over 120 prior tasks. The 64G it used to ask for
+# was a 5.5x over-request, and memory -- not the job count -- is what the QOS actually caps: with
+# 64G per task the ONT array sat at QOSMaxMemoryPerUser for two and a half hours without being given
+# a single slot while this array ran. An over-request costs throughput, not safety.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 O=$IGI_WORK/release/pacbio; W=$IGI_WORK/release/pacbio_work

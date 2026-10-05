@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_ont_wgs
-#SBATCH -c 48 --mem=64G -t 48:00:00
+#SBATCH -c 48 --mem=48G -t 48:00:00
 #SBATCH --array=1-96
 # ONT R10.4.1 WGS at 30x, tumour and normal. Same array layout as 10_wes.sbatch: 24 chromosomes x 2
 # libraries x 2 datasets. Uses the same derived-chromosome construction as the PacBio arm, shared through
@@ -10,6 +10,8 @@
 # request, the opposite direction from PacBio's +0.43, so ont_wgs_identity is 99.17 to land on the measured
 # 0.98676. The length model was the open risk for this assay and is verified: at a requested 19,117/15,530
 # it returns mean 18,554 and sd 15,378, so sd ~ mean is reproduced.
+# Memory is 48G against a measured peak of 39.6 G over 158 prior tasks; the mean is 6.0 G but the tail
+# is what has to fit. See the note in 21_wgs_pacbio.sbatch for why the old 64G mattered.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 O=$IGI_WORK/release/ont_wgs; W=$IGI_WORK/release/ont_wgs_work

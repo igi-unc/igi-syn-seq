@@ -591,3 +591,24 @@ concurrent slots, 7.2 h at 70.
 tasks and reported success, leaving the deliverables identical to the ones the rebuild existed to replace
 -- and acceptance would then have passed against the old data. `stale()` rebuilds when the output is
 missing, empty, or older than its newest input.
+
+
+### 10.4 Memory requests, and why they are a throughput decision
+
+The QOS caps total memory per user (4,500 G here), not just the job count, so an over-request does not buy
+safety -- it buys fewer concurrent tasks. Measured peak RSS over every prior task of each arm:
+
+| Arm | tasks measured | mean RSS | peak RSS | requested | now |
+|---|---|---|---|---|---|
+| Illumina WGS | 244 | 9.1 G | 45.5 G | 48 G | 48 G, unchanged -- the tail is already close |
+| PacBio HiFi WGS | 120 | 5.4 G | 11.6 G | 64 G | **24 G** |
+| ONT WGS | 158 | 6.0 G | 39.6 G | 64 G | **48 G** |
+| ONT bulk RNA | 2 | — | 29.0 G | 320 G | **48 G** |
+
+The cost of getting this wrong was concrete twice in one day. The ONT bulk RNA job sat at
+`QOSMaxMemoryPerUser` indefinitely asking for 320 G against a 29 G peak, and an ETA was reported for a job
+that had never started. Then the ONT WGS array went two and a half hours without being given a single slot
+while PacBio ran beside it, both asking 64 G, because memory was saturated at 4,496 of 4,500 G.
+
+Size the request from the measured peak plus headroom for the tail, not from the mean and not from a round
+number.
