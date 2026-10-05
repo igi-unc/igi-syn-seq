@@ -42,6 +42,24 @@ SOURCES = {
     "gc_bias_curve": ("in-repo", "measured from IPISRC044 WES; catalog/resources"),
     "annotation_cache": ("derived", "regenerated from the GTF on first run; safe to delete"),
     "workdir": ("scratch", "working directory, not an input"),
+    "kinnex_adapters_fasta": ("in-repo", "MAS adapters decoded from the HG002 Kinnex segmented.bam ds tags"),
+    "kinnex_mas_profile": ("in-repo", "array structure fitted from HG002 Kinnex; fit_mas_adapters.py"),
+    "kinnex_size_selection": ("in-repo", "fitted from HG002 Kinnex bulk; fit_kinnex_size_selection.py"),
+    "kinnex_sc_size_selection": ("in-repo", "fitted from HG002 Kinnex sc; fit_kinnex_size_selection.py"),
+    "skera_cmd": ("container", "pbskera 1.4.0, quay.io/biocontainers"),
+    "pbindex_cmd": ("container", "pbtk 3.5.0 (pbbam 2.8.0), quay.io/biocontainers; builds the .pbi"),
+    # Loaded by module-relative path rather than through the paths file, so the walk below would never
+    # see them. They are build-time inputs all the same: a different pacbio_np_model.json gives different
+    # np tags, and a different vdj_germline.json gives different CDR3s.
+    "resources/pacbio_np_model.json": ("in-repo", "np/ec measured from HG002 Revio and Kinnex; "
+                                                  "fit_pacbio_np.py"),
+    "resources/tenx_r1_quality.json": ("in-repo", "per-cycle R1 qualities from IPISRC044 10x; "
+                                                  "fit_tenx_r1_quality.py"),
+    "resources/vdj_germline.json": ("in-repo", "TR V/J germline junction anchors from GENCODE v37; "
+                                               "fit_vdj_germline.py"),
+    "resources/cosmic_v3.4_sbs_subset.tsv": ("in-repo", "COSMIC v3.4 SBS signature subset"),
+    "resources/tcga_brca_basal.samples.txt": ("in-repo", "the TCGA-BRCA basal sample list the medians "
+                                                         "were taken over"),
 }
 
 
@@ -101,6 +119,16 @@ def main():
             for kk, vv in v.items():
                 if isinstance(vv, str) and vv.startswith("/"):
                     add(f"{k}.{kk}", vv, "file")
+
+    # Everything under catalog/resources is a build-time input even when no paths key names it: several
+    # fitted models are loaded by module-relative path, and swapping one changes the output.
+    res_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
+    seen = {r["basename"] for r in rows}
+    for name in sorted(os.listdir(res_dir)) if os.path.isdir(res_dir) else []:
+        full = os.path.join(res_dir, name)
+        if not os.path.isfile(full) or name in seen or name == "README.md":
+            continue
+        add(f"resources/{name}", full, "file")
 
     cols = ["key", "kind", "class", "basename", "bytes", "md5", "source", "complete", "durable"]
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)

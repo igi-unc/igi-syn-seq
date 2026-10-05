@@ -19,11 +19,22 @@ germline_vcf.IPISRC044	file	derived	IGI-SYN-SEQ-02.germline.vcf.gz	95012492	e934
 germline_vcf_baseline.HG002	file	public	HG002.Q100v1.1.germline_smvar.vcf.gz	42067644	c71acc71069bf7cd7f51eb8fb0c1a1ab	GIAB HG002 Q100 v1.1 small-variant benchmark, GRCh38	yes	yes
 germline_vcf_baseline.IPISRC044	file	derived	IPISRC044.germline.phased.final.vcf.gz	95004850	87c0c70731f079eaeff05f73ee02f963	called and phased here; see baseline-references.md	yes	yes
 gtf	file	public	gencode.v37.annotation.gtf.gz	45208353	362a1ae2b59bf8a1fcbebb6d626b3a70	GENCODE v37 comprehensive annotation, gencodegenes.org	yes	yes
+kinnex_adapters_fasta	file	in-repo	kinnex_mas8_adapters.fasta	392	9a145236d4b2deb6e7f03561414b8c67	MAS adapters decoded from the HG002 Kinnex segmented.bam ds tags	yes	yes
+kinnex_mas_profile	file	in-repo	kinnex_mas8_profile.json	2317	373d20845b8e72439f3be974ab9bba23	array structure fitted from HG002 Kinnex; fit_mas_adapters.py	yes	yes
+kinnex_sc_size_selection	file	in-repo	kinnex_sc_size_selection.json	2015	cf8ba0234434e7899308afb9317de3a9	fitted from HG002 Kinnex sc; fit_kinnex_size_selection.py	yes	yes
+kinnex_size_selection	file	in-repo	kinnex_size_selection.json	1873	49ccc0506b68fa31cd79f4a17a93ecb9	fitted from HG002 Kinnex bulk; fit_kinnex_size_selection.py	yes	yes
 netmhcpan_cmd	container	container	spvensko-netmhcpan-4.1b.img	102961152	11f3a013fa4e1607b905f4fcf38642b2	container registry; see basename for the exact tag	yes	yes
 pan_normal_quant	file	host	pan_normal_and_mtec_exp.95th_perc.homo_sapiens.quant.sf	11227285	cbd5d034b347ea5307e4439f7ed156bb	lab pan-normal and mTEC expression, 95th percentile	yes	yes
+pbindex_cmd	container	container	pbtk_3.5.0.sif	18194432	909ab9dbc0381b8141c1ef05663f7433	pbtk 3.5.0 (pbbam 2.8.0), quay.io/biocontainers; builds the .pbi	yes	yes
 reference_fasta	file	public	Homo_sapiens.assembly38.fa	3249912778	7ff134953dcca8c8997453bbb80b6b5e	GRCh38 analysis set; GATK resource bundle / Broad	yes	yes
 rmsk_bed	file	public	hg38.rmsk.bed.gz	66822601	24f5b8d5d283ba92560629c16f35f7c3	UCSC RepeatMasker track, hg38	yes	yes
 samtools_cmd	container	container	quay.io-biocontainers-samtools-1.21--h96c455f_1.img	25509888	e48d49cdd027ecb51653601dad3b1758	container registry; see basename for the exact tag	yes	yes
 segdups_bed	file	public	hg38.segdups.merged.bed	188585	b66751f8406ebc21c95335ca61f81416	UCSC genomicSuperDups track, hg38	yes	yes
 single_cell_whitelist	file	public	737K-august-2016.txt	12533760	f62a276e262fdd85262a889d0f48556b	10x Genomics 737K-august-2016 barcode whitelist	yes	yes
+skera_cmd	container	container	quay.io_biocontainers_pbskera_1.4.0--hdfd78af_0.sif	6516736	d9565e903a8a3bb77fbef956964226c6	pbskera 1.4.0, quay.io/biocontainers	yes	yes
 viral_fasta	file	host	virus_unmasked.02ec8.fa	32665391	02ec8760dd51c46e3252eab4dfde3259	unmasked viral genome set, digest 02ec8	yes	yes
+resources/cosmic_v3.4_sbs_subset.tsv	file	in-repo	cosmic_v3.4_sbs_subset.tsv	6586	a6df05991ba4b0144715a8630b0d8364	COSMIC v3.4 SBS signature subset	yes	yes
+resources/pacbio_np_model.json	file	in-repo	pacbio_np_model.json	4349	d40d86b61e1f66694f97de2c912e9c39	np/ec measured from HG002 Revio and Kinnex; fit_pacbio_np.py	yes	yes
+resources/tcga_brca_basal.samples.txt	file	in-repo	tcga_brca_basal.samples.txt	3056	7c18a6f57342ffcac9d9d013aa4aaa53	the TCGA-BRCA basal sample list the medians were taken over	yes	yes
+resources/tenx_r1_quality.json	file	in-repo	tenx_r1_quality.json	7802	8bd11e7dde4a60edec84a6dbd991da46	per-cycle R1 qualities from IPISRC044 10x; fit_tenx_r1_quality.py	yes	yes
+resources/vdj_germline.json	file	in-repo	vdj_germline.json	35238	a744123ad82d93c60ef2bf916dee5192	TR V/J germline junction anchors from GENCODE v37; fit_vdj_germline.py	yes	yes
