@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.pipeline import depth_denominator, source_plan
+from igi_catalog.derived import build_derived
 from igi_catalog.pacbio_bam import pbindex, write_hifi_bam
 from igi_catalog import rearrange
 
@@ -128,41 +129,11 @@ def main():
     svs = sv_rows(a.catalog_dir, a.dataset, a.chrom) if tumor else []
 
     t0 = time.time()
-    pieces, plan_rows = [], []
-    for src, hap, kind, w in source_plan(env.clones, purity, a.chrom, chrom_len // 2, tumor=tumor):
-        clone = "T" if (src == "NORMAL" or kind == "pre_cna") else src
-        pre_only = kind == "pre_cna"
-        mine = [s for s in svs
-                if s["haplotype"] == hap and env.clones.is_descendant(clone, s["clone"])] if src != "NORMAL" else []
-        # plan_chromosome returns (segments, applied, dropped). `dropped` is truth, not noise: an SV that
-        # could not be placed -- overlapping another, or too near a chromosome end -- is absent from the
-        # reads, and a truth table that still claims it would be wrong in the way F9 was.
-        segs, applied, dropped = rearrange.plan_chromosome(a.chrom, chrom_len, mine)
-        if dropped:
-            print(f"    {src} hap{hap} {kind}: {len(dropped)} SV(s) not placeable: "
-                  f"{[d[-1].get('event_id') if isinstance(d, tuple) else d for d in dropped][:4]}", flush=True)
-        seq = rearrange.realise(env.genome, env.germline, events, env.clones, clone, hap, segs,
-                                mei_sequence=mei_sequence_factory(rng), only_pre_cna=pre_only)
-        if len(seq) < 10_000:
-            continue
-        tag = f"{src}_hap{hap}_{kind}"
-        fa = rearrange.write_derived(os.path.join(work, f"{tag}.fa"), f"{a.chrom}_{tag}", seq)
-        cmap = rearrange.write_coordinate_map(
-            os.path.join(work, f"{tag}.coordmap.tsv"),
-            [(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]) for r in rearrange.coordinate_map(segs)])
-        cov = max(0.01, a.depth * w / denom)
-        plan_rows.append({"source": src, "haplotype": hap, "copy_kind": kind, "weight": round(w, 5),
-                          "coverage": round(cov, 4), "derived_length": len(seq),
-                          "reference_length": chrom_len, "segments": len(segs),
-                          "svs_offered": [s["event_id"] for s in mine],
-                          "svs_applied": applied,
-                          "svs_dropped": [(d[-1].get("event_id") if isinstance(d, tuple) else str(d))
-                                          for d in dropped],
-                          "fasta": fa, "coordinate_map": cmap})
-        pieces.append((tag, fa, cov))
-        print(f"    {tag}: {len(segs)} segments, derived {len(seq):,} bp "
-              f"(reference {chrom_len:,}), {len(applied)}/{len(mine)} SVs applied, "
-              f"coverage {cov:.3f}x", flush=True)
+    # One shared implementation with run_ont.py. This used to be an inline copy of the same loop, and the
+    # copies drifted: the copy-number fix landed in derived.py and would silently have missed PacBio.
+    pieces, plan_rows = build_derived(env, dcfg, a.dataset, a.chrom, a.library, a.catalog_dir,
+                                      events, a.depth, rng, work,
+                                      log=lambda m: print(m, flush=True))
     print(f"  derived chromosomes built in {time.time() - t0:.0f}s", flush=True)
 
     # Badread rather than pbsim3 plus ccs. The ccs route is correct -- consensus over ten simulated
