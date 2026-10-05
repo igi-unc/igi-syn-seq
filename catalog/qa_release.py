@@ -22,19 +22,23 @@ import glob
 import gzip
 import json
 import math
+import csv
 import os
+import re
 import subprocess
 
 # (name, target, tolerance) where tolerance is a fraction of the target; None means "report, do not judge"
 TARGETS = {
     "pacbio":        {"length_mean": (16689, 0.08), "accuracy": (0.99823, 0.0015)},
     "ont_wgs":       {"length_mean": (19117, 0.08), "accuracy": (0.98676, 0.0030)},
-    # ONT RNA length is set by the transcript and the size-selection curve, not by a parameter, and the
-    # curve is fitted on Kinnex rather than ONT -- so the single-cell value is reported against the real
-    # 910 bp median without a bound, and the bulk value has no real reference at all because the only
-    # IPISRC044 ONT data is single cell. Inventing a bound would manufacture a pass or a failure.
+    # Single-cell ONT RNA length is reported against the real 910 bp IPISRC044 median without a bound,
+    # because it is set by the transcript and the size-selection curve rather than by a parameter and the
+    # curve is fitted on Kinnex. Bulk DOES have a real reference now: 2,091 bp, the mean over 400,000
+    # reads of the HG002 Kinnex FLNC BAM, which is a genuine full-length cDNA library. It used to be
+    # generated with the single-cell model, at 910 bp, in a sample the design calls "cDNA, full length" --
+    # so this target is the one that would have caught that.
     "ont_sc_rna":    {"length_mean": (910, None),   "accuracy": (0.98220, 0.0030)},
-    "ont_bulk_rna":  {"length_mean": (None, None),  "accuracy": (0.98220, 0.0030)},
+    "ont_bulk_rna":  {"length_mean": (2091, 0.15),  "accuracy": (0.98220, 0.0030)},
     "kinnex_bulk":   {"length_mean": (2223, 0.12),  "accuracy": (0.99788, 0.0020)},
     # 2,155 is the real OVERALL mean of skera's output on single-cell arrays, which is what a segmented
     # BAM contains. The first version of this target used 952, the real median of the SINGLE-cDNA subset,
@@ -92,6 +96,164 @@ def judge(got, target, tol):
     return "PASS" if lo <= got <= hi else f"FAIL (outside {lo:.5g}-{hi:.5g})"
 
 
+
+ILLUMINA_NAME = re.compile(r"^[A-Z]+:\d+:[A-Z0-9]+:\d+:\d+:\d+:\d+$")
+PACBIO_NAME = re.compile(r"^m\d+_\d+_\d+_s\d+/\d+/ccs(/\d+_\d+)?$")
+HEX8 = re.compile(r"^[0-9a-f]{8}(/.*)?$")
+
+
+def _fq_head(path, n_lines):
+    out = subprocess.run(f"pigz -dc {path} 2>/dev/null | head -{n_lines}", shell=True,
+                         capture_output=True, text=True).stdout
+    return out.splitlines()
+
+
+def ont_deliverables(release):
+    """The ONT FASTQs that are actually SHIPPED, which is not everything matching ont_*.
+
+    `ont_wgs/` holds the per-chromosome intermediates the merge consumes -- 48 files a dataset -- and
+    `ont_wgs_merged/` holds the four libraries. Globbing `ont_*/*/*.fastq.gz` picks up the intermediates
+    and reports 192 failures for files nobody receives, which is the same mistake as checking the
+    builder's output directory instead of the report directory: a check that fires on scratch is worse
+    than no check, because it buries the real result.
+    """
+    wgs = sorted(glob.glob(f"{release}/ont_wgs_merged/*/*_ont_wgs.fastq.gz"))
+    if not wgs:
+        wgs = sorted(glob.glob(f"{release}/ont_wgs/*/*_ont_wgs.fastq.gz"))
+    return (wgs
+            + sorted(glob.glob(f"{release}/ont_sc_rna/*/*_ont_sc_rna.fastq.gz"))
+            + sorted(glob.glob(f"{release}/ont_bulk_rna/*/*_ont_bulk_rna.fastq.gz")))
+
+
+def check_ont_format(release, results):
+    """No ONT read may carry the simulator's description, and the map that replaced it must be there.
+
+    Badread writes the source reference, strand and coordinates into a genomic read's header and the
+    source molecule id into an RNA read's. A benchmark whose reads carry their own answer is not a
+    benchmark, so the description is stripped into `*_read_map.tsv.gz` and this is the check that it was.
+    """
+    for f in ont_deliverables(release):
+        heads = [l for i, l in enumerate(_fq_head(f, 40000)) if i % 4 == 0]
+        if not heads:
+            continue
+        leaky = [h for h in heads if " " in h]
+        mp = f.replace(".fastq.gz", "_read_map.tsv.gz")
+        results.append({
+            "check": "ont_header_has_no_description", "file": os.path.basename(f),
+            "value": f"{len(leaky)}/{len(heads)} headers carry a description",
+            "verdict": "PASS" if not leaky else f"FAIL ({leaky[0][:70]})"})
+        results.append({
+            "check": "ont_read_map_present", "file": os.path.basename(mp),
+            "value": f"{os.path.getsize(mp) / 1e6:.0f} MB" if os.path.exists(mp) else "absent",
+            "verdict": "PASS" if os.path.exists(mp) and os.path.getsize(mp) > 1000 else "FAIL"})
+
+
+def check_pacbio_format(release, results, samtools="samtools"):
+    """Every PacBio BAM must be one the PacBio tools will read.
+
+    The delivered HiFi BAMs came from `samtools import`: eleven fields, no tags, UUID read names, no read
+    group, no index. Each clause here is a thing some tool refuses -- the @RG ID must be eight hex digits
+    or pbindex aborts with "ERROR: stoul", the movie must be in PU or skera names every segment with a
+    leading slash, and np must vary or a pass-count filter has nothing to filter on.
+    """
+    # pacbio_merged, not pacbio: the latter holds 48 per-chromosome intermediates a dataset. Same reason
+    # as ont_deliverables.
+    bams = sorted(glob.glob(f"{release}/pacbio_merged/*/*_hifi.bam"))
+    if not bams:
+        bams = sorted(glob.glob(f"{release}/pacbio/*/*_hifi.bam"))[:4]
+    bams += sorted(glob.glob(f"{release}/kinnex_*/*/*_hifi_reads.bam"))
+    bams += sorted(glob.glob(f"{release}/kinnex_*/*/*_segmented.bam"))
+    for f in [b for b in bams if "non_passing" not in b and "rebuild" not in b]:
+        base = os.path.basename(f)
+        hdr = subprocess.run(f"{samtools} view -H {f}", shell=True, capture_output=True,
+                             text=True).stdout
+        rg = next((l for l in hdr.splitlines() if l.startswith("@RG")), "")
+        fields = dict(x.split(":", 1) for x in rg.split("\t")[1:] if ":" in x)
+        results.append({"check": "rg_id_is_8_hex", "file": base, "value": fields.get("ID", "(none)"),
+                        "verdict": "PASS" if HEX8.match(fields.get("ID", "")) else "FAIL"})
+        results.append({"check": "rg_pu_is_movie", "file": base, "value": fields.get("PU", "(none)"),
+                        "verdict": "PASS" if fields.get("PU", "").startswith("m") else "FAIL"})
+        results.append({"check": "rg_pm_is_instrument", "file": base, "value": fields.get("PM", "(none)"),
+                        "verdict": "PASS" if fields.get("PM") else "FAIL"})
+
+        recs = subprocess.run(f"{samtools} view {f} 2>/dev/null | head -20000",
+                              shell=True, capture_output=True, text=True).stdout.splitlines()
+        if not recs:
+            continue
+        names = [r.split("\t", 1)[0] for r in recs]
+        bad = [n for n in names if not PACBIO_NAME.match(n)]
+        results.append({"check": "pacbio_read_name", "file": base,
+                        "value": f"{len(bad)}/{len(names)} malformed; e.g. {names[0]}",
+                        "verdict": "PASS" if not bad else f"FAIL ({bad[0][:60]})"})
+        tags = {}
+        for r in recs:
+            for fd in r.split("\t")[11:]:
+                if fd[:5] in ("zm:i:", "np:i:", "ec:f:", "rq:f:", "qs:i:", "qe:i:"):
+                    tags.setdefault(fd[:2], set()).add(fd[5:])
+        missing = [t for t in ("zm", "np", "ec", "rq", "qs", "qe") if t not in tags]
+        results.append({"check": "hifi_tags_present", "file": base,
+                        "value": "missing " + ",".join(missing) if missing else "zm np ec rq qs qe",
+                        "verdict": "PASS" if not missing else "FAIL"})
+        n_np = len(tags.get("np", ()))
+        results.append({"check": "np_varies", "file": base,
+                        "value": f"{n_np} distinct np over {len(recs):,} reads",
+                        "verdict": "PASS" if n_np >= 5 else f"FAIL ({n_np} distinct)"})
+        pbi = f + ".pbi"
+        results.append({"check": "pbi_present", "file": base,
+                        "value": f"{os.path.getsize(pbi) / 1e6:.0f} MB" if os.path.exists(pbi)
+                                 else "absent",
+                        "verdict": "PASS" if os.path.exists(pbi) and os.path.getsize(pbi) > 128
+                                   else "FAIL"})
+
+
+def check_tenx_format(release, results):
+    """10x reads must be named like Illumina reads, and R1 qualities must have real variety.
+
+    R1 was a flat two-level draw giving 663 distinct quality strings in 20,000 reads. The bound here is
+    the REAL library's 2,819, not R2's 19,461: R1 is 26 four-level-binned cycles and genuinely has low
+    variety, so R2 was never the right comparison.
+    """
+    for f in sorted(glob.glob(f"{release}/tenx_*/*/*_R1_001.fastq.gz")):
+        base = os.path.basename(f)
+        lines = _fq_head(f, 80000)
+        heads = [l[1:].split()[0] for i, l in enumerate(lines) if i % 4 == 0 and l]
+        quals = [l for i, l in enumerate(lines) if i % 4 == 3]
+        bad = [h for h in heads if not ILLUMINA_NAME.match(h)]
+        results.append({"check": "tenx_read_name", "file": base,
+                        "value": f"{len(bad)}/{len(heads)} malformed; e.g. {heads[0] if heads else ''}",
+                        "verdict": "PASS" if heads and not bad else f"FAIL ({bad[0][:40] if bad else 'no reads'})"})
+        d = len(set(quals))
+        results.append({"check": "r1_quality_variety", "file": base,
+                        "value": f"{d} distinct over {len(quals):,} reads (real library: 2,819)",
+                        "verdict": "PASS" if 1200 <= d <= 6000 else f"FAIL ({d})"})
+
+
+def check_tcr_truth(release, results):
+    """CDR3s must be anchored, free of internal cysteines, and tied to the V and J the table names."""
+    for f in sorted(glob.glob(f"{release}/tenx_tcr/*/*_tcr_clonotypes.tsv")):
+        base = os.path.basename(f)
+        with open(f) as fh:
+            rows = list(csv.DictReader(fh, delimiter="\t"))
+        if not rows:
+            continue
+        n = len(rows)
+        anch = sum(1 for r in rows for k in ("trb", "tra")
+                   if r.get(k, "").startswith("C") and r.get(k, "").endswith("F"))
+        icys = sum(1 for r in rows for k in ("trb", "tra") if "C" in r.get(k, "")[1:-1])
+        vj = sum(1 for r in rows if r.get("trb_v") and r.get("trb_j")
+                 and r.get("tra_v") and r.get("tra_j"))
+        fp = sum(1 for r in rows if r.get("flagpost_antigen"))
+        results.append({"check": "cdr3_anchored_C_to_F", "file": base,
+                        "value": f"{anch}/{2 * n} chains", "verdict": "PASS" if anch == 2 * n else "FAIL"})
+        results.append({"check": "cdr3_internal_cysteine", "file": base,
+                        "value": f"{icys}/{2 * n} chains ({100 * icys / (2 * n):.1f}%)",
+                        "verdict": "PASS" if icys <= 0.03 * 2 * n else f"FAIL ({icys})"})
+        results.append({"check": "clonotype_names_v_and_j", "file": base,
+                        "value": f"{vj}/{n} clonotypes", "verdict": "PASS" if vj == n else "FAIL"})
+        results.append({"check": "flagpost_antigen_linked", "file": base, "value": f"{fp} clonotypes",
+                        "verdict": "PASS" if fp >= 5 else f"FAIL ({fp})"})
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--release", required=True)
@@ -144,6 +306,20 @@ def main():
             tm.setdefault(assay, []).append({"file": os.path.basename(f), "rows": n})
             print(f"  truth map    {os.path.basename(f)[:46]:<46} {n:,} rows")
     report["truth_maps"] = tm
+
+    # Format conformance: not "is the sequencing what was asked for" but "will the tools read it at all".
+    # Eight defects found by review on 2026-10-05 were all of this kind, and none of them would have been
+    # caught by a length or accuracy check.
+    fmt = []
+    check_ont_format(a.release, fmt)
+    check_pacbio_format(a.release, fmt, a.samtools)
+    check_tenx_format(a.release, fmt)
+    check_tcr_truth(a.release, fmt)
+    report["format"] = fmt
+    report["n_fail"] += sum(1 for r in fmt if r["verdict"].startswith("FAIL"))
+    print()
+    for r in fmt:
+        print(f"  {r['check']:<30} {r['file'][:40]:<40} {str(r['value'])[:46]:<46} {r['verdict']}")
 
     with open(a.out, "w") as fh:
         json.dump(report, fh, indent=2); fh.write("\n")
