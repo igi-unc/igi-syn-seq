@@ -14,6 +14,22 @@
 # 1,000,832 record ids duplicated while the integrity check of the day passed.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
+# Rebuild when the output is MISSING OR OLDER THAN ITS NEWEST INPUT, not merely when it is missing.
+# The guards here used to be `[ -s "$out" ] || cat ...`, which is right for resuming an interrupted merge
+# and wrong for every rebuild: after the copy-number fix re-simulated all 96 WGS chromosomes, the merge
+# would have found the previous merged library in place, skipped, and reported success -- leaving the
+# deliverable identical to the one the rebuild existed to replace.
+stale() {
+  local out=$1; shift
+  [ -s "$out" ] || return 0
+  local f
+  for f in "$@"; do
+    [ -f "$f" ] || continue
+    [ "$f" -nt "$out" ] && return 0
+  done
+  return 1
+}
+
 ASSAYS=(wgs pacbio ont_wgs); LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1))
 asy=${ASSAYS[$((i / 4))]}; j=$((i % 4)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j / 2))]}
@@ -26,7 +42,12 @@ case "$asy" in
   wgs)
     for m in 1 2; do
       out=$M/${d}_${l}_wgs_R${m}.fastq.gz
-      [ -s "$out" ] || cat $O/$d/${d}_chr*_${l}_wgs_R${m}.fastq.gz > "$out"
+      if stale "$out" $O/$d/${d}_chr*_${l}_wgs_R${m}.fastq.gz; then
+        echo "  merging R${m} ($(ls $O/$d/${d}_chr*_${l}_wgs_R${m}.fastq.gz | wc -l) chromosomes)"
+        cat $O/$d/${d}_chr*_${l}_wgs_R${m}.fastq.gz > "$out"
+      else
+        echo "  R${m} is newer than every input; keeping it"
+      fi
     done
     n=$(zcat $M/${d}_${l}_wgs_R1.fastq.gz | awk 'NR%4==1' | wc -l)
     u=$(zcat $M/${d}_${l}_wgs_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 -u | wc -l)
@@ -49,7 +70,8 @@ case "$asy" in
     ;;
   pacbio)
     out=$M/${d}_${l}_hifi.bam
-    if [ ! -s "$out" ]; then
+    if stale "$out" $O/$d/${d}_chr*_${l}_hifi.bam; then
+      rm -f "$out" "$out.pbi"
       ls $O/$d/${d}_chr*_${l}_hifi.bam > $M/${l}.bamlist
       echo "  merging $(wc -l < $M/${l}.bamlist) BAMs"
       singularity exec -B "$IGI_BIND" "$IGI_SAMTOOLS_IMG" \
@@ -61,7 +83,12 @@ case "$asy" in
     out=$M/${d}_${l}_ont_wgs.fastq.gz
     n=$(ls $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz 2>/dev/null | wc -l)
     [ "$n" -eq 24 ] || { echo "  only $n/24 chromosomes present; not merging a partial library"; exit 0; }
-    [ -s "$out" ] || cat $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz > "$out"
+    if stale "$out" $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz; then
+      echo "  merging $n chromosomes"
+      cat $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz > "$out"
+    else
+      echo "  merged library is newer than every input; keeping it"
+    fi
     echo "  reads $(zcat "$out" | awk 'NR%4==1' | wc -l)"
     ;;
 esac
