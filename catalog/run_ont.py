@@ -28,6 +28,7 @@ import argparse
 import gzip
 import json
 import os
+import shutil
 import random
 import subprocess
 import time
@@ -39,7 +40,8 @@ from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.derived import build_derived
 from igi_catalog.kinnex import SizeSelection, ont_cdna
-from igi_catalog.longread import chunk_fasta, combine_fastq, run_chunks, split_fasta_bp
+from igi_catalog.longread import (_framed, chunk_fasta, combine_fastq, run_chunks,
+                                  split_fasta_bp)
 from igi_catalog.molecules import MoleculePool
 from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
@@ -201,22 +203,36 @@ def main():
                     f"--start_adapter_seq '' --end_adapter_seq '' --junk_reads 0 --random_reads 0 "
                     f"--chimeras 0")
             jobs.append((f"ont/{j}", out, br.format(args=args)))
-    parts = run_chunks(jobs, n_par, timeout_s, log=log)
-
     label = a.label or (f"{a.chrom}_{a.library}" if a.assay == "wgs" else "full")
     cat = os.path.join(work, "all.fq")
     # The ONT FASTQ *is* the deliverable, so the simulator's description is stripped and written to
     # a separate map: Badread's header names the source reference, strand and coordinates for a
     # genomic read and the source molecule for an RNA one. See combine_fastq's docstring.
     map_path = os.path.join(a.out, f"{a.dataset}_{label}_ont_{a.assay}_read_map.tsv.gz")
-    n_reads = combine_fastq(parts, cat, log=log, map_path=map_path)
+
+    # Resume. The combined FASTQ is the expensive artefact: the ds-02 bulk RNA run spent 58,506 s in
+    # badread and another hour combining, then hit the 24 h wall limit during the final gzip and the whole
+    # thing would otherwise be redone. If a complete, frame-aligned all.fq is already sitting in the work
+    # directory, the simulation and the combine are both already paid for.
+    if os.path.exists(cat) and os.path.getsize(cat) > 1_000_000 and _framed(cat):
+        with open(cat, "rb") as fh:
+            n_reads = sum(blk.count(b"\n") for blk in iter(lambda: fh.read(1 << 24), b"")) // 4
+        log(f"  resuming: {os.path.basename(cat)} is complete ({os.path.getsize(cat) / 1e9:.1f} GB, "
+            f"{n_reads:,} reads); skipping simulation and combine")
+    else:
+        parts = run_chunks(jobs, n_par, timeout_s, log=log)
+        n_reads = combine_fastq(parts, cat, log=log, map_path=map_path)
+
     out_fq = os.path.join(a.out, f"{a.dataset}_{label}_ont_{a.assay}.fastq.gz")
-    with open(cat, "rb") as src, gzip.open(out_fq, "wb") as dst:
-        while True:
-            b = src.read(1 << 24)
-            if not b:
-                break
-            dst.write(b)
+    # pigz, not Python's gzip. Compressing 85 GB single-threaded is what ran out of wall clock.
+    t_gz = time.time()
+    if shutil.which("pigz"):
+        subprocess.run(f"pigz -p {min(16, n_par)} -c {cat} > {out_fq}", shell=True, check=True)
+    else:
+        with open(cat, "rb") as src, gzip.open(out_fq, "wb") as dst:
+            for b in iter(lambda: src.read(1 << 24), b""):
+                dst.write(b)
+    log(f"  compressed in {time.time() - t_gz:.0f}s")
     os.remove(cat)
     log(f"  {n_reads:,} reads -> {os.path.basename(out_fq)} "
         f"({os.path.getsize(out_fq)/1e9:.1f} GB)")

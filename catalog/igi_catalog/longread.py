@@ -22,22 +22,40 @@ import time
 import zlib
 
 
-def _framed(path, tail_bytes=1 << 16):
+def _framed(path, tail_bytes=1 << 16, max_tail=1 << 24):
     """Whether a FASTQ ends on a record boundary. Reads only the tail, so it costs nothing on a 170 MB file.
 
     A complete FASTQ has a line count divisible by four and ends with a newline. Checking the tail catches
-    the truncation a killed simulator leaves behind; a full line count would be exact but would mean reading
-    every chunk twice.
+    the truncation a killed simulator leaves behind; a full line count would be exact but would mean
+    reading every chunk twice.
+
+    THE WINDOW MUST BE SIZED FROM THE DATA. A fixed 64 KiB tail rejected seven of 96 ONT WGS tasks, and
+    the files were perfectly good: ONT reads run to tens of kilobases -- the genomic length model has a
+    standard deviation of 15.5 kb and a measured maximum of 551 kb -- so one record is a header plus two
+    lines of equal length plus a '+', and at a 32,725 bp read that is 65,605 bytes against a 65,536 byte
+    window. Sixty-nine bytes over, and the first line in the window was a fragment of a sequence rather
+    than a header, so the check declared a complete file truncated. badread had reached 100.0 %, written
+    117 MB and exited cleanly; the retry then re-ran it four more times to the same byte and the task
+    failed. The window therefore grows until it holds at least five lines or the whole file.
     """
     try:
         size = os.path.getsize(path)
-        with open(path, "rb") as fh:
-            fh.seek(max(0, size - tail_bytes))
-            tail = fh.read()
-        if not tail.endswith(b"\n"):
-            return False
-        # the last four lines should be header, sequence, plus, quality, with matching lengths
-        lines = tail.split(b"\n")[:-1]
+        want = tail_bytes
+        while True:
+            with open(path, "rb") as fh:
+                fh.seek(max(0, size - want))
+                tail = fh.read()
+            if not tail.endswith(b"\n"):
+                return False
+            lines = tail.split(b"\n")[:-1]
+            # Enough lines to see a whole record AND know the first one is not a fragment, or the window
+            # already covers the file, in which case the first line really is the first line.
+            if len(lines) >= 5 or want >= size:
+                break
+            if want >= max_tail:
+                # a single record larger than 16 MiB is not a FASTQ this pipeline produces
+                return False
+            want = min(want * 8, max_tail)
         if len(lines) < 4:
             return True
         h, seq, plus, qual = lines[-4:]
