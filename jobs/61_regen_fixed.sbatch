@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_regen
-#SBATCH -c 48 --mem=48G -t 24:00:00
+#SBATCH -c 48 --mem=48G -t 48:00:00
 #SBATCH --array=1-6
 # Regenerate the three arms whose defects are in the reads themselves, so no in-place repair can fix them.
 #
