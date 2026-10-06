@@ -19,6 +19,7 @@ import gzip
 import os
 import subprocess
 import time
+import zlib
 
 
 def _framed(path, tail_bytes=1 << 16):
@@ -45,7 +46,7 @@ def _framed(path, tail_bytes=1 << 16):
         return False
 
 
-def run_chunks(jobs, n_parallel, timeout_s, attempts=3, log=print):
+def run_chunks(jobs, n_parallel, timeout_s, attempts=5, log=print):
     """Run (label, out_path, command) jobs concurrently. Returns the list of outputs that produced data.
 
     Raises if any job produced nothing after `attempts` tries: a silently missing chunk is a silently
@@ -56,9 +57,14 @@ def run_chunks(jobs, n_parallel, timeout_s, attempts=3, log=print):
 
     def run_one(spec, attempt=1):
         label, out, cmd = spec
+        # Stagger the launches. The failure this retries is container start contention -- 48 simultaneous
+        # singularity invocations on one node -- so retrying immediately retries into the same storm. The
+        # jitter is derived from the output path so it is reproducible, and it grows with the attempt.
+        time.sleep((zlib.crc32(out.encode()) % 1000) / 1000.0 * 2.0 * attempt)
+        err_path = out + f".err{attempt}"
         try:
-            with open(out, "wb") as fh:
-                rc = subprocess.run(cmd, shell=True, stdout=fh, stderr=subprocess.DEVNULL,
+            with open(out, "wb") as fh, open(err_path, "wb") as eh:
+                rc = subprocess.run(cmd, shell=True, stdout=fh, stderr=eh,
                                     timeout=timeout_s).returncode
         except subprocess.TimeoutExpired:
             rc = -1
@@ -67,6 +73,11 @@ def run_chunks(jobs, n_parallel, timeout_s, attempts=3, log=print):
         # 82 GB of which 19 in 20 had a line count that was not a multiple of four. Size alone would have
         # accepted them, and concatenating them would have produced a corrupt library that looked right.
         ok = rc == 0 and os.path.exists(out) and os.path.getsize(out) > 100 and _framed(out)
+        if ok:
+            for a in range(1, attempts + 1):
+                p = out + f".err{a}"
+                if os.path.exists(p):
+                    os.remove(p)
         if not ok and attempt < attempts:
             return run_one(spec, attempt + 1)
         return label, out, ok, attempt
@@ -79,10 +90,26 @@ def run_chunks(jobs, n_parallel, timeout_s, attempts=3, log=print):
                 if tries > 1:
                     log(f"    {label}: succeeded on attempt {tries}")
             else:
-                failed.append(label)
+                failed.append((label, out))
     if failed:
+        # Report WHY, not just that. stderr used to go to DEVNULL, so a reproducible failure left nothing
+        # to diagnose: seven ONT tasks each lost one chunk of eighty and the only evidence was the chunk's
+        # label, which several chunks share. The tail of the last attempt's stderr is kept instead.
+        detail = []
+        for label, out in failed[:4]:
+            tail = ""
+            for a in range(attempts, 0, -1):
+                p = out + f".err{a}"
+                if os.path.exists(p) and os.path.getsize(p):
+                    with open(p, "rb") as fh:
+                        fh.seek(max(0, os.path.getsize(p) - 4096))
+                        lines = [x for x in fh.read().decode(errors="replace").replace("\r", "\n").split("\n")
+                                 if x.strip() and "Simulating" not in x]
+                    tail = " | ".join(lines[-3:])[:300]
+                    break
+            detail.append(f"{label} [{os.path.basename(out)}]: {tail or 'no stderr captured'}")
         raise RuntimeError(f"the simulator produced nothing for {len(failed)} chunk(s) after {attempts} "
-                           f"attempts: {failed[:5]}")
+                           f"attempts:\n    " + "\n    ".join(detail))
     log(f"  simulation done in {time.time() - t0:.0f}s, {len(done)} chunk(s)")
     return done
 
