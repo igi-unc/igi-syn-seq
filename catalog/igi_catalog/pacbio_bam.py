@@ -4,7 +4,10 @@
 eleven fields and no tags at all. PacBio tools expect what a Revio run carries, so it is written here.
 
     zm  the ZMW: one per insert, and for Kinnex one per array
-    np  number of passes behind the consensus
+    np  number of passes behind the consensus -- FABRICATED. Badread has no pass structure, so
+        there are no passes behind these reads; np is drawn from the real HG002 distribution so a
+        tool filtering on pass count sees a realistic spread rather than one constant, and it is
+        not evidence about consensus depth. ec inherits the same caveat.
     ec  effective coverage, a float that tracks np
     rq  predicted read accuracy
     qs  query start and qe query end, which skera uses to name segments

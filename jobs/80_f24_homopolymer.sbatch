@@ -43,7 +43,12 @@ else
   FQ=$W/real.fq
   if [ ! -s "$FQ" ]; then
     R=/datastore/nextgenout5/share/labs/Vincent_Lab/datasets/HG002/PacBio_HiFi-Revio_20231031/HG002_PacBio-Revio_m84039_230928_213653_s3.hifi_reads.bam
-    $SAM view "$R" | head -40000 | awk '{print "@"$1"\n"$10"\n+\n"$11}' > "$FQ"
+    # `samtools view | head` under `set -o pipefail` fails the job: head closes the pipe, samtools dies
+    # of SIGPIPE, and pipefail reports the non-zero. The FASTQ is written correctly first, so the
+    # pipeline's status is discarded and the output is checked instead.
+    { $SAM view "$R" | head -40000 | awk '{print "@"$1"\n"$10"\n+\n"$11}' > "$FQ"; } || true
+    [ -s "$FQ" ] && [ "$(( $(wc -l < "$FQ") % 4 ))" -eq 0 ] \
+      || { echo "real FASTQ extraction produced a malformed file"; exit 1; }
   fi
   GIAB=$(python3 -c "import yaml;print(yaml.safe_load(open('$IGI_PATHS'))['germline_vcf_baseline']['HG002'])")
   EXTRA="--exclude-vcf $GIAB"

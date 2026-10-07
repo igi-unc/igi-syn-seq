@@ -441,6 +441,14 @@ rather than by reading a specification:
 - Every field of the movie name after the instrument must be **decimal**, because pbbam parses the date
   and time fields as numbers.
 
+**`np` is fabricated, and nothing should trust it as a pass count.** Badread applies an error model per
+read with no pass structure, so there are no passes behind these reads at all. The `np` written here is
+drawn from the real HG002 distribution so that a tool filtering on pass count sees a realistic
+distribution rather than a single constant, but it is a plausible number, not a measurement: it does not
+describe how the read was produced, and the read's accuracy was not obtained by consensus over that many
+passes. `ec` inherits the same caveat, being derived from `np`. Any analysis that treats `np` as evidence
+about consensus depth is reading something that was invented.
+
 `np` is drawn per read from the empirical distribution measured off the real HG002 BAMs
 (`catalog/resources/pacbio_np_model.json`: median 7, mean 7.60, p10 4, p90 13) and `ec` is `np` times the
 measured `ec/np` ratio of 1.130. A single constant `np` leaves a caller filtering on pass count with
