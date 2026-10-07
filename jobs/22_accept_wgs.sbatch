@@ -10,6 +10,10 @@
 # N-straddling window otherwise reads as a deletion); the GC curve is not applied, since it is capture
 # efficiency and the builder uses a flat one; and every designed breakpoint on the chromosome counts as
 # placeable, which is a stronger expectation than the exome's, not a weaker one.
+# An output that merely EXISTS is not an output that is current. Guarding with `[ ! -s "$x" ]` skipped
+# work whenever a previous run had left something behind, and that silently graded or shipped stale data
+# twice in one release: the long-read merge would have kept pre-rebuild libraries, and the WGS acceptance
+# scored a 2026-10-05 alignment of a 2026-10-06 library in 35 minutes instead of 21 hours. Compare mtimes.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 O=$IGI_WORK/release/wgs; M=$IGI_WORK/release/wgs_merged
@@ -21,12 +25,14 @@ mkdir -p "$M/$d" "$A/$d" "$R/$d"
 # the merge job as ${d}_tumor_wgs_R1.fastq.gz. Fall back to merging only if the merge job has not run.
 R1=$M/$d/${d}_tumor_wgs_R1.fastq.gz
 R2=$M/$d/${d}_tumor_wgs_R2.fastq.gz
-if [ ! -s "$R1" ]; then
-  echo "  merge job output absent; merging here instead"
+newest=$(ls -t $O/$d/${d}_chr*_tumor_wgs_R1.fastq.gz 2>/dev/null | head -1)
+if [ ! -s "$R1" ] || { [ -n "$newest" ] && [ "$newest" -nt "$R1" ]; }; then
+  echo "  merge job output absent or older than its chromosomes; merging here instead"
   for m in 1 2; do cat $O/$d/${d}_chr*_tumor_wgs_R${m}.fastq.gz > $M/$d/${d}_tumor_wgs_R${m}.fastq.gz; done
 fi
 B=$A/$d/${d}_tumor.bam
-if [ ! -s "$B" ]; then
+if [ ! -s "$B" ] || [ "$R1" -nt "$B" ]; then
+  rm -f "$B" "$B.bai"
   singularity exec -B "$IGI_BIND" "$IGI_BWA_IMG" bash -c "
     bwa mem -t 16 -R '@RG\tID:${d}_tumor_wgs\tSM:${d}_tumor\tPL:ILLUMINA\tLB:${d}_tumor_wgs' \
       $IGI_FASTA_NOALT $R1 $R2 2> $A/$d/bwa.err \

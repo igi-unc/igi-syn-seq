@@ -78,6 +78,13 @@ case "$asy" in
         samtools merge -@ 8 -b $M/${l}.bamlist -o "$out"
     fi
     echo "  reads $(singularity exec -B "$IGI_BIND" "$IGI_SAMTOOLS_IMG" samtools view -c "$out")"
+    # The per-chromosome BAMs each carry a .pbi, but samtools merge does not produce one for the result,
+    # so the delivered library had none. An earlier commit message claimed this block; it was not actually
+    # present, because the string replacement meant to add it failed silently and was not asserted.
+    PBI=$(python3 -c "import yaml;print(yaml.safe_load(open('$IGI_PATHS')).get('pbindex_cmd',''))")
+    if [ -n "$PBI" ] && stale "$out.pbi" "$out"; then
+      eval "${PBI/\{args\}/$out}" && echo "  pbi $(stat -c%s "$out.pbi" 2>/dev/null) bytes"
+    fi
     ;;
   ont_wgs)
     out=$M/${d}_${l}_ont_wgs.fastq.gz

@@ -3,6 +3,10 @@
 #SBATCH -c 24 --mem=64G -t 48:00:00
 #SBATCH --array=1-4
 # Align the merged exomes so acceptance runs on the release itself rather than a slice (D7 condition 1).
+# An output that merely EXISTS is not an output that is current. Guarding with `[ ! -s "$x" ]` skipped
+# work whenever a previous run had left something behind, and that silently graded or shipped stale data
+# twice in one release: the long-read merge would have kept pre-rebuild libraries, and the WGS acceptance
+# scored a 2026-10-05 alignment of a 2026-10-06 library in 35 minutes instead of 21 hours. Compare mtimes.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 M=$IGI_WORK/release/merged; A=$IGI_WORK/release/bams
@@ -13,7 +17,8 @@ for e in amb ann bwt pac sa; do
   [ -f "$IGI_FASTA_NOALT.$e" ] || { echo "missing bwa index $IGI_FASTA_NOALT.$e"; exit 1; }
 done
 B=$A/$d/${d}_${l}.bam
-if [ ! -s "$B" ]; then
+if [ ! -s "$B" ] || [ "$R1" -nt "$B" ]; then
+  rm -f "$B" "$B.bai"
   # bwa's stderr is kept: suppressing it once turned a missing index into an unreadable
   # "failed to read header".
   singularity exec -B "$IGI_BIND" "$IGI_BWA_IMG" bash -c "
