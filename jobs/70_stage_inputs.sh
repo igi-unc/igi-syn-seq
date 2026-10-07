@@ -46,6 +46,13 @@ fresher_than_inputs() {
   return 0
 }
 
+link_as() {  # link <src> <dest_dir> <new_basename>
+  local src="$1" dir="$2" name="$3"
+  if [ ! -e "$src" ]; then n_skip=$((n_skip+1)); echo "    skip (absent): $(basename "$src")"; return; fi
+  if [ "$DRY" = 1 ]; then echo "    would link $name"; n_link=$((n_link+1)); return; fi
+  mkdir -p "$dir"; ln -sfn "$src" "$dir/$name"; n_link=$((n_link+1))
+}
+
 link() {  # link <src> <dest_dir>
   local src="$1" dir="$2"
   if [ ! -e "$src" ]; then n_skip=$((n_skip+1)); echo "    skip (absent): $(basename "$src")"; return; fi
@@ -63,7 +70,13 @@ for d in "${DATASETS[@]}"; do
   BAM_SUB=$IGI_RAFT/inputs/bams/$d/chr1to6
   echo "=== $d: full ==="
   for l in tumor normal; do
-    for m in 1 2; do link "$IGI_RELEASE/merged/$d/${d}_${l}_R${m}.fastq.gz" "$FQ_FULL"; done
+    # Linked with a _wes_ infix the release does not have. RAFT resolves a sample by gathering every
+    # FASTQ matching File_Prefix, and the release names WES as <ds>_<lib>_R1.fastq.gz -- so the prefix
+    # <ds>_tumor would also match <ds>_tumor_wgs_R1 and <ds>_tumor_ont_wgs, and one manifest row would
+    # claim three assays. A symlink's name is free to differ from its target.
+    for m in 1 2; do
+      link_as "$IGI_RELEASE/merged/$d/${d}_${l}_R${m}.fastq.gz" "$FQ_FULL" "${d}_${l}_wes_R${m}.fastq.gz"
+    done
     if fresher_than_inputs "$IGI_RELEASE/wgs_merged/$d/${d}_${l}_wgs_R1.fastq.gz" \
          $IGI_RELEASE/wgs/$d/${d}_chr*_${l}_wgs_R1.fastq.gz; then
       for m in 1 2; do link "$IGI_RELEASE/wgs_merged/$d/${d}_${l}_wgs_R${m}.fastq.gz" "$FQ_FULL"; done
@@ -100,7 +113,8 @@ for d in "${DATASETS[@]}"; do
   for c in 1 2 3 4 5 6; do
     for l in tumor normal; do
       for m in 1 2; do
-        link "$IGI_RELEASE/wes/$d/${d}_chr${c}_${l}_R${m}.fastq.gz" "$FQ_SUB"
+        link_as "$IGI_RELEASE/wes/$d/${d}_chr${c}_${l}_R${m}.fastq.gz" "$FQ_SUB" \
+                "${d}_chr${c}_${l}_wes_R${m}.fastq.gz"
         link "$IGI_RELEASE/wgs/$d/${d}_chr${c}_${l}_wgs_R${m}.fastq.gz" "$FQ_SUB"
       done
       link "$IGI_RELEASE/ont_wgs/$d/${d}_chr${c}_${l}_ont_wgs.fastq.gz" "$FQ_SUB"
