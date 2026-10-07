@@ -82,6 +82,13 @@ def main():
     ap.add_argument("--min-run", type=int, default=6)
     ap.add_argument("--pad", type=int, default=10)
     ap.add_argument("--max-reads", type=int, default=20000)
+    ap.add_argument("--min-mapq", type=int, default=0,
+                    help="skip alignments below this MAPQ. Repeats are homopolymer- and tandem-rich, so "
+                         "mismapped reads land preferentially in the homopolymer bucket and inflate the "
+                         "enrichment. Comparing a genome-wide real alignment against reads simulated from "
+                         "one clean window without this filter is not a like-for-like comparison.")
+    ap.add_argument("--region", default=None,
+                    help="chrom:start-end, to hold the reference context identical across arms")
     ap.add_argument("--label", default="")
     a = ap.parse_args()
 
@@ -94,13 +101,25 @@ def main():
     base = {"hp": 0, "non": 0}
     ev = {"hp": 0, "non": 0}
     bp = {"hp": 0, "non": 0}
-    n_reads = n_excluded = 0
+    n_reads = n_excluded = n_lowmapq = 0
+    reg = None
+    if a.region:
+        c, span = a.region.split(":")
+        lo, hi = span.split("-")
+        reg = (c, int(lo), int(hi))
     runlen_hist = collections.Counter()
 
-    for rec in bam.fetch(until_eof=True):
+    itr = (bam.fetch(reg[0], reg[1], reg[2]) if reg else bam.fetch(until_eof=True))
+    for rec in itr:
         if rec.is_unmapped or rec.is_secondary or rec.is_supplementary:
             continue
         if rec.reference_name not in chroms:
+            continue
+        if rec.mapping_quality < a.min_mapq:
+            n_lowmapq += 1
+            continue
+        if reg and not (rec.reference_name == reg[0]
+                        and rec.reference_start >= reg[1] and rec.reference_end <= reg[2]):
             continue
         n_reads += 1
         if n_reads > a.max_reads:
@@ -149,6 +168,7 @@ def main():
         "label": a.label, "bam": a.bam, "min_run": a.min_run,
         "reads_used": min(n_reads, a.max_reads),
         "excluded_vcf": a.exclude_vcf, "indels_excluded_as_truth": n_excluded,
+        "min_mapq": a.min_mapq, "reads_below_mapq": n_lowmapq, "region": a.region,
         "aligned_ref_bases": base,
         "indel_events": ev, "indel_bases": bp,
         "event_rate_per_base": {k: rate(ev[k], base[k]) for k in ev},

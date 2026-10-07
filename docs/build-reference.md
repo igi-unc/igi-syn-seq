@@ -368,6 +368,12 @@ Two notes on these:
   offsets, none of them the flag's face value.
 - **Badread's realised length spread runs about 6 % wide.** Across 29 release chromosomes the mean read
   length is 16,768 bp against a target 16,689 (+0.5 %) and the accuracy 0.99830 against 0.99823, both well
+  within tolerance -- **but that accuracy is derived from the quality strings, not from an alignment, and
+  the two differ by 5.4x.** Measured against the reference on reads simulated from it, the true accuracy is
+  0.99089 (error 9.11e-03/bp) while the quality strings claim 0.99833 (1.67e-03/bp). Real HiFi is
+  1.77e-03/bp, so the delivered reads carry about 5.1x the error rate of real HiFi. `pacbio_identity` is a
+  mean request of 99.4 % and the reads deliver on it; the request was tuned until the quality-derived number
+  matched real, which drove the wrong quantity to agreement. See CHANNEL.md [23].
   inside tolerance, but the standard deviation is consistently 4,870 against 4,593. It is a systematic
   property of Badread's gamma length model rather than sampling noise -- every one of the 29 chromosomes is
   high, across both datasets and both libraries -- so a caller that is sensitive to the read-length tail

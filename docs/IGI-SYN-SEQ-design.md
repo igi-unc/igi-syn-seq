@@ -441,6 +441,14 @@ rather than by reading a specification:
 - Every field of the movie name after the instrument must be **decimal**, because pbbam parses the date
   and time fields as numbers.
 
+**The HiFi error rate is about 5x real, and the quality scores do not say so.** Simulated from the plain
+reference, where the alignment is ground truth, these reads measure 0.99089 accuracy (9.11e-03 error/bp)
+while their quality strings claim 0.99833 (1.67e-03/bp). Real HiFi is 1.77e-03/bp. Badread's qscore model
+floors the relationship between requested identity and reported quality, so the two cannot both be matched;
+the identity request was tuned against the quality-derived figure, which is the reads' claim about
+themselves rather than their content. The homopolymer indel enrichment is 3.24x against a real 4.34x, so
+errors do concentrate in homopolymers but less than in real HiFi. Both are open; see CHANNEL.md [23].
+
 **`np` is fabricated, and nothing should trust it as a pass count.** Badread applies an error model per
 read with no pass structure, so there are no passes behind these reads at all. The `np` written here is
 drawn from the real HG002 distribution so that a tool filtering on pass count sees a realistic
