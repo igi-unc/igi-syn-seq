@@ -45,22 +45,34 @@ SHORT_READ = [
 # Long-read arms. ONT is delivered as FASTQ and goes in the same way. PacBio HiFi and Kinnex
 # are delivered as unaligned BAM, which the manifest specification has no column for, so they
 # are held out of the manifest rather than guessed at; see the README this writes.
-LONG_READ_FASTQ = [
-    ("ont_wgs_tumor",  "WGS",       False, False, "{d}_tumor_ont_wgs"),
-    ("ont_wgs_normal", "WGS",       True,  False, "{d}_normal_ont_wgs"),
-    ("ont_bulk_rna",   "RNA-Seq",   False, True,  "{d}_full_ont_bulk_rna"),
-    ("ont_sc_rna",     "scRNA-Seq", False, True,  "{d}_full_ont_sc_rna"),
+LONG_READ = [
+    # (label, Sequencing_Method, normal?, RNA?, File_Prefix template, Platform)
+    ("ont_wgs_tumor",   "WGS",       False, False, "{d}_tumor_ont_wgs",            "ONT"),
+    ("ont_wgs_normal",  "WGS",       True,  False, "{d}_normal_ont_wgs",           "ONT"),
+    ("ont_bulk_rna",    "RNA-Seq",   False, True,  "{d}_full_ont_bulk_rna",        "ONT"),
+    ("ont_sc_rna",      "scRNA-Seq", False, True,  "{d}_full_ont_sc_rna",          "ONT"),
+    # BAM-delivered. File_Prefix is the FULL .bam filename, matching the
+    # IPISRC044_T1_sclrs_live.seg.bam row in the v2.0.0-dev manifest. preflight_resolve_inputs
+    # prefix-matches and then keeps only names ending in .bam, so the .pbi beside each one is
+    # excluded, and it fails loudly if a prefix matches more than one BAM.
+    ("hifi_wgs_tumor",  "WGS",       False, False, "{d}_tumor_hifi.bam",           "PacBio"),
+    ("hifi_wgs_normal", "WGS",       True,  False, "{d}_normal_hifi.bam",          "PacBio"),
+    ("kinnex_bulk",     "RNA-Seq",   False, True,  "{d}_full_kinnex_bulk_segmented.bam", "PacBio"),
+    ("kinnex_sc",       "scRNA-Seq", False, True,  "{d}_full_kinnex_sc_segmented.bam",   "PacBio"),
 ]
 
 COLS = ["Patient_Name", "Dataset", "Run_Name", "File_Prefix",
-        "Sequencing_Method", "Normal", "Group", "Alleles"]
+        "Sequencing_Method", "Normal", "Group", "Alleles",
+        "Platform", "Read_Type", "Sample_Type"]
 
 
 def rows(dataset, cfg, include_long_read=True):
     out = []
     alleles = ",".join(cfg["hla"])
-    for label, method, is_normal, is_rna, tmpl in (
-            SHORT_READ + (LONG_READ_FASTQ if include_long_read else [])):
+    entries = [t + ("Illumina",) for t in SHORT_READ]
+    if include_long_read:
+        entries += LONG_READ
+    for label, method, is_normal, is_rna, tmpl, platform in entries:
         pre = f"{'n' if is_normal else 'a'}{'r' if is_rna else 'd'}"
         out.append({
             "Patient_Name": dataset,
@@ -71,6 +83,9 @@ def rows(dataset, cfg, include_long_read=True):
             "Normal": "TRUE" if is_normal else "FALSE",
             "Group": "T0",
             "Alleles": alleles,
+            "Platform": platform,
+            "Read_Type": "short-read" if platform == "Illumina" else "long-read",
+            "Sample_Type": "blood-normal" if is_normal else "tumor",
         })
     return out
 

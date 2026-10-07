@@ -122,8 +122,11 @@ for d in "${DATASETS[@]}"; do
       link "$IGI_RELEASE/pacbio/$d/${d}_chr${c}_${l}_hifi.bam.pbi" "$BAM_SUB"
     done
   done
-  # kept complete by design §12, so chr1to6 points at the full library
-  for r in R1 R2; do link "$IGI_RELEASE/tenx_tcr/$d/${d}-TCR_S1_L001_${r}_001.fastq.gz" "$FQ_SUB"; done
+  # 10x TCR is NOT linked into chr1to6, even though design §12 keeps it complete there. A second copy
+  # under the same filename makes the File_Prefix ambiguous: preflight_resolve_inputs walks the bam and
+  # fastq trees recursively, so "<ds>-TCR_S1_L001" matched four FASTQs -- two identical pairs -- and one
+  # manifest row would have gathered the library twice. The chr1to6 release uses the full/ copy, which is
+  # the same file, and the README says so.
   echo "=== $d: chr1to6 (whole-library arms) ==="
   for a in "bulk RNA" "10x GEX" "Kinnex bulk" "Kinnex sc" "ONT bulk RNA" "ONT sc RNA"; do pending "$a"; done
 done
