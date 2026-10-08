@@ -11,19 +11,30 @@
 # Only the FINAL deliverables are linked. A link to a library that is mid-rebuild would be worse than a
 # missing one, because a RAFT run would consume it and succeed.
 #
-# chr1to6 is handled in two halves, because the design handles it in two halves:
+# chr1to6 is built in two halves, because the design builds it in two halves:
 #
-#   per-chromosome arms (WES, WGS, PacBio, ONT WGS)   the builder already emits one file per chromosome,
-#                                                     so the subset is a plain selection of chr1-chr6
-#   whole-library arms (bulk RNA, 10x, Kinnex, ONT RNA)
-#                                                     design §12: "derived from the full release by
-#                                                     alignment, not re-simulated" -- keep reads whose
-#                                                     alignment overlaps chr1to6, plus viral and unmapped
-#                                                     reads and mates. That filter is not built yet, so
-#                                                     these are reported as pending rather than linked.
+#   per-chromosome arms (WES, WGS, PacBio, ONT WGS)   the builder emits one file per chromosome, and
+#                                                     91_merge_chr1to6.sbatch merges chr1-chr6 into one
+#                                                     library per sample. The shards are NOT linked: a
+#                                                     BAM row may match only one file, and with
+#                                                     chromosome-first names no prefix selects one
+#                                                     assay's six chromosomes anyway.
+#   whole-library arms (bulk RNA, 10x GEX, Kinnex x2, ONT RNA x2)
+#                                                     catalog/subset_chr1to6.py, driven by
+#                                                     90_subset_chr1to6.sbatch: each read is kept or
+#                                                     dropped by the transcript record its truth sidecar
+#                                                     names. See that file on why selection is by truth
+#                                                     map rather than by re-aligning.
 #   10x TCR                                           design §12 keeps it COMPLETE in chr1to6, because
-#                                                     TRA/TRB/TRG lie outside the subset, so chr1to6
-#                                                     links the full library.
+#                                                     TRA/TRB/TRG lie outside the subset. It stays linked
+#                                                     under full/ ONLY: a second link under the same name
+#                                                     made "<ds>-TCR_S1_L001" match four FASTQs, and the
+#                                                     chr1to6 manifest points at the full/ copy, which is
+#                                                     the same file.
+#
+# Every chr1to6 name carries a `chr1to6` label that the full name does not, and no File_Prefix is a
+# prefix of another. That is a requirement, not tidiness: preflight_resolve_inputs walks every search
+# directory recursively and matches basenames, so full/ and chr1to6/ are one namespace.
 set -euo pipefail
 : "${IGI_RELEASE:?export IGI_RELEASE=/path/to/release}"
 : "${IGI_RAFT:?export IGI_RAFT=/path/to/raft/workspace}"
@@ -109,26 +120,37 @@ for d in "${DATASETS[@]}"; do
     link "$IGI_RELEASE/$a/$d/${d}_full_${a}_segmented.bam.pbi" "$BAM_FULL"
   done
 
-  echo "=== $d: chr1to6 (per-chromosome arms are a plain selection) ==="
-  for c in 1 2 3 4 5 6; do
-    for l in tumor normal; do
-      for m in 1 2; do
-        link_as "$IGI_RELEASE/wes/$d/${d}_chr${c}_${l}_R${m}.fastq.gz" "$FQ_SUB" \
-                "${d}_chr${c}_${l}_wes_R${m}.fastq.gz"
-        link "$IGI_RELEASE/wgs/$d/${d}_chr${c}_${l}_wgs_R${m}.fastq.gz" "$FQ_SUB"
-      done
-      link "$IGI_RELEASE/ont_wgs/$d/${d}_chr${c}_${l}_ont_wgs.fastq.gz" "$FQ_SUB"
-      link "$IGI_RELEASE/pacbio/$d/${d}_chr${c}_${l}_hifi.bam" "$BAM_SUB"
-      link "$IGI_RELEASE/pacbio/$d/${d}_chr${c}_${l}_hifi.bam.pbi" "$BAM_SUB"
+  # The chr1to6 directories are rebuilt from scratch each run, because this script is the only thing that
+  # writes them and an earlier layout's links would otherwise survive forever. Only symlinks are removed,
+  # and the ${VAR:?} guards mean an unset path deletes nothing.
+  echo "=== $d: chr1to6 ==="
+  if [ "$DRY" != 1 ]; then
+    for dir in "${FQ_SUB:?}" "${BAM_SUB:?}"; do
+      [ -d "$dir" ] && find "$dir" -maxdepth 1 -type l -delete
     done
+  fi
+  for l in tumor normal; do
+    for m in 1 2; do
+      # WES keeps the _wes_ infix the release does not have, for the same reason the full release does.
+      link_as "$IGI_RELEASE/wes_chr1to6/$d/${d}_chr1to6_${l}_R${m}.fastq.gz" "$FQ_SUB" \
+              "${d}_chr1to6_${l}_wes_R${m}.fastq.gz"
+      link "$IGI_RELEASE/wgs_chr1to6/$d/${d}_chr1to6_${l}_wgs_R${m}.fastq.gz" "$FQ_SUB"
+    done
+    link "$IGI_RELEASE/ont_wgs_chr1to6/$d/${d}_chr1to6_${l}_ont_wgs.fastq.gz" "$FQ_SUB"
+    link "$IGI_RELEASE/pacbio_chr1to6/$d/${d}_chr1to6_${l}_hifi.bam" "$BAM_SUB"
+    link "$IGI_RELEASE/pacbio_chr1to6/$d/${d}_chr1to6_${l}_hifi.bam.pbi" "$BAM_SUB"
   done
-  # 10x TCR is NOT linked into chr1to6, even though design §12 keeps it complete there. A second copy
-  # under the same filename makes the File_Prefix ambiguous: preflight_resolve_inputs walks the bam and
-  # fastq trees recursively, so "<ds>-TCR_S1_L001" matched four FASTQs -- two identical pairs -- and one
-  # manifest row would have gathered the library twice. The chr1to6 release uses the full/ copy, which is
-  # the same file, and the README says so.
-  echo "=== $d: chr1to6 (whole-library arms) ==="
-  for a in "bulk RNA" "10x GEX" "Kinnex bulk" "Kinnex sc" "ONT bulk RNA" "ONT sc RNA"; do pending "$a"; done
+  for m in 1 2; do
+    link "$IGI_RELEASE/rna/$d/${d}_chr1to6_rna_R${m}.fastq.gz" "$FQ_SUB"
+    link "$IGI_RELEASE/tenx_gex/$d/${d}-chr1to6-GEX_S1_L001_R${m}_001.fastq.gz" "$FQ_SUB"
+  done
+  link "$IGI_RELEASE/ont_bulk_rna/$d/${d}_chr1to6_ont_bulk_rna.fastq.gz" "$FQ_SUB"
+  link "$IGI_RELEASE/ont_sc_rna/$d/${d}_chr1to6_ont_sc_rna.fastq.gz" "$FQ_SUB"
+  for a in kinnex_bulk kinnex_sc; do
+    link "$IGI_RELEASE/$a/$d/${d}_chr1to6_${a}_segmented.bam" "$BAM_SUB"
+    link "$IGI_RELEASE/$a/$d/${d}_chr1to6_${a}_segmented.bam.pbi" "$BAM_SUB"
+  done
+  echo "    10x TCR: kept complete per design §12; the chr1to6 manifest points at the full/ copy"
 done
 
 echo

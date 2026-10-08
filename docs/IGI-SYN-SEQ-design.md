@@ -551,13 +551,63 @@ omitted it would score a caller's correct answer as a false positive.
 
 ## 12. chr1to6 subset
 
-Derived from the full release by alignment, not re-simulated:
-- Keep read pairs/molecules whose alignment overlaps chr1to6, plus all viral-contig and
-  unmapped reads, plus mates.
-- 10x GEX and Kinnex sc keep all barcodes but only chr1to6 molecules (Cell Ranger cell calling
-  still works at ~35 % of the UMI depth; documented).
-- **10x TCR is kept complete** because TRA/TRB/TRG lie outside chr1to6.
-- Truth bundle filtered to chr1to6 events; manifests regenerated.
+Derived from the full release, not re-simulated. Built in two halves, because the release is built
+in two halves.
+
+**Per-chromosome arms** (WES, Illumina WGS, PacBio HiFi WGS, ONT WGS) are simulated one
+chromosome at a time, so their subset is the chr1-chr6 shards **merged into one library per
+sample** (`jobs/91_merge_chr1to6.sbatch`). The merge is not cosmetic: lens-v2.0.0-dev's
+`preflight_resolve_inputs` gathers every file whose name starts with `File_Prefix` and then fails
+hard on more than one BAM, so PacBio's six shards cannot be addressed by any prefix; and with the
+release's chromosome-first names (`<ds>_chr1_tumor_wgs_R1`) no prefix selects one assay's six
+chromosomes without also selecting the other assays'.
+
+**Whole-library arms** (bulk RNA, 10x GEX, Kinnex bulk, Kinnex sc, ONT bulk RNA, ONT sc RNA) are
+filtered read by read by `catalog/subset_chr1to6.py`
+(`jobs/90_subset_map.sbatch`, then `jobs/90_subset_chr1to6.sbatch`).
+
+**Selection is by truth map, not by alignment**, which departs from this section's original
+wording. Each library ships a read-level truth sidecar naming the transcript record every read
+came from, and a read is kept when that record's locus is on chr1-6. Three reasons:
+
+1. *It is the rule the other ten arms use.* A per-chromosome shard holds the reads whose SOURCE
+   locus is on that chromosome. Selecting the RNA arms by where an aligner puts them would make
+   the subset release use two different definitions of "on chr1-6" depending on the assay.
+2. *It is exact* -- no MAPQ, multimapping or soft-clip judgement.
+3. *It is cheap* -- aligning these twelve libraries (276 GB of reads) would cost more than
+   simulating them did.
+
+What alignment would have added is the read whose source is on chr7 but which maps into chr1-6
+anyway. Those reads are excluded, and that is stated rather than discovered.
+
+Per source class: reference and splice transcripts resolve through the GENCODE transcript, ERV and
+CTA through their event's locus, a **fusion is kept if either partner** is on chr1-6 (it is one
+molecule and half of it is in the subset), and **viral transcripts are kept unconditionally** --
+there is no human chromosome to test, and this section keeps viral reads.
+
+- 10x GEX and Kinnex sc keep all barcodes but only chr1to6 molecules. Measured: all 4,000
+  barcodes retained in both; molecules drop to ~35 % of full, which is the UMI depth Cell Ranger
+  cell calling has to work at.
+- **10x TCR is kept complete** because TRA/TRB/TRG lie outside chr1to6. It is linked under
+  `full/` only -- a second link under the same name made `<ds>-TCR_S1_L001` match four FASTQs --
+  and the chr1to6 manifest points at that same file.
+- Truth bundle filtered to chr1to6 events; manifests regenerated as
+  `lens.<ds>.chr1to6.{with,no}-alleles.manifest` with `Dataset` = `<ds>-chr1to6`.
+
+**Caveat, Kinnex single-cell.** A single-cell array carries sixteen cDNAs but the kit has only
+nine adapters, so `skera` returns the last bracketed segment as molecules 7-15 concatenated (§10
+records this as an open adapter-layout caveat). A segment is kept if **any** molecule in it is on
+chr1-6, so that one segment almost always survives: measured molecule purity is **0.494**, against
+1.000 for Kinnex bulk where one segment is one molecule. Half the molecules in the Kinnex sc
+subset are therefore off-target. That is the adapter-layout caveat surfacing, not a new defect,
+and each arm's `*_chr1to6_<arm>.json` reports the purity so the size of it stays visible.
+
+**Caveat, event coverage.** §4 asks for >= 50 % of every class and tier cell on chr1to6. Measured
+against the truth tables' own `chr1to6` flags, only SNVs (77 %/75 %) and viral integrations
+(67 %) clear that; indels are 34 %/32 %, SVs 23 %/34 %, fusions 26 %/40 %, splice 23 %/37 %, CTA
+20 %/27 %, ERV 40 %/40 %. The subset is a fast end-to-end exercise of the pipeline, not a
+proportional miniature of the full truth set, and raising the non-SNV classes would mean
+re-running the designer and invalidating every library built from it.
 
 ## 13. Generator pipeline
 

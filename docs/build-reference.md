@@ -618,3 +618,79 @@ while PacBio ran beside it, both asking 64 G, because memory was saturated at 4,
 
 Size the request from the measured peak plus headroom for the tail, not from the mean and not from a round
 number.
+
+
+## 11. The chr1to6 subset
+
+The subset exists so an end-to-end LENS run takes hours rather than days. Design §12 asked for it to be
+derived from the full release "by alignment, not re-simulated"; it is derived from the full release by
+**truth map**, and §12 now records that departure and the reasons. The short version: the per-chromosome
+arms' subset is already defined by source locus, so defining the RNA arms' subset by where an aligner put
+the reads would have left the subset release using two different meanings of "on chr1-6"; the truth map is
+exact where an aligner is not; and the reads already carry the sidecars that make it free.
+
+Two jobs and one script:
+
+| Step | Runs | Produces |
+|---|---|---|
+| `jobs/90_subset_map.sbatch` | 2 tasks, ~1 min | `$IGI_WORK/subset/<ds>.chr1to6_records.tsv.gz` |
+| `jobs/91_merge_chr1to6.sbatch` | 16 tasks | `<arm>_chr1to6/<ds>/<ds>_chr1to6_*` for WES, WGS, ONT WGS, PacBio |
+| `jobs/90_subset_chr1to6.sbatch` | 12 tasks | `<arm>/<ds>/<ds>_chr1to6_<arm>*` for the six RNA arms |
+
+### 11.1 The record map
+
+`catalog/subset_chr1to6.py map` writes one row per transcript record: `rec`, `source`, the chromosomes it
+resolves to, and the keep flag. Resolution is per source class -- GENCODE transcript for `reference` and
+`splice_isoform`, the designed event's locus for `erv`/`cta`/`fusion`, and unconditional keep for `virus`.
+A record that resolves to **nothing aborts the map**, because an unresolved source class would silently
+shrink the subset; that check is why the map is trustworthy rather than merely produced.
+
+Cross-checked against the truth tables' own `chr1to6` flags: 75 of 75 expressed events agree in both
+datasets. Result: 442,380 of 1,226,495 records on chr1-6 for ds-01 (36.1 %) and 463,011 of 1,259,951 for
+ds-02 (36.7 %).
+
+### 11.2 Streaming, and the lockstep assertion
+
+Every arm streams its deliverable and its truth sidecar **in lockstep and asserts the read names agree**,
+read by read, rather than trusting that they do. The sidecars were written in emission order, but an arm
+that was ever resumed or re-merged could have broken that, and a silent misalignment would mislabel every
+read downstream. All reads and writes go through `pigz`; the gzip module is the bottleneck on a 49 GB
+FASTQ.
+
+### 11.3 Kinnex: which molecule is a segment?
+
+An array is built `adapter_0 m_0 adapter_1 m_1 ... adapter_k`, so `skera split` returns one segment per
+bracketed molecule and the segment's molecule index is **`min(dl, dr)`** of its two adapter tags. Taking
+the minimum rather than `dl` is what makes it orientation-agnostic: about half the arrays are sequenced
+reverse and come back with `dl > dr`. Verified on both libraries, both orientations and on short arrays.
+
+Two things this surfaced, neither of which a naive implementation would have noticed:
+
+- **4.2 % of ZMWs have fewer segments than molecules.** `skera` moved the rest to `non_passing.bam`.
+  Harmless -- `min(dl, dr)` still identifies the molecule for the segments that remain, which is why
+  counting segments in order would have been wrong.
+- **0.019 % of segments carry an adapter index past the end of their array.** HiFi error on a 17 bp
+  adapter occasionally makes adapter *j* look like *j+1*. Such a segment cannot be attributed, so it is
+  **kept** and counted (`segments_unattributed`): keeping it adds a little background, while dropping it
+  would remove reads nothing can account for, and an unexplained hole in a benchmark library is worse than
+  an unexplained extra read.
+
+### 11.4 Verification before launch
+
+Each of the four code paths was run against truncated copies of the real deliverables and checked by an
+independent reimplementation, not by eye:
+
+| Arm | Checked | Result |
+|---|---|---|
+| bulk RNA | R1, R2 and readmap against the keep set, record by record | 38,074 of 100,000 pairs, identical order and content |
+| Kinnex bulk | output BAM names against a separate recomputation | 76,996 of 199,995 segments, identical; `@RG`/`PU` preserved |
+| Kinnex sc | molecule purity, barcodes | 85,342 of 199,995 segments, purity 0.494, 4,000 barcodes |
+| ONT sc RNA | reads, molecules, barcodes | 69,170 of 200,000 reads, 4,000 barcodes |
+
+### 11.5 Naming is a correctness requirement
+
+`preflight_resolve_inputs` walks every search directory recursively and matches on the basename, so
+`inputs/fastqs/<ds>/full` and `.../chr1to6` are one namespace. Every chr1to6 name therefore carries a
+`chr1to6` label the full name lacks, and `make_lens_manifest.py` **fails** if any `File_Prefix` is a
+prefix of another, within or across releases. 10x TCR is the single row whose two releases name the same
+file, and it is linked under `full/` only.
