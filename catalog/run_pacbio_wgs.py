@@ -238,7 +238,8 @@ def main():
     # DeepVariant's HiFi model all either reject it or mishandle it, which made 251 GB of delivered BAM
     # unusable. write_hifi_bam gives it Revio read names, zm/np/ec/rq/qs/qe and an @RG carrying PU.
     n_reads, _ = write_hifi_bam([cat], out_bam, sample=a.dataset, seed=a.seed,
-                                library=f"{a.dataset}_{a.library}_hifi", kind="hifi_wgs")
+                                library=f"{a.dataset}_{a.library}_hifi", kind="hifi_wgs",
+                                qual_error_scale=paths.get("pacbio_qual_error_scale", 1.0))
     pbi = pbindex(out_bam, paths.get("pbindex_cmd"))
 
     # Every builder records its seed; see the note in run_wes.py for what goes wrong when a checker is

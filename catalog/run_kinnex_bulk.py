@@ -190,7 +190,8 @@ def main():
     # np is drawn per read from the real Kinnex distribution, not pinned to the profile's mean: a single
     # constant np across a library leaves a caller filtering on pass count with nothing to filter on.
     n_pre, by_src = write_hifi_bam([cat], pre_bam, one_per_source=True, kind="kinnex", seed=a.seed,
-                                   sample=a.dataset, library=f"{a.dataset}_kinnex_bulk")
+                                   sample=a.dataset, library=f"{a.dataset}_kinnex_bulk",
+                                   qual_error_scale=paths.get("pacbio_qual_error_scale", 1.0))
     print(f"  pre-skera: {n_pre:,} reads (one per array) -> {os.path.basename(pre_bam)}", flush=True)
 
     seg_bam = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_bulk_segmented.bam")

@@ -32,9 +32,11 @@ Three details were each paid for by a defect in delivered data:
 import bisect
 import hashlib
 import json
+import math
 import os
 import re
 import subprocess
+from array import array
 
 import pysam
 
@@ -151,9 +153,34 @@ def _emit(out, name, seq, qual, zmw, np_passes, ec, rq, qs=8, rg="synthetic"):
     out.write(a)
 
 
+def rescale_quality(qual, scale):
+    """Multiply every base's error PROBABILITY by `scale` and return the new Phred array.
+
+    Badread builds sequence from an error model and qualities from a separate qscore model, and for the
+    PacBio model they disagree: measured against the alignment, the reads carry 5.15x the error their
+    quality strings claim, at EVERY identity request (jobs/81_calibrate_identity.sbatch). The ratio is
+    constant because the qscore model is keyed to the REQUESTED identity, not the realised one, so
+    raising --identity improves the sequence and leaves the claim exactly as optimistic as before.
+
+    That is the F24 defect itself -- reads asserting an accuracy they do not have -- and unlike the error
+    floor it is ours to fix, because we write the BAM. Scaling the per-base error probability preserves
+    the shape of the qscore model, which has real per-position structure, while making the aggregate
+    honest; `rq` then follows from the rescaled array rather than needing its own correction.
+
+    Phred is clamped to [1, 93]: 0 means "no quality available" in SAM and 93 is the encodable maximum.
+    """
+    if not scale or scale == 1.0:
+        return qual
+    out = array("B", bytes(len(qual)))
+    for i, q in enumerate(qual):
+        e = min(0.75, (10.0 ** (-q / 10.0)) * scale)
+        out[i] = max(1, min(93, int(round(-10.0 * math.log10(e)))))
+    return out
+
+
 def write_hifi_bam(fastq_paths, out_bam, movie=None, one_per_source=False,
                    np_passes=None, sample="SAMPLE", library=None, kind="hifi_wgs", seed=0,
-                   index_offset=0):
+                   index_offset=0, qual_error_scale=1.0):
     """Convert Badread FASTQ(s) into a HiFi-style unaligned BAM.
 
     Returns (n_written, {source: read_name}). With `one_per_source` only the first read from each
@@ -162,6 +189,8 @@ def write_hifi_bam(fastq_paths, out_bam, movie=None, one_per_source=False,
 
     `np_passes` fixes the pass count for every read; leaving it None draws per read from the measured
     distribution, which is what real data looks like and what callers filtering on np need.
+
+    `qual_error_scale` calibrates the quality strings against the alignment -- see `rescale_quality`.
     """
     movie = movie or movie_for(sample, library)
     rg = rg_id(movie)
@@ -184,7 +213,8 @@ def write_hifi_bam(fastq_paths, out_bam, movie=None, one_per_source=False,
                     name = f"{movie}/{zmw}/ccs"
                     if src is not None:
                         seen.setdefault(src, name)
-                    qual = pysam.qualitystring_to_array(rec.quality)
+                    qual = rescale_quality(pysam.qualitystring_to_array(rec.quality),
+                                           qual_error_scale)
                     rq = mean_accuracy(qual)
                     if np_passes is None:
                         npass, ec = draw_np(seed, f"{library or sample}:{idx}", kind)

@@ -225,7 +225,8 @@ def main():
     pre_bam = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_sc_hifi_reads.bam")
     # np drawn per read from the real Kinnex distribution; see the note in run_kinnex_bulk.py
     n_pre, by_src = write_hifi_bam([cat], pre_bam, one_per_source=True, kind="kinnex", seed=a.seed,
-                                   sample=a.dataset, library=f"{a.dataset}_kinnex_sc")
+                                   sample=a.dataset, library=f"{a.dataset}_kinnex_sc",
+                                   qual_error_scale=paths.get("pacbio_qual_error_scale", 1.0))
     log(f"  pre-skera: {n_pre:,} reads (one per array) -> {os.path.basename(pre_bam)}")
 
     seg_bam = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_sc_segmented.bam")

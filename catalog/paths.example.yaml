@@ -46,7 +46,15 @@ kinnex_sc_size_selection: /path/to/catalog/resources/kinnex_sc_size_selection.js
 # Verified end to end on chr21: ONT genomic lands at 0.98633 with length mean 19,067 and sd 15,485 against
 # targets of 0.98676, 19,117 and 15,530.
 
-pacbio_identity: "99.4,99.8,0.5"          # -> 0.99823, HG002 Revio HiFi
+# Set to Badread's FLOOR, not to a calibrated offset. Measured against the alignment, pacbio2021 has a
+# hard error floor of 3.05e-3/bp (Q25.2) that --identity cannot reach past -- 100,100,0 still returns it
+# -- against real Revio HiFi's 1.77e-3. The earlier "99.4,99.8,0.5 -> 0.99823" was read off the reads'
+# own quality strings, which is not a measurement of a simulated read: Badread builds sequence from an
+# error model and qualities from a separate qscore model, and these two disagree by 5.15x.
+pacbio_identity: "100,100,0"               # -> true 0.99695 by alignment; 1.72x real HiFi error
+# Multiplies each base's error probability so the quality strings stop claiming an accuracy the reads do
+# not have. 5.15 is the measured true/claimed error ratio, which is constant across identity requests.
+pacbio_qual_error_scale: 5.15
 pacbio_length_mean: 16689
 pacbio_length_sd: 4593
 pacbio_error_model: pacbio2021

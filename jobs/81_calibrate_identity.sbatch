@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J igi_calib
 #SBATCH -c 12 --mem=32G -t 6:00:00
-#SBATCH --array=1-14
+#SBATCH --array=1-15
 # Calibrate every long-read identity setting against the ALIGNMENT, not against the reads' own quality
 # strings. See jobs/measure/alignment_identity.py for why the distinction matters; in short, Badread
 # generates sequence from an error model and qualities from a separate qscore model, and for the PacBio
@@ -45,6 +45,10 @@ CASES=(
   # ratio, which is the signature of a floor; asking for perfect reads settles it.
   "pacbio|99.99,100,0.05|pacbio2021|16689,4593|map-hifi"
   "pacbio|100,100,0|pacbio2021|16689,4593|map-hifi"
+  # Task 15 checks the floor at KINNEX read lengths. The floor was measured on 16.7 kb genomic reads and
+  # both Kinnex arms share pacbio_identity, but their segments are 2 kb cDNA, so the per-base error of a
+  # short read under the same model is worth confirming before committing 20-44 h per library to it.
+  "kinnex|100,100,0|pacbio2021|2091,843|map-hifi"
 )
 IFS='|' read -r SET REQ MODEL LEN PRESET <<<"${CASES[$((SLURM_ARRAY_TASK_ID-1))]}"
 TAG="${SET}_${REQ//,/-}"

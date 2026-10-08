@@ -698,3 +698,78 @@ cells have no chr1-6 molecule at all. §12 now says 99.3 % instead of "all".
 `chr1to6` label the full name lacks, and `make_lens_manifest.py` **fails** if any `File_Prefix` is a
 prefix of another, within or across releases. 10x TCR is the single row whose two releases name the same
 file, and it is linked under `full/` only.
+
+
+## 12. The PacBio error floor, and the quality strings
+
+F24 found that the delivered HiFi reads carried 5.1x the error their quality strings claimed. The follow-up
+established two separate facts, and only one of them is fixable here.
+
+### 12.1 Every long-read identity setting had been calibrated against the wrong thing
+
+`jobs/measure/measure_longread.py` derives accuracy from the base-quality string, and from `rq` for a real
+HiFi BAM. For a REAL read that is a fair measurement: the quality string is the instrument's own estimate.
+For a SIMULATED read it is not a measurement at all. Badread builds sequence from an error model and
+qualities from a separate qscore model, and nothing couples them.
+
+`jobs/measure/alignment_identity.py` measures identity from NM over the aligned length, on reads simulated
+from an unmodified reference window so the alignment is ground truth.
+`jobs/81_calibrate_identity.sbatch` sweeps every setting.
+
+ONT came out fine, and errs in the harmless direction:
+
+| setting | request | true identity | target | verdict |
+|---|---|---|---|---|
+| `ont_wgs_identity` | 99.17 | ~0.9883 | 0.98676 | ~12 % too clean |
+| `ont_identity` (cDNA) | 98.41 | ~0.9812 | 0.98220 | ~6 % too noisy |
+
+For both, the quality strings UNDERSTATE accuracy (ratio 0.54-0.93), which does not touch the sequence.
+No ONT change was made.
+
+### 12.2 PacBio has an error floor, not a calibration offset
+
+Across six requests the EXCESS over the nominal error rate is constant rather than proportional:
+
+| request | nominal error | true error | excess | indel share |
+|---|---|---|---|---|
+| 99.4 | 6.0e-03 | 9.12e-03 | 3.12e-03 | 91 % |
+| 99.7 | 3.0e-03 | 5.99e-03 | 2.99e-03 | 90 % |
+| 99.85 | 1.5e-03 | 4.41e-03 | 2.91e-03 | 88 % |
+| 99.95 | 0.5e-03 | 3.53e-03 | 3.03e-03 | 86 % |
+| 99.99 | 0.1e-03 | 3.17e-03 | 3.07e-03 | 85 % |
+| **100** | **0** | **3.05e-03** | **3.05e-03** | 84 % |
+
+Asking for perfect reads still returns 3.05e-03/bp (Q25.2). Badread's `pacbio2021` model therefore cannot
+produce real HiFi, whose error is 1.77e-03: the best it can do is **1.72x real**, and `--identity` has no
+effect at the limit. `pacbio_identity` is set to the floor, `"100,100,0"`, which is 1.72x real instead of
+the 5.15x that `99.4` delivered.
+
+**Reaching real HiFi needs a different simulator, and that decision is not made here.** Note that the
+pbsim3 + ccs route's figure of `rq 0.99754` came from the quality estimate too, by the same method §12.1
+invalidates, so it is not established either; whichever route is tried next must have ITS true error
+measured by alignment first. pbsim3's error models were also removed from this site as non-durable.
+
+### 12.3 The quality strings were ours to fix, and are fixed
+
+The true/claimed error ratio is **5.15 at every request**, because the qscore model is keyed to the
+REQUESTED identity rather than the realised one. So raising `--identity` improves the sequence and leaves
+the claim exactly as optimistic as before -- reads at the floor would assert Q32.3 while carrying Q25.2.
+
+That assertion is the F24 defect itself, and unlike the floor it is entirely in our hands, because we write
+the BAM. `pacbio_bam.rescale_quality` multiplies each base's error probability by
+`pacbio_qual_error_scale` (5.15, the measured ratio) before the read is written, which preserves the
+per-position structure of the qscore model while making the aggregate honest; `rq` then follows from the
+rescaled array rather than needing a correction of its own. Phred is clamped to [1, 93] -- 0 means "no
+quality available" in SAM. Verified: a badread-shaped quality string claiming 0.99939 becomes 0.99695,
+which is the measured true accuracy at the floor.
+
+All three PacBio arms read `pacbio_identity`, so all three are affected and all three were wired to the
+scale: `run_pacbio_wgs.py`, `run_kinnex_bulk.py`, `run_kinnex_sc.py`.
+
+### 12.4 The QA accuracy target had to move, and why that is not moving the goalposts
+
+`qa_release.py` derives accuracy from the quality strings, so with those calibrated the PacBio targets
+become the simulator's own true accuracy, 0.99695, not real HiFi's 0.99823. The check now asks "do the
+reads describe themselves correctly", which is answerable, instead of "did Badread reach real HiFi", which
+it cannot. The gap is a simulator limit and belongs in this document, not in a check that fails on every
+release.
