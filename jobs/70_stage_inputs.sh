@@ -129,26 +129,50 @@ for d in "${DATASETS[@]}"; do
       [ -d "$dir" ] && find "$dir" -maxdepth 1 -type l -delete
     done
   fi
+  # EVERY chr1to6 deliverable is derived, so every one of them can be stale, and a stale derived library
+  # is the most dangerous thing in this tree: a RAFT run consumes it and succeeds. Each is therefore
+  # linked only if it is newer than what it was derived FROM -- the chr1-6 shards for the merged arms,
+  # the full library for the filtered ones. This is not hypothetical: the `*`-allele fix invalidated
+  # every ds-01 library while that dataset's subsets were still being written from the old reads.
+  sub_link() {  # sub_link <src> <dest_dir> <rename|-> -- <inputs...>
+    local src="$1" dir="$2" name="$3"; shift 4
+    if fresher_than_inputs "$src" "$@"; then
+      if [ "$name" = "-" ]; then link "$src" "$dir"; else link_as "$src" "$dir" "$name"; fi
+    else
+      echo "    HELD (older than what it is derived from): $(basename "$src")"; n_pend=$((n_pend+1))
+    fi
+  }
   for l in tumor normal; do
     for m in 1 2; do
       # WES keeps the _wes_ infix the release does not have, for the same reason the full release does.
-      link_as "$IGI_RELEASE/wes_chr1to6/$d/${d}_chr1to6_${l}_R${m}.fastq.gz" "$FQ_SUB" \
-              "${d}_chr1to6_${l}_wes_R${m}.fastq.gz"
-      link "$IGI_RELEASE/wgs_chr1to6/$d/${d}_chr1to6_${l}_wgs_R${m}.fastq.gz" "$FQ_SUB"
+      sub_link "$IGI_RELEASE/wes_chr1to6/$d/${d}_chr1to6_${l}_R${m}.fastq.gz" "$FQ_SUB" \
+               "${d}_chr1to6_${l}_wes_R${m}.fastq.gz" -- \
+               $IGI_RELEASE/wes/$d/${d}_chr[1-6]_${l}_R${m}.fastq.gz
+      sub_link "$IGI_RELEASE/wgs_chr1to6/$d/${d}_chr1to6_${l}_wgs_R${m}.fastq.gz" "$FQ_SUB" - -- \
+               $IGI_RELEASE/wgs/$d/${d}_chr[1-6]_${l}_wgs_R${m}.fastq.gz
     done
-    link "$IGI_RELEASE/ont_wgs_chr1to6/$d/${d}_chr1to6_${l}_ont_wgs.fastq.gz" "$FQ_SUB"
-    link "$IGI_RELEASE/pacbio_chr1to6/$d/${d}_chr1to6_${l}_hifi.bam" "$BAM_SUB"
-    link "$IGI_RELEASE/pacbio_chr1to6/$d/${d}_chr1to6_${l}_hifi.bam.pbi" "$BAM_SUB"
+    sub_link "$IGI_RELEASE/ont_wgs_chr1to6/$d/${d}_chr1to6_${l}_ont_wgs.fastq.gz" "$FQ_SUB" - -- \
+             $IGI_RELEASE/ont_wgs/$d/${d}_chr[1-6]_${l}_ont_wgs.fastq.gz
+    for x in "" ".pbi"; do
+      sub_link "$IGI_RELEASE/pacbio_chr1to6/$d/${d}_chr1to6_${l}_hifi.bam$x" "$BAM_SUB" - -- \
+               $IGI_RELEASE/pacbio/$d/${d}_chr[1-6]_${l}_hifi.bam
+    done
   done
   for m in 1 2; do
-    link "$IGI_RELEASE/rna/$d/${d}_chr1to6_rna_R${m}.fastq.gz" "$FQ_SUB"
-    link "$IGI_RELEASE/tenx_gex/$d/${d}-chr1to6-GEX_S1_L001_R${m}_001.fastq.gz" "$FQ_SUB"
+    sub_link "$IGI_RELEASE/rna/$d/${d}_chr1to6_rna_R${m}.fastq.gz" "$FQ_SUB" - -- \
+             "$IGI_RELEASE/rna/$d/${d}_full_rna_R${m}.fastq.gz"
+    sub_link "$IGI_RELEASE/tenx_gex/$d/${d}-chr1to6-GEX_S1_L001_R${m}_001.fastq.gz" "$FQ_SUB" - -- \
+             "$IGI_RELEASE/tenx_gex/$d/${d}-GEX_S1_L001_R${m}_001.fastq.gz"
   done
-  link "$IGI_RELEASE/ont_bulk_rna/$d/${d}_chr1to6_ont_bulk_rna.fastq.gz" "$FQ_SUB"
-  link "$IGI_RELEASE/ont_sc_rna/$d/${d}_chr1to6_ont_sc_rna.fastq.gz" "$FQ_SUB"
+  for a in ont_bulk_rna ont_sc_rna; do
+    sub_link "$IGI_RELEASE/$a/$d/${d}_chr1to6_${a}.fastq.gz" "$FQ_SUB" - -- \
+             "$IGI_RELEASE/$a/$d/${d}_full_${a}.fastq.gz"
+  done
   for a in kinnex_bulk kinnex_sc; do
-    link "$IGI_RELEASE/$a/$d/${d}_chr1to6_${a}_segmented.bam" "$BAM_SUB"
-    link "$IGI_RELEASE/$a/$d/${d}_chr1to6_${a}_segmented.bam.pbi" "$BAM_SUB"
+    for x in "" ".pbi"; do
+      sub_link "$IGI_RELEASE/$a/$d/${d}_chr1to6_${a}_segmented.bam$x" "$BAM_SUB" - -- \
+               "$IGI_RELEASE/$a/$d/${d}_full_${a}_segmented.bam"
+    done
   done
   echo "    10x TCR: kept complete per design §12; the chr1to6 manifest points at the full/ copy"
 done

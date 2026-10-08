@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_tenx_gex
-#SBATCH -c 8 --mem=320G -t 48:00:00
+#SBATCH -c 8 --mem=24G -t 48:00:00
 #SBATCH --array=1-2
 # 10x Chromium 5' v2 gene expression, one task per dataset.
 #

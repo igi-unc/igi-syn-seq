@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_rna
-#SBATCH -c 16 --mem=320G -t 72:00:00
+#SBATCH -c 16 --mem=16G -t 72:00:00
 #SBATCH --array=1-2
 # Bulk RNA, full genome: ERVs, splice isoforms and CTAs reach an RNA library here for the first time,
 # which no chr6 slice could exercise.

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_kinnex_sc
-#SBATCH -c 48 --mem=320G -t 72:00:00
+#SBATCH -c 48 --mem=64G -t 72:00:00
 #SBATCH --array=1-2
 # Kinnex single-cell RNA (PacBio MAS-seq, 10x 5' v2 cDNA), one task per dataset. Produces the pre-skera
 # hifi_reads BAM, the segmented BAM from the real `skera split`, the cell roster and the clonotype table.

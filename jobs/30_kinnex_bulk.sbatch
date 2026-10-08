@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_kinnex_bulk
-#SBATCH -c 48 --mem=320G -t 72:00:00
+#SBATCH -c 48 --mem=24G -t 72:00:00
 #SBATCH --array=1-2
 # Kinnex bulk RNA (PacBio MAS-seq, 8-mer array), one task per dataset. Produces both the pre-skera
 # hifi_reads BAM, where one read is one whole array, and the segmented BAM from the real `skera split`.

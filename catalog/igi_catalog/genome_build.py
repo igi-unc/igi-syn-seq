@@ -15,11 +15,37 @@ from collections import defaultdict
 class EditSet:
     """Reference-coordinate substitutions for one chromosome."""
 
+    # Sequence alleles only. A VCF ALT column is not restricted to sequence -- it also carries symbolic
+    # alleles (`*`, `<DEL>`, `<NON_REF>`, breakend notation) -- and appending one of those to the
+    # sequence writes a character that is not a base. That is exactly what happened: 2.65 % of the HG002
+    # Q100 records carry a spanning-deletion `*` ALT, the genotype selects it on one haplotype, and
+    # literal `*` characters reached the delivered ds-01 reads of every arm built from the genome. The
+    # aligners tolerated them and Cell Ranger did not, which is how it surfaced rather than by any check
+    # of ours. This guard is at the chokepoint every edit passes through, so no source can do it again.
+    ALLOWED = set("ACGTNacgtn")
+
     def __init__(self, chrom):
         self.chrom = chrom
         self.edits = []          # (pos1, ref, alt, label)
+        self.spanning_deletion_alleles = 0
+
+    def extend(self, other):
+        """Take another set's edits, re-validating them. Splicing `.edits` in directly would walk past
+        the allele check in `add`, which is the only thing standing between a symbolic VCF allele and the
+        delivered sequence."""
+        for pos1, ref, alt, label in other.edits:
+            self.add(pos1, ref, alt, label)
+        self.spanning_deletion_alleles += other.spanning_deletion_alleles
+        return self
 
     def add(self, pos1, ref, alt, label):
+        for which, allele in (("ref", ref), ("alt", alt)):
+            bad = set(allele) - self.ALLOWED
+            if bad or not allele:
+                raise ValueError(
+                    f"{self.chrom}:{pos1} {label}: {which} allele {allele!r} is not a sequence "
+                    f"({''.join(sorted(bad)) or 'empty'}). Symbolic VCF alleles must be resolved by the "
+                    f"caller, not appended to the sequence.")
         self.edits.append((int(pos1), ref, alt, label))
 
     def apply(self, seq, offset1=1, strict=True):
@@ -59,14 +85,28 @@ class EditSet:
 
 
 def germline_edits(germline, chrom, hap, start1, end1):
-    """Phased germline edits for one haplotype over a region."""
+    """Phased germline edits for one haplotype over a region.
+
+    `*` ALT alleles are a NO-OP, not an edit. In VCF, `*` means this allele is deleted by a spanning
+    deletion recorded at another position, so the bases are removed by that deletion's own edit and
+    there is nothing to apply here; the record exists only so the site is representable. 2.65 % of the
+    HG002 Q100 germline records carry one (157,310 of 5,945,526), always as the second ALT of a
+    multiallelic site with the genotype selecting it on one haplotype -- so keeping multiallelic records,
+    which was right and is what put 178,123 HG002 genotypes back into the sequence, is also what let
+    these through. IPISRC044 has none; its VCF went through SHAPEIT5 normalisation.
+    """
     es = EditSet(chrom)
+    es.spanning_deletion_alleles = 0
     for pos, ref, alts, gt, _phased in germline.variants(chrom, start1 - 1, end1):
         allele = gt[hap] if len(gt) == 2 else gt[0]
         # the genotype indexes into the record's ALT tuple: at a multiallelic site the two haplotypes
         # carry different non-reference alleles, and testing `allele == 1` applied neither
         if allele > 0:
-            es.add(pos, ref, alts[allele - 1], "germline")
+            alt = alts[allele - 1]
+            if alt == "*":
+                es.spanning_deletion_alleles += 1
+                continue
+            es.add(pos, ref, alt, "germline")
     return es
 
 

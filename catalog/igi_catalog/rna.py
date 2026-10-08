@@ -110,10 +110,10 @@ class RnaBuilder:
                     if share <= 0:
                         continue
                     es = EditSet(t.chrom)
-                    es.edits += germline_edits(self.env.germline, t.chrom, hap, t.start, t.end).edits
+                    es.extend(germline_edits(self.env.germline, t.chrom, hap, t.start, t.end))
                     if src != "NORMAL":
-                        es.edits += somatic_edits(events_by_chrom.get(t.chrom, []), self.env.clones,
-                                                  t.chrom, hap, clone, t.start, t.end).edits
+                        es.extend(somatic_edits(events_by_chrom.get(t.chrom, []), self.env.clones,
+                                                t.chrom, hap, clone, t.start, t.end))
                     seq = exon_sequence(self.env.genome, t, es)
                     if len(seq) < 150:
                         continue
@@ -179,10 +179,10 @@ class RnaBuilder:
         seq = rec.get("sequence")
         if t is not None:
             es = EditSet(t.chrom)
-            es.edits += germline_edits(self.env.germline, t.chrom, hap, t.start, t.end).edits
+            es.extend(germline_edits(self.env.germline, t.chrom, hap, t.start, t.end))
             if src != "NORMAL":
-                es.edits += somatic_edits((events_by_chrom or {}).get(t.chrom, []), self.env.clones,
-                                          t.chrom, hap, src, t.start, t.end).edits
+                es.extend(somatic_edits((events_by_chrom or {}).get(t.chrom, []), self.env.clones,
+                                        t.chrom, hap, src, t.start, t.end))
             seq = exon_sequence(self.env.genome, t, es)
         if not seq or len(seq) < 150:
             return

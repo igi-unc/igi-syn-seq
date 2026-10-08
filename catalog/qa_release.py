@@ -254,6 +254,42 @@ def check_tcr_truth(release, results):
                         "verdict": "PASS" if fp >= 5 else f"FAIL ({fp})"})
 
 
+def check_alphabet(release, results, samtools="samtools", limit=400000):
+    """Every delivered base must be A, C, G, T or N.
+
+    This is the check that was missing. A VCF ALT column carries symbolic alleles as well as sequence --
+    `*` for an allele removed by a spanning deletion, `<DEL>`, breakend notation -- and the generator
+    appended whatever allele the genotype selected straight into the sequence. 2.65 % of the HG002 Q100
+    records carry a `*`, so literal `*` characters reached the delivered IGI-SYN-SEQ-01 reads of every
+    arm built from the genome, and the same records silently deleted 960,223 reference bases across
+    74,017 sites. The aligners tolerated the character and Cell Ranger refused it, which is how it
+    surfaced: downstream, in someone else's run, rather than here.
+
+    A length check cannot see this and an accuracy check cannot either. One grep over the reads can.
+    """
+    for f in (sorted(glob.glob(f"{release}/*/*/*_R1.fastq.gz"))
+              + sorted(glob.glob(f"{release}/*/*/*_R1_001.fastq.gz"))
+              + ont_deliverables(release)):
+        seqs = [l for i, l in enumerate(_fq_head(f, limit)) if i % 4 == 1]
+        if not seqs:
+            continue
+        bad = sorted({c for l in seqs for c in l.upper()} - set("ACGTN"))
+        results.append({"check": "bases are ACGTN", "file": os.path.basename(f),
+                        "value": f"{len(seqs):,} reads, offending characters: {bad or 'none'}",
+                        "verdict": "PASS" if not bad else f"FAIL ({''.join(bad)})"})
+    for f in (sorted(glob.glob(f"{release}/kinnex_*/*/*_segmented.bam"))
+              + sorted(glob.glob(f"{release}/pacbio_merged/*/*_hifi.bam"))):
+        out = subprocess.run(f"{samtools} view {f} 2>/dev/null | head -{limit // 4} | cut -f10",
+                             shell=True, capture_output=True, text=True).stdout
+        seqs = out.splitlines()
+        if not seqs:
+            continue
+        bad = sorted({c for l in seqs for c in l.upper()} - set("ACGTN"))
+        results.append({"check": "bases are ACGTN", "file": os.path.basename(f),
+                        "value": f"{len(seqs):,} records, offending characters: {bad or 'none'}",
+                        "verdict": "PASS" if not bad else f"FAIL ({''.join(bad)})"})
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--release", required=True)
@@ -315,6 +351,7 @@ def main():
     check_pacbio_format(a.release, fmt, a.samtools)
     check_tenx_format(a.release, fmt)
     check_tcr_truth(a.release, fmt)
+    check_alphabet(a.release, fmt, a.samtools)
     report["format"] = fmt
     report["n_fail"] += sum(1 for r in fmt if r["verdict"].startswith("FAIL"))
     print()
