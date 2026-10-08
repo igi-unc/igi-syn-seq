@@ -687,6 +687,10 @@ independent reimplementation, not by eye:
 | Kinnex sc | molecule purity, barcodes | 85,342 of 199,995 segments, purity 0.494, 4,000 barcodes |
 | ONT sc RNA | reads, molecules, barcodes | 69,170 of 200,000 reads, 4,000 barcodes |
 
+At full scale the kept fractions are 34-38 % across the six arms. One number from the truncated runs did
+not survive: 10x GEX retains **3,972 / 3,977 of 4,000** barcodes rather than all of them, because a few
+cells have no chr1-6 molecule at all. §12 now says 99.3 % instead of "all".
+
 ### 11.5 Naming is a correctness requirement
 
 `preflight_resolve_inputs` walks every search directory recursively and matches on the basename, so

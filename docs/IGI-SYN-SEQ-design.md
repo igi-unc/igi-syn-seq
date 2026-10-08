@@ -585,9 +585,11 @@ CTA through their event's locus, a **fusion is kept if either partner** is on ch
 molecule and half of it is in the subset), and **viral transcripts are kept unconditionally** --
 there is no human chromosome to test, and this section keeps viral reads.
 
-- 10x GEX and Kinnex sc keep all barcodes but only chr1to6 molecules. Measured: all 4,000
-  barcodes retained in both; molecules drop to ~35 % of full, which is the UMI depth Cell Ranger
-  cell calling has to work at.
+- 10x GEX and Kinnex sc keep all barcodes but only chr1to6 molecules. Measured at full scale:
+  10x GEX retains **3,972 and 3,977 of 4,000** barcodes (the rest are cells whose every molecule
+  was off-target, so there is nothing to keep), ONT sc RNA retains 4,000 of 4,000, and reads drop
+  to 34-38 % of full -- which is the UMI depth Cell Ranger cell calling has to work at. "All
+  barcodes" is therefore 99.3 %, not 100 %, and the per-arm JSON reports the number.
 - **10x TCR is kept complete** because TRA/TRB/TRG lie outside chr1to6. It is linked under
   `full/` only -- a second link under the same name made `<ds>-TCR_S1_L001` match four FASTQs --
   and the chr1to6 manifest points at that same file.
