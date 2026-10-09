@@ -14,7 +14,7 @@ carry a depth change, which is applied separately through the copy-number profil
 intervals. Anything requiring the rearranged sequence itself, such as a caller that assembles across a
 whole inversion, is out of scope and documented as such.
 """
-from .genome import revcomp
+from .genome import normalize_bases, revcomp
 
 FLANK = 600
 
@@ -129,7 +129,7 @@ def viral_junctions(genome, viral_fasta, virus_rows, flank=FLANK):
         contig = next((c for c in ref.references if acc and acc in c), None)
         if contig is None:
             continue
-        vseq = ref.fetch(contig)
+        vseq = normalize_bases(ref.fetch(contig).upper())
         if r.get("subclass") == "integrated" and r.get("integration_pos"):
             pos = int(r["integration_pos"])
             chrom = r["chrom"]

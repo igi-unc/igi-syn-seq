@@ -4,13 +4,37 @@ import pysam
 COMP = str.maketrans("ACGTNacgtn", "TGCANtgcan")
 def revcomp(s): return s.translate(COMP)[::-1]
 
+# GRCh38 and the viral reference both contain IUPAC ambiguity codes -- chr1 carries one M and one R, chr3
+# a B, an R, two W and three Y, and virus_unmasked.02ec8.fa carries 497 of them. Delivered reads must not,
+# for three reasons:
+#
+#  - No instrument emits them. A real sequencer reading an ambiguous locus reports a definite base or N,
+#    because the ambiguity is in the reference's knowledge, not in the molecule.
+#  - Strict consumers refuse them. Cell Ranger rejects any base outside ACGTN, which is how the `*`
+#    defect surfaced; an ambiguity code reaching a 10x arm would reproduce that failure exactly.
+#  - revcomp() above maps only ACGTN, so an IUPAC base survives reverse-complementing UNCHANGED -- a
+#    silent corruption on every minus-strand read through such a position.
+#
+# They become N rather than a definite base drawn from the code's constituents. A definite base would be
+# more realistic, but it would differ from the reference at a position no truth table records, and a
+# caller would report it as a variant absent from the truth VCF -- the same mistake as writing `*` into
+# the sequence, in miniature. Callers skip N.
+IUPAC_CODES = "RYSWKMBDHVryswkmbdhv"
+TO_N = str.maketrans(IUPAC_CODES, "N" * len(IUPAC_CODES))
+
+
+def normalize_bases(seq):
+    """Replace IUPAC ambiguity codes with N. Anything outside ACGTN after this is a defect, not a base."""
+    return seq.translate(TO_N)
+
 class Genome:
     def __init__(self, fasta):
         self.fa = pysam.FastaFile(fasta)
         self.lengths = dict(zip(self.fa.references, self.fa.lengths))
     def seq(self, chrom, start, end):
-        """0-based half-open, uppercase."""
-        return self.fa.fetch(chrom, max(0, start), min(end, self.lengths[chrom])).upper()
+        """0-based half-open, uppercase, ambiguity codes normalised to N (see normalize_bases)."""
+        return normalize_bases(
+            self.fa.fetch(chrom, max(0, start), min(end, self.lengths[chrom])).upper())
     def homopolymer_run(self, chrom, pos0):
         """Length of the longest homopolymer run touching 0-based position pos0 (run of the base at pos0 or its neighbours)."""
         s = self.seq(chrom, pos0 - 12, pos0 + 13); c = 12

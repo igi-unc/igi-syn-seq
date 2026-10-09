@@ -13,6 +13,7 @@ count.
 import csv
 import os
 
+from .genome import normalize_bases
 from .rna import RnaBuilder
 from .transcriptome import TranscriptomeBuilder
 from . import fusion_core
@@ -40,7 +41,7 @@ def viral_records(paths, viruses, env):
         key = next((r for r in ref.references if acc.split(".")[0] in r), None)
         if key is None:
             continue
-        seq = ref.fetch(key)
+        seq = normalize_bases(ref.fetch(key).upper())
         out.append({"id": f"{v['event_id']}|{v['virus']}", "source": "virus", "gene": v["virus"],
                     "sequence": seq, "tpm": 80.0 if v.get("expressed") == "True" else 8.0,
                     "clone": v.get("clone", "T"), "hap": 0,

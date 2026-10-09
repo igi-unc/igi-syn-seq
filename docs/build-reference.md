@@ -1000,3 +1000,97 @@ The post-fix peaks have not been re-measured. Every arm's request above was size
 free to take the library, so several are now larger than they need to be -- Illumina WGS most of all. They
 should be re-measured once the current rebuild drains, and this table revised against that, not against
 the figures here.
+
+## 17. IUPAC ambiguity codes in delivered reads
+
+Found while verifying that §15's alphabet check passes on the rebuilt ds-01 arms. It does -- rebuilt WES
+and ONT WGS carry no `*` -- but the check surfaced a second, unrelated population of non-ACGTN characters
+that had been in the delivered data all along.
+
+Delivered ONT WGS reads carry IUPAC ambiguity codes, roughly 90 characters per 20,000 reads, in both
+tumour and normal and across several chromosomes:
+
+```
+ds-01 chr10 normal   24 R  22 W  17 Y  13 M  12 K
+ds-01 chr10 tumour   17 R  14 W  13 Y   6 M   6 K
+ds-01 chr13 tumour   11 Y   5 R   5 K   3 M
+ds-01 chr17 normal    8 R   7 Y
+ds-02 chr1  tumour    6 Y   6 K   3 R   1 M
+```
+
+These are not ours. They are in the references:
+
+| source | ambiguity codes |
+|---|---|
+| GRCh38 noalt, whole file | **94** -- Y 33, R 26, W 13, M 8, K 8, S 4, B 2 |
+| of which chr10 | 36 -- R 13, Y 8, W 6, K 4, M 3, S 1, B 1 |
+| of which chr17 | 12 · chr3 7 · chr13 3 · chr1 2 |
+| `virus_unmasked.02ec8.fa` | **497** -- Y 190, R 162, W 42, M 35, S 34, K 34 |
+
+That both the tumour and the normal library carry them, in proportion to coverage, is what identifies the
+reference rather than a designed event as the source, and the counts line up: chr10 holds 36 of the
+reference's 94 positions, and a 20,000-read sample covers that chromosome about 2.8 times, which is the 88
+characters observed.
+
+**Both sources are real, and the arithmetic shows it.** chr13's reads carry `R` and `M`, which chr13's
+reference does not contain at all -- its three positions are 2 Y and 1 K. Those characters can only have
+come from inserted sequence, which is the viral path, and that is the same path
+`rna_assembly.viral_records` uses to build *expressed* transcripts.
+
+They show up in ONT WGS and not in the short-read arms for a simple reason: a 19 kb read has a few hundred
+times the chance of spanning one of 94 isolated positions than a 150 bp read does, and the exome arms only
+cover captured exons.
+
+### 17.1 Why this had to be fixed even though nothing had failed
+
+Appearing in only one assay is a property of this seed, not a safety margin:
+
+- **No instrument emits them.** A real sequencer reading an ambiguous locus reports a definite base or N;
+  the ambiguity lives in the reference's knowledge, not in the molecule. A synthetic read carrying `Y` is
+  not realistic however faithful it is to the FASTA.
+- **Strict consumers refuse them**, and that is exactly how §15 surfaced: Cell Ranger rejects any base
+  outside ACGTN. Every RNA arm, both 10x arms and the exome measured **zero**, so there was no Cell Ranger
+  exposure -- but `rna_assembly.viral_records` puts raw viral sequence into *expressed* transcript records,
+  and the viral reference holds 497 of these codes. Whether any reach a 10x library depends on which
+  accession is expressed and where coverage lands. That is luck, not design, and the failure it would
+  produce is the one just fixed.
+- **`revcomp` silently corrupts them.** `genome.COMP` maps only `ACGTNacgtn`, so an ambiguity code survives
+  reverse-complementing **unchanged** rather than complemented -- `revcomp("ACGTRY")` returned `"YRACGT"`,
+  where `Y` should become `R` and `R` become `Y`. Every minus-strand read through such a position carried a
+  base that was wrong rather than merely ambiguous. This one is a real defect, not a cosmetic one, and it
+  had no symptom to notice.
+
+### 17.2 N, not a definite base
+
+They become `N`. Resolving each code to one of its constituent bases would be more realistic, but it would
+put a definite base at a position no truth table records, and a caller would report it as a variant absent
+from the truth VCF. That is the §15 mistake in miniature -- writing something into the sequence that the
+truth set does not account for. Callers skip N.
+
+`genome.normalize_bases` does the translation, applied at `Genome.seq`, which is the single chokepoint for
+reference access, plus the two viral fetches that do not go through it (`junctions.viral_junctions` and
+`rna_assembly.viral_records`). Verified against the real reference: chr1 and chr3 both go from the counts
+above to clean. This is the §15.2 shape of fix again -- one place that everything passes.
+
+### 17.3 Why QA warns rather than fails
+
+`check_alphabet` now separates the two causes, because they need different responses:
+
+| characters | verdict | meaning |
+|---|---|---|
+| `*`, `<DEL>`, breakend notation | **FAIL** | a symbolic allele in the sequence; a generator defect |
+| `R Y S W K M B D H V` | **WARN** | reference ambiguity; arm predates the normalisation, clears on rebuild |
+| both together | **FAIL** | the symbolic allele dominates |
+
+A FAIL that we have decided not to act on is worse than a warning, because it teaches people to ignore
+failures. The rate is ~2e-7 per base, every aligner tolerates it, and no RNA arm is affected, so the arms
+that still carry these codes are not worth a dedicated rebuild -- they clear whenever each arm is next
+built. The condition is still reported on every run, so it cannot be forgotten, and it returns to FAIL the
+moment a symbolic allele appears beside it.
+
+### 17.4 What still carries them
+
+Everything built before this change: both datasets' ONT WGS, and by the same mechanism their Illumina WGS
+and HiFi WGS at a lower rate. The three ds-01 PacBio arms resubmitted in §14.3 and ds-02's pending PacBio
+rebuild will pick the normalisation up; the ONT and Illumina DNA arms will carry the codes until they are
+next rebuilt. No arm needs rebuilding *for this reason alone*.
