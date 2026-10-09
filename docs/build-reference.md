@@ -1031,6 +1031,17 @@ at ~638 B per record, and it is the number that explains the old 59.8 G release-
 The external merge is not the bottleneck anyone might fear: eight minutes for 48.4 GB across roughly a
 dozen runs, against a 21 % penalty measured on the small case.
 
+And at this scale the penalty is immaterial, because the sort was never the expensive part. The ds-02 arm
+built with the *unbounded* sort took **6.89 h** end to end (24,812 s, 76.5 M pairs, 5.14 GB R1), and ds-01
+is tracking the same shape: 27 min of record assembly, about 65 min of ART, **8 min of sorting**, and the
+rest writing three gzip streams. The sort is roughly 2 % of the runtime, so a 21 % penalty on it is a
+rounding error -- which is worth stating, because "bound the buffer and it will get slower" is the obvious
+objection to §16.2 and the measurement says it does not matter here.
+
+The write-out is what dominates, and that is a separate, untouched opportunity: `shuffle_and_rename`
+writes R1, R2 and the read map through Python's `gzip` at default compression, single-threaded. Nothing
+about the sort fix changed it, and it has not been optimised.
+
 ### 16.4 The fix changes no output, so nothing needs rebuilding
 
 Buffer size could in principle change the order of records whose keys tie, which would change which read
