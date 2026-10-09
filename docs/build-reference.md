@@ -1022,20 +1022,35 @@ These are not ours. They are in the references:
 
 | source | ambiguity codes |
 |---|---|
-| GRCh38 noalt, whole file | **94** -- Y 33, R 26, W 13, M 8, K 8, S 4, B 2 |
+| `reference_fasta` (GRCh38, what the builders read), chr1-chrY | **94** |
 | of which chr10 | 36 -- R 13, Y 8, W 6, K 4, M 3, S 1, B 1 |
-| of which chr17 | 12 · chr3 7 · chr13 3 · chr1 2 |
+| chr17 12 · chr2 9 · chr3 7 · chr22 5 · chrX 5 · chr7 4 | chr9/12/13/21 3 · chr1 2 · chr6/chr16 1 |
+| chr4, chr5, chr8, chr11, chr14, chr15, chr18-chr20, chrY | none |
 | `virus_unmasked.02ec8.fa` | **497** -- Y 190, R 162, W 42, M 35, S 34, K 34 |
 
-That both the tumour and the normal library carry them, in proportion to coverage, is what identifies the
-reference rather than a designed event as the source, and the counts line up: chr10 holds 36 of the
-reference's 94 positions, and a 20,000-read sample covers that chromosome about 2.8 times, which is the 88
-characters observed.
+Note that this is `reference_fasta`, the full assembly the builders read via `Genome`, not the `noalt`
+build used for alignment. The first draft of this section counted the noalt file; the primary-chromosome
+totals happen to agree at 94, but they are different files and the one that matters is the one the
+generator opens.
 
-**Both sources are real, and the arithmetic shows it.** chr13's reads carry `R` and `M`, which chr13's
-reference does not contain at all -- its three positions are 2 Y and 1 K. Those characters can only have
-come from inserted sequence, which is the viral path, and that is the same path
-`rna_assembly.viral_records` uses to build *expressed* transcripts.
+That both the tumour and the normal library carry them in proportion to coverage identifies the reference,
+rather than a designed event, as the source, and the counts line up: chr10 holds 36 of the 94 positions and
+a 20,000-read sample covers that chromosome about 2.8 times, which is the 88 characters observed.
+
+**All of it is the reference, and none of it is the viral set.** This needed checking rather than
+assuming, because the characters in the reads do not match the reference's at first glance -- chr13's reads
+carry `R` and `M` where chr13's three positions are 2 Y and 1 K. The explanation is strand:
+complement(Y) = R and complement(K) = M, and Badread emits minus-strand reads. Grouping both the reference
+and the reads into complement classes resolves it exactly:
+
+| | reference classes | observed in reads | classes with no reference source |
+|---|---|---|---|
+| chr3 | RY 4, W 2, BV 1 | RY 14, W 16, BV 17 | none |
+| chr10 | RY 21, W 6, KM 7, S 1, BV 1 | RY 41, W 22, KM 25 | none |
+
+So the viral reference's 497 codes are a *latent* source rather than a contributing one: nothing observed
+in delivered reads requires them. They still matter, because `viral_records` feeds viral sequence into
+expressed transcripts, and they are normalised along with everything else.
 
 They show up in ONT WGS and not in the short-read arms for a simple reason: a 19 kb read has a few hundred
 times the chance of spanning one of 94 isolated positions than a 150 bp read does, and the exome arms only
@@ -1054,11 +1069,19 @@ Appearing in only one assay is a property of this seed, not a safety margin:
   and the viral reference holds 497 of these codes. Whether any reach a 10x library depends on which
   accession is expressed and where coverage lands. That is luck, not design, and the failure it would
   produce is the one just fixed.
-- **`revcomp` silently corrupts them.** `genome.COMP` maps only `ACGTNacgtn`, so an ambiguity code survives
-  reverse-complementing **unchanged** rather than complemented -- `revcomp("ACGTRY")` returned `"YRACGT"`,
-  where `Y` should become `R` and `R` become `Y`. Every minus-strand read through such a position carried a
-  base that was wrong rather than merely ambiguous. This one is a real defect, not a cosmetic one, and it
-  had no symptom to notice.
+- **`revcomp` does not complement them.** `genome.COMP` maps only `ACGTNacgtn`, so an ambiguity code
+  survives reverse-complementing **unchanged** -- `revcomp("ACGTRY")` returns `"YRACGT"`, where `Y` should
+  become `R` and `R` become `Y`. This is a defect in the helper rather than an observed corruption, and the
+  distinction is worth keeping straight. The paths that would reach it are minus-strand transcripts
+  (`transcriptome.py:33`), inverted SV segments (`rearrange.py:148`) and fusion partners, all of which feed
+  delivered reads. But the one strand-flipped case actually found in the data runs the other way: chr3's
+  single `B` appears as `V` on minus-strand reads, which is the *correct* complement, produced by Badread's
+  own strand handling. So the latent defect is real and the delivered evidence for it is not; normalising
+  at `Genome.seq` removes the class either way, because `revcomp` then only ever sees ACGTN.
+
+  Tracing that `V` is also what caught an error in this section's first draft. `V` appears in no reference
+  -- not GRCh38, not the viral set -- so it looked like a third source. It is chr3's `B` reverse
+  complemented, and the two reads carrying it sit at one locus with identical flanks.
 
 ### 17.2 N, not a definite base
 

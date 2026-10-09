@@ -12,8 +12,12 @@ def revcomp(s): return s.translate(COMP)[::-1]
 #    because the ambiguity is in the reference's knowledge, not in the molecule.
 #  - Strict consumers refuse them. Cell Ranger rejects any base outside ACGTN, which is how the `*`
 #    defect surfaced; an ambiguity code reaching a 10x arm would reproduce that failure exactly.
-#  - revcomp() above maps only ACGTN, so an IUPAC base survives reverse-complementing UNCHANGED -- a
-#    silent corruption on every minus-strand read through such a position.
+#  - revcomp() above maps only ACGTN, so an IUPAC base survives reverse-complementing UNCHANGED. That is
+#    latent rather than observed: the paths that would hit it are minus-strand transcripts
+#    (transcriptome.py), inverted SV segments (rearrange.py) and fusion partners. The one strand-flipped
+#    case actually found in delivered reads -- chr3's single B appearing as V on the minus strand -- was
+#    Badread complementing correctly on its own. Normalising here removes the class either way, because
+#    revcomp then only ever sees ACGTN.
 #
 # They become N rather than a definite base drawn from the code's constituents. A definite base would be
 # more realistic, but it would differ from the reference at a position no truth table records, and a
