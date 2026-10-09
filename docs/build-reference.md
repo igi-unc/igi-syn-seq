@@ -1305,6 +1305,24 @@ IGI-SYN-SEQ-01_chr10_normal_R1.fastq.gz   1,860,880 reads
 A sample can witness contamination. It cannot establish absence at a rate below its own resolution, and
 absence is precisely what every consumer of these files depends on. The check now counts completely.
 
+**The library that actually aborted razers3 settles the argument past any doubt.** Complete count of
+ds-02's staged normal exome, the file the failing run opened:
+
+```
+ds-02 normal R1   32,391,933 reads   Y x1   M x2   B x1   W x1
+ds-02 normal R2   32,391,933 reads   Y x2   M x2   S x1   W x1
+```
+
+**One `Y`, in 4,858,789,950 bases.** That is 2.06e-10 per base, and it failed HLA typing seven times. The
+reporter saw "one Y and one M in the first 2M reads" and that is the entire library's worth of `Y`. The old
+100,000-read sample covered 0.309 % of the file, so it would have reported `none` **99.69 % of the time** --
+and a sample ten times larger would still miss it nine times in ten. There is no sample size that makes
+this detectable short of reading the whole file, which is the definition of the thing a sample cannot do.
+
+Note also what is *absent*: no `*` anywhere in ds-02, as expected from its SHAPEIT5-normalised VCF, which
+is what makes an ambiguity code the first illegal character razers3 meets there and is how the dataset was
+identified (§17.6.4).
+
 Two further gaps found while fixing that one:
 
 - **R2 was never examined.** The globs ended at `*_R1.fastq.gz` and `*_R1_001.fastq.gz`, so half of every
