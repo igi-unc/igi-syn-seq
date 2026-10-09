@@ -1166,28 +1166,46 @@ reference access, plus the two viral fetches that do not go through it (`junctio
 `rna_assembly.viral_records`). Verified against the real reference: chr1 and chr3 both go from the counts
 above to clean. This is the §15.2 shape of fix again -- one place that everything passes.
 
-### 17.3 Why QA warns rather than fails
+### 17.3 Why QA fails on any non-ACGTN character, in every arm
 
-`check_alphabet` separates the two causes, because they need different responses, and for IUPAC the
-response depends on **who reads the file**:
+**This section previously argued for a WARN tier, and that argument was wrong. It is kept here, as the
+reasoning it was, because the way it failed is the useful part.**
 
-| characters | arm | verdict | meaning |
-|---|---|---|---|
-| `*`, `<DEL>`, breakend notation | any | **FAIL** | a symbolic allele in the sequence; a generator defect |
-| `R Y S W K M B D H V` | 10x GEX, 10x TCR | **FAIL** | Cell Ranger refuses the run on one character |
-| `R Y S W K M B D H V` | everything else | **WARN** | reference ambiguity; clears on next rebuild |
-| both together | any | **FAIL** | the symbolic allele dominates |
+The original rule made the verdict depend on who reads the file:
 
-The split is the point. A FAIL that we have decided not to act on is worse than a warning, because it
-teaches people to ignore failures -- and for the long-read and short-read DNA arms that is what a FAIL
-would be: minimap2, pbmm2 and bwa all tolerate ambiguity codes, the rate is ~2e-7 per base, and the arms
-clear whenever each is next built.
+| characters | arm | verdict (ORIGINAL, SUPERSEDED) |
+|---|---|---|
+| `*`, `<DEL>`, breakend notation | any | **FAIL** -- a symbolic allele; a generator defect |
+| `R Y S W K M B D H V` | 10x GEX, 10x TCR | **FAIL** -- Cell Ranger refuses the run on one character |
+| `R Y S W K M B D H V` | everything else | **WARN** -- reference ambiguity; clears on next rebuild |
 
-But **there is no tolerable rate for a 10x arm.** Cell Ranger fails the whole run on a single character
-rather than dropping the read, which is exactly how §15 surfaced. That makes a sampled zero worthless as
-evidence there: 300,000 reads of GEX measured clean, but the delivered library is ~140 M reads, and the
-exome arm's single `M` in 80,000 reads proves short reads do span these positions. So for the two 10x arms
-the guarantee has to be absolute, and the check says so.
+The justification was that a FAIL nobody acts on teaches people to ignore failures, and that for the DNA
+arms a FAIL would be exactly that, since "minimap2, pbmm2 and bwa all tolerate ambiguity codes, the rate
+is ~2e-7 per base, and the arms clear whenever each is next built".
+
+Every clause of that is true. The conclusion still did not hold, because the premise was **an enumeration
+of the consumers I happened to know**, and a reference dataset does not get to decide what reads it. It
+was falsified within a day, by §17.6: OptiType's `razers3` aborts while loading its first chunk --
+
+```
+seqan::ParseError: Unexpected character 'Y' found.
+```
+
+-- because SeqAn's reader accepts only A, C, G, T and N. It killed HLA typing on the ds-01 normal exome
+through all seven retries, in the arm the table above had classified as tolerant, while every aligner in
+the same run read the file without complaint.
+
+The rule is therefore unconditional:
+
+| characters | arm | verdict |
+|---|---|---|
+| anything outside `ACGTN` | **any** | **FAIL**, naming which of the two causes it is |
+
+There is no WARN tier. The cost of the absolute guarantee is low -- `genome.normalize_bases` removes the
+codes at source, so the only arms that can fail are those built before it, which need rebuilding anyway --
+and the cost of the conditional one was a user's pipeline failing seven times on data we had checked and
+passed. Tolerating a defect because the tools *we* tested survive it is how both §15 and §17 reached
+someone else's run instead of being caught here.
 
 ### 17.4 What still carries them
 
@@ -1221,10 +1239,11 @@ test, and the character counts are themselves consistent with §17's complement-
 73/50, M/K at 31/27, W and S self-complementing, and the B/V pair at 2/2.
 
 It also means **no arm of ds-01 is uniformly normalised**, and which tasks are depends on when SLURM
-happened to schedule them. Per §17.3 that is a WARN rather than a defect for every arm except the 10x
-ones, which were verified clean over their full libraries anyway. A uniformly normalised dataset requires
-rebuilding each arm entirely after 22:19:57, which is not worth doing on its own account; ds-02's pending
-PacBio rebuild will be the first arm built wholly with it.
+happened to schedule them. When this was written, §17.3 made that a WARN rather than a defect outside the
+10x arms, and the conclusion drawn here was that uniform normalisation "is not worth doing on its own
+account". **§17.6 overturns that.** The mixture is a defect in every arm that carries a code, the dirty
+units have to be rebuilt, and §17.6.3 records which they are and how they were identified -- by complete
+measurement, not by this inference.
 
 Illumina WGS and HiFi WGS were not scanned exhaustively; by the mechanism they carry codes at a rate
 between the exome's and ONT's, since they are whole-genome but short or shorter.
@@ -1247,34 +1266,125 @@ code while GEX does not is that a GEX read has to come from an *expressed* trans
 positions must fall inside an expressed exon, where exome capture only requires it to fall inside a
 captured one.
 
+### 17.6 razers3, and three defects in the check that was supposed to catch this
+
+Reported from downstream on 2026-10-09: `optitype_razers3` failed on `nd-wes-normal`, all seven attempts,
+exit 1, aborting while loading its first 10M-read chunk with `seqan::ParseError: Unexpected character 'Y'
+found`. The diagnosis that came with it was correct in every particular -- the codes come from the
+reference rather than the VCF, `Genome.seq` returned the fetched sequence unchanged, the `*` fix's
+`EditSet` guard validates VCF alleles and not reference bases, and the proposed fix was to translate
+non-ACGTN to N at the `fetch(...).upper()` return in `genome.py`.
+
+That is the fix that had already been committed, at that exact line, in `6ad1796` -- the report was
+written against the pre-fix file. The useful content of the report was therefore not the fix but the
+**evidence that two of my judgement calls were wrong**, and a LENS-side `tr` to N was correctly declined
+as masking a data problem.
+
+#### 17.6.1 The verdict was wrong
+
+See §17.3. razers3 is the consumer the WARN tier assumed did not exist.
+
+#### 17.6.2 The check sampled, and never read R2
+
+`check_alphabet` had been reading 400,000 lines -- 100,000 reads -- off the front of each file. The report
+put the exome rate at "one Y and one M in the first 2M reads", which is the whole problem: only 94
+reference positions are ambiguous, a targeted assay covers few of them, and the resulting rate is about
+**one offending read per million**. Measured on the library that broke razers3:
+
+```
+IGI-SYN-SEQ-01_chr10_normal_R1.fastq.gz   1,860,880 reads
+  complete scan : R x1
+  100k sample   : none          <-- what the check reported
+```
+
+A sample can witness contamination. It cannot establish absence at a rate below its own resolution, and
+absence is precisely what every consumer of these files depends on. The check now counts completely.
+
+Two further gaps found while fixing that one:
+
+- **R2 was never examined.** The globs ended at `*_R1.fastq.gz` and `*_R1_001.fastq.gz`, so half of every
+  paired library went unread -- including the 10x R2 that carries the cDNA and is the only mate Cell
+  Ranger aligns. The earlier full-library 10x verifications in §17.5 happened to be done by hand on R2;
+  the automated check could not have reproduced them.
+- **A read failure was indistinguishable from a clean library.** The complete scan runs without `head` in
+  the pipeline so `pipefail` can stay on, and a decompression or `samtools` error is now reported as
+  `FAIL (could not read the file)` rather than as zero offences.
+
+Completeness had to be made affordable or it would simply be skipped, which is how a check stops being a
+check. The scan's inner loop tests `/[^ACGTNacgtn]/` before calling `gsub`, because `gsub` rebuilds the
+string on every read it touches:
+
+| inner loop | one exome library (1.86 M reads) | result |
+|---|---|---|
+| `gsub` on every read | 105 s | `R x1` |
+| regex pre-test first | **11 s** | `R x1` |
+
+I found this the honest way: my first pass over the 3.1 GB reference used `gsub` unconditionally and ran
+for over ten minutes before I killed it; with the pre-test it is 32 s.
+
+#### 17.6.3 Which units actually need rebuilding, by measurement
+
+The 94 ambiguous positions are not spread evenly, so the repair can be targeted. Counted fresh from the
+build reference (`Homo_sapiens.assembly38.fa`, the FASTA the generators read -- not the `noalt` build):
+
+| chrom | n | breakdown | | chrom | n | breakdown |
+|---|---|---|---|---|---|---|
+| chr10 | 36 | R13 Y8 W6 K4 M3 B1 S1 | | chr12 | 3 | Y2 M1 |
+| chr17 | 12 | Y5 R3 K2 S1 W1 | | chr13 | 3 | Y2 K1 |
+| chr2 | 9 | Y4 W2 K1 M1 R1 | | chr21 | 3 | M2 R1 |
+| chr3 | 7 | Y3 W2 B1 R1 | | chr9 | 3 | Y2 R1 |
+| chr22 | 5 | R2 Y2 W1 | | chr1 | 2 | M1 R1 |
+| chrX | 5 | Y2 R1 S1 W1 | | chr16 | 1 | R1 |
+| chr7 | 4 | Y2 R1 S1 | | chr6 | 1 | Y1 |
+
+**No ambiguous position exists on chr4, chr5, chr8, chr11, chr14, chr15, chr18, chr19, chr20 or chrY.**
+The DNA arms are generated per chromosome, and each task reads only its own chromosome, so those ten
+chromosomes cannot carry a code and their tasks do not need re-running -- 10 of 24 chromosomes, which is
+42 % of the per-chromosome tasks in every DNA arm.
+
+That is an inference, though, and §17.6.2 is a lesson about trusting inference over measurement. So the
+rebuild set is decided by `jobs/92_scan_alphabet.sbatch`, which counts every base of all 612 delivered
+files (~1.3 TB) 96-wide in about 40 minutes, against ~33 h serially. It scans the **per-chromosome units
+rather than the merged libraries**, because those units are exactly the array tasks that build them: a
+dirty file names the task to re-run. It also catches anything the chromosome inference would miss, such as
+the viral reference's 497 codes reaching an RNA arm, where they do not arrive by chromosome at all.
+
 ## 18. Regression tests for the guards
 
-`catalog/tests/test_guards.py` pins down the four guards added on 2026-10-08. It needs no cluster and no
-data, takes 0.2 s, and runs either as `python3 catalog/tests/test_guards.py` or under pytest.
+`catalog/tests/test_guards.py` pins down the guards added on 2026-10-08 and 2026-10-09. It needs no
+cluster and no data, takes 0.2 s, and runs either as `python3 catalog/tests/test_guards.py` or under
+pytest. **10 tests.**
 
-Each guard is tested because its entire value is doing what it claims, and this build has twice shipped or
-graded data behind a check that did not:
+Each guard is tested because its entire value is doing what it claims, and this build has three times now
+shipped or graded data behind a check that did not:
 
 | test | what would otherwise go unnoticed |
 |---|---|
-| `check_alphabet` verdicts | a `*` passing, or IUPAC failing a release it should only warn about -- and the reverse, IUPAC *warning* on a 10x arm where Cell Ranger will refuse the run |
-| WARN does not count as FAIL | the warn/fail distinction being cosmetic |
+| `check_alphabet` verdicts | a `*` passing, or an ambiguity code being tolerated in any arm -- the WARN tier razers3 falsified (§17.3) |
+| the scan is complete, not sampled | the check reverting to a sample, which reported `none` on the library that aborted razers3 (§17.6.2) |
+| both mates are examined | R2 going unread, as it did -- the only mate Cell Ranger aligns |
 | `sort_buffer_mb` | the buffer drifting back to something the allocation does not bound (§16) |
 | `normalize_bases` | an ambiguity code dropped from the translation table (§17) |
 | `revcomp` after normalisation | the uncomplemented-ambiguity path reopening |
 | `rescale_quality` is an integer dB shift | the per-base form creeping back, which sits on the knife edge at scale 8.9125 (§14.3) |
 | `rescale_quality` saturates | the reasoning for 10.0 over the measured 5.15 being lost |
 
-The suite was checked by mutation rather than only by running it green, because a test that cannot fail is
-worth nothing. Removing `STRICT_CONSUMER_DIRS`, raising the sort-buffer cap, dropping `V`/`B` from the
-ambiguity table and neutering the Phred shift each break the tests that cover them:
+The suite is checked by mutation rather than only by running it green, because a test that cannot fail is
+worth nothing. Each line below is a real edit to the source, the suite run, and the edit reverted:
 
 ```
-10x arms no longer strict      -> 6/8   (both alphabet tests)
-sort buffer cap removed        -> 7/8
-normalisation drops V/B        -> 7/8
-rescale shift forced to 0      -> 6/8   (both rescale-identity tests)
+baseline                              10/10
+the scan samples by default again      9/10   <- the §17.6 defect, reintroduced
+the globs stop at R1 again             9/10
+the WARN tier restored for DNA arms    7/10
+sort-buffer cap removed                9/10
+normalisation table drops V and B      9/10
+Phred shift forced to 0                8/10
 ```
+
+The WARN mutation breaking three tests rather than one is the useful signal: the verdict is asserted per
+arm, in aggregate, and in the wording that names razers3, so restoring the tolerant rule cannot pass by
+satisfying one of them.
 
 `revcomp("ACGTRY") == "YRACGT"` is asserted deliberately, documenting the untreated behaviour rather than
 the desired one, so that anyone who fixes `COMP` properly is told that this test encodes the old contract.
