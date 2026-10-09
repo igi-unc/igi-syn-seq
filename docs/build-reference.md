@@ -1125,7 +1125,11 @@ They show up in ONT WGS and not in the short-read arms for a simple reason: a 19
 times the chance of spanning one of 94 isolated positions than a 150 bp read does, and the exome arms only
 cover captured exons.
 
-### 17.1 Why this had to be fixed even though nothing had failed
+### 17.1 Why this had to be fixed before anything had failed
+
+**Written before §17.6.** Something has failed since: razers3, on the exome. The arguments below
+were made on first principles while no consumer had yet complained, and they held up -- but note
+that the one they lean on, Cell Ranger, is not the one that broke.
 
 Appearing in only one assay is a property of this seed, not a safety margin:
 
@@ -1136,7 +1140,7 @@ Appearing in only one assay is a property of this seed, not a safety margin:
   outside ACGTN, and it fails the whole run on one character rather than dropping the read. A full scan of
   the ONT WGS and exome arms found that short reads are *not* immune: `IGI-SYN-SEQ-01_chr21_tumor_R1`
   carries one `M` in an 80,000-read sample, from one of chr21's three positions falling in a captured
-  exon. A sampled zero therefore proves nothing about a library -- 300,000 reads of 10x GEX measured zero,
+  exon. Counted completely since (§17.6.2): chr10 normal R1 carries one `R` in 1,860,880 reads. A sampled zero therefore proves nothing about a library -- 300,000 reads of 10x GEX measured zero,
   but the delivered library is ~140 M reads, and the relevant question is whether it contains *one*
   character, not what its rate is. `rna_assembly.viral_records` also puts raw viral sequence into
   *expressed* transcript records, and the viral reference holds 497 codes.
