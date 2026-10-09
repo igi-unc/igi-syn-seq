@@ -1274,7 +1274,8 @@ captured one.
 
 Reported from downstream on 2026-10-09: `optitype_razers3` failed on `nd-wes-normal`, all seven attempts,
 exit 1, aborting while loading its first 10M-read chunk with `seqan::ParseError: Unexpected character 'Y'
-found`. The diagnosis that came with it was correct in every particular -- the codes come from the
+found`. The report did not name the dataset and **it is ds-02**, not ds-01 as I first assumed -- see
+§17.6.4, where the character itself turns out to identify the dataset. The diagnosis that came with it was correct in every particular -- the codes come from the
 reference rather than the VCF, `Genome.seq` returned the fetched sequence unchanged, the `*` fix's
 `EditSet` guard validates VCF alleles and not reference bases, and the proposed fix was to translate
 non-ACGTN to N at the `fetch(...).upper()` return in `genome.py`.
@@ -1352,6 +1353,49 @@ files (~1.3 TB) 96-wide in about 40 minutes, against ~33 h serially. It scans th
 rather than the merged libraries**, because those units are exactly the array tasks that build them: a
 dirty file names the task to re-run. It also catches anything the chromosome inference would miss, such as
 the viral reference's 497 codes reaching an RNA arm, where they do not arrive by chromosome at all.
+
+#### 17.6.4 The rebuild regenerated the reads; the libraries a consumer opens are nine days older
+
+The most consequential thing found while answering "so are the ds-01 files valid now?" is not about the
+alphabet at all.
+
+The 2026-10-08 rebuild regenerated the **per-chromosome** reads of every arm. No merge re-ran afterwards.
+The deliverables are the *merged* libraries, and the staged inputs are symlinks to them, so every file a
+consumer actually opens still dates from before the rebuild:
+
+```
+merged/ (exome)                      09-30 20:27      per-chromosome wgs inputs   10-09 05:09
+ont_wgs_merged/                      10-06 15:42      per-chromosome pacbio       10-09 01:26
+pacbio_merged/                       10-07 09:51
+{wes,wgs,ont_wgs,pacbio}_chr1to6/    10-08 16:32-18:45
+```
+
+Each stage does compare mtimes and would have refused to ship stale output -- that guard exists because
+this build shipped stale data twice already (§11) -- so nothing would have been *delivered* wrongly. But
+"all nine arms completed, no failures" is not the same statement as "the release is current", and reading
+it as the latter is what the question exposed.
+
+This is also how the razers3 report resolves. The staged exome both datasets' symlinks resolve to is the
+Sep 30 merge, and complete counts of those two libraries disagree in a way that identifies the dataset:
+
+```
+ds-01 normal R1   47,074,635 reads   * x4433   R x1   K x2
+ds-01 normal R2   47,074,635 reads   * x4580   W x1   M x1
+```
+
+ds-01's exome contains **no `Y` at all**, so it cannot be the library that aborted on `Y`; ds-02's VCF is
+SHAPEIT5-normalised and carries no `*`, so an ambiguity code is the first thing razers3 would meet there.
+The nextflow log confirms it independently -- `Unexpected character` appears only under
+`lens-v2.0.0-dev-igi-syn-seq-02`.
+
+Two things follow, and the second is the uncomfortable one:
+
+- **ds-01's staged exome would have failed razers3 too**, on a `*` rather than a `Y`, and about 4,500
+  times more often. Which dataset reported first is an accident of which run reached OptiType.
+- **Those ~9,000 `*` characters are the §15 defect, still sitting in a staged library on 2026-10-09**,
+  nine days after it was diagnosed and a day after it was fixed and the reads were regenerated. The fix
+  was real and the regenerated reads are clean; the delivery path was never re-run. A fix that has not
+  reached the file the consumer opens has not reached the consumer.
 
 ## 18. Regression tests for the guards
 
