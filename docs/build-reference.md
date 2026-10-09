@@ -1670,3 +1670,46 @@ GEX and TCR regenerate for both datasets -- `32_tenx_gex --array=1-2`, `33_tenx_
 GEX arm is the long pole. Note that the 10x arms were the ones previously verified **clean** on the
 alphabet by complete count, which is worth stating plainly: a library can be correct in every base and
 still be unusable, and no amount of checking the alphabet would have found this.
+
+## 20. What is still not checked
+
+Asked directly whether the next build will have the same problems. The three reported defects will not
+recur silently -- each is fixed at source, each has a check, a test and a measured mutation, and the
+alignment check of §19.7 would independently catch two of the three. But that is not the same as saying
+the next build is clean, and the honest reason is visible in how all three were found: **a consumer hit
+them, because nothing here asserted the property.** Every check in this document was written after a
+failure. So the useful thing to record is not the list of what is now checked but the list of what is
+still not, because that is where the next one will come from.
+
+### 20.1 Unasserted properties, as of 2026-10-09
+
+| property | state | why it matters |
+|---|---|---|
+| truth-map bijection | **not checked** | every read name should appear exactly once in the truth map and vice versa. Resolution is checked; bijection is not, so a duplicated or orphaned mapping passes |
+| read-name uniqueness per delivered library | **partial** | the merges prove it for the arms they build; no release-level check covers the rest |
+| designed small variants actually present at the designed VAF | **partial** | acceptance checks allele fractions by tier, on some chromosomes. §19.4's junction defect was found through exactly this check failing, so the coverage of it is the live question |
+| insert-size distribution shape | **not checked** | the mean is measured; a bimodal or truncated distribution would pass |
+| 10x barcode whitelist membership | **not checked** | a barcode outside the whitelist is dropped by Cell Ranger, silently reducing cells |
+| GEX R2 direction on delivered data | **not checkable** | its truth map carries a record id, not sequence. TCR is verified against shipped `cdr3_nt`; GEX rests on the generator plus the consistency check |
+| Kinnex primer structure | **known gap** | the synthetic Kinnex bulk reads carry no primers; real Iso-Seq reads do |
+| coverage uniformity and the CN ladder genome-wide | **partial** | per-tier allele fractions are checked at designed sites, not coverage across the genome |
+| the ~150 bp ART masking holes at the 94 IUPAC positions | **known, documented** | §17.6.6; a deliberate trade, not yet an owner decision |
+| chr1to6 truth consistency against the full release | **not checked** | the subsets are re-cut, and nothing asserts that a subset's truth is the full release's truth restricted |
+
+### 20.2 The pattern worth acting on
+
+Three of the four defects I found in my own work this release were in the CHECKS, not the data: the
+alphabet check sampled 0.3 % of a library, the release scan reported 96 COMPLETED having skipped 36
+files, and the BAM check called all 12 delivered BAMs truncated because it omitted `-u`. My checks have
+been wrong about as often as the generator has.
+
+That is the argument for the one thing that would change the odds more than any further check written
+here: **run the consumer on a slice before delivering.** Every one of the three defects was found by
+LENS, in minutes, on data that had passed everything this release asserts -- the `*` by Cell Ranger, the
+IUPAC by razers3, the orientation by Cell Ranger's chemistry detector. The chr1to6 release exists and is
+~8x smaller than the full one. A LENS run over it, as a gate before the full release is staged, tests
+every assumption at once, including the ones nobody has written down.
+
+That is a decision for the owner rather than something to adopt unilaterally, because it costs a pipeline
+run per build and it couples the release to a specific consumer version. It is recorded here as the
+highest-value change available, not as a plan already made.
