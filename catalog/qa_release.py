@@ -750,8 +750,19 @@ def check_mate_pairing(release, results):
     Names are compared in full, streaming both files once together, because an off-by-one that starts
     deep in a library is exactly what a head-of-file sample cannot see.
     """
-    for r1 in sorted(glob.glob(f"{release}/*/*/*_R1.fastq.gz")
-                     + glob.glob(f"{release}/*/*/*_R1_001.fastq.gz")):
+    # ONLY the assembled deliverables, not the per-chromosome intermediates. Measured cost: 24 minutes
+    # for ds-01's two exome libraries, 115 M pairs, at ~80k pairs/s -- walking all 192 per-chromosome WGS
+    # pairs as well would put this into the hours and make it a check that gets skipped, which is how
+    # every defect in this release reached a consumer.
+    #
+    # Restricting it loses nothing, and that is an argument rather than a convenience: a desynchronised
+    # per-chromosome pair propagates into the merge, so checking the merged library covers its inputs.
+    # The merge independently proves read-name uniqueness over the same files (section 11).
+    deliverables = (glob.glob(f"{release}/merged/*/*_R1.fastq.gz")
+                    + glob.glob(f"{release}/wgs_merged/*/*_R1.fastq.gz")
+                    + glob.glob(f"{release}/rna/*/*_R1.fastq.gz")
+                    + glob.glob(f"{release}/tenx_*/*/*_R1_001.fastq.gz"))
+    for r1 in sorted(deliverables):
         r2 = r1.replace("_R1.fastq.gz", "_R2.fastq.gz").replace("_R1_001.fastq.gz", "_R2_001.fastq.gz")
         if not os.path.exists(r2):
             results.append({"check": "mates are paired", "file": os.path.basename(r1),

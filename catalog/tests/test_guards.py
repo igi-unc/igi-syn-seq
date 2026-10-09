@@ -516,21 +516,21 @@ def test_mate_pairing_catches_desynchronised_mates():
         names = ["r%04d" % i for i in range(200)]
         mk = lambda ns: [(n, "ACGTACGTAC", "IIIIIIIIII") for n in ns]
 
-        _fq_records(f"{root}/wgs/DS/DS_x_R1.fastq.gz", mk(names))
-        _fq_records(f"{root}/wgs/DS/DS_x_R2.fastq.gz", mk(names))
+        _fq_records(f"{root}/wgs_merged/DS/DS_x_R1.fastq.gz", mk(names))
+        _fq_records(f"{root}/wgs_merged/DS/DS_x_R2.fastq.gz", mk(names))
         res = []
         qa.check_mate_pairing(root, res)
         assert res and res[0]["verdict"] == "PASS", res
 
         # one record dropped from R2: every pair after it is shifted
-        _fq_records(f"{root}/wgs/DS/DS_x_R2.fastq.gz", mk(names[:100] + names[101:]))
+        _fq_records(f"{root}/wgs_merged/DS/DS_x_R2.fastq.gz", mk(names[:100] + names[101:]))
         res = []
         qa.check_mate_pairing(root, res)
         assert res[0]["verdict"].startswith("FAIL"), res
         assert "out of step" in res[0]["verdict"] or "one mate only" in res[0]["verdict"]
 
         # R2 missing entirely
-        os.remove(f"{root}/wgs/DS/DS_x_R2.fastq.gz")
+        os.remove(f"{root}/wgs_merged/DS/DS_x_R2.fastq.gz")
         res = []
         qa.check_mate_pairing(root, res)
         assert res[0]["verdict"].startswith("FAIL") and "unpaired" in res[0]["verdict"], res
