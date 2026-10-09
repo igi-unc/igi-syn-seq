@@ -929,7 +929,8 @@ peak RSS 8.25 G against the 24 G this arm was reduced to.
 
 **Confirmed on the worst-affected arm too.** ONT bulk RNA carried the highest rate of `*` of any deliverable,
 4,147 non-ACGTN characters per 300,000 reads, which is about 13,800 per million. The rebuilt arm
-(2026-10-08 18:15 to 23:42, 5 h 27, 49.8 GB) measures **zero** in a one-million-read sample.
+(2026-10-08 18:15 to 23:42, 5 h 27, 49.8 GB) measures **zero across the full library** -- every read of
+all 47 GB, not a sample.
 
 Being exact about what that does and does not establish, since the two fixes landed hours apart: this build
 contains the `*` fix (committed 16:40) but **not** the §17 ambiguity-code normalisation (22:19), because
