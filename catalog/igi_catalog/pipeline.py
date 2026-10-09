@@ -197,6 +197,32 @@ def cn_profile(clones, chrom, pos):
     return tuple(sorted((c, clones.cn(c, chrom, pos)[0], clones.cn(c, chrom, pos)[1]) for c in clones.clones))
 
 
+def splice_junctions(seq, start1, jns):
+    """Replace each junction's own window inside an interval, returning (reduced_seq, [contigs]).
+
+    The interval keeps its length: for every junction, a window the size of its contig is excised from
+    the wild-type sequence and the contig is returned to be written as its own record alongside. So the
+    copy contributes the same number of bases whether or not it carries a rearrangement, which is what
+    keeps coverage and allele fractions right, while the junction is still present at this copy's depth.
+
+    The builder used to replace the ENTIRE interval with one contig. A WGS interval is 5 Mb and a contig
+    is 1.2 kb, so a copy carrying a junction lost ~99.98 % of its sequence over that interval. See
+    `junctions_in` for what that cost.
+
+    Excision is clamped, because `seq` is the EDITED haplotype and germline indels mean its length is not
+    exactly `end1 - start1 + 1`; an offset derived from reference coordinates can land past either end.
+    """
+    extra = []
+    for pos, jn in jns:
+        contig = jn["sequence"]
+        off = max(0, min(len(seq), pos - start1))
+        half = len(contig) // 2
+        lo, hi = max(0, off - half), min(len(seq), off + half)
+        seq = seq[:lo] + seq[hi:]
+        extra.append(contig)
+    return seq, extra
+
+
 class WesBuilder:
     """Write per-source interval FASTAs for an exome library, then simulate reads from them."""
 
@@ -216,18 +242,27 @@ class WesBuilder:
                     continue
                 self.jn_by_site.setdefault((chrom, j["clone"], j["hap"]), []).append((int(pos), j))
 
-    def junction_at(self, chrom, start1, end1, clone, hap):
-        """The junction whose breakpoint falls in this interval for this clone and haplotype, if any.
+    def junctions_in(self, chrom, start1, end1, clone, hap):
+        """EVERY junction whose breakpoint falls in this interval for this clone and haplotype.
 
-        A junction is handed out once. The off-target bands overlap the capture flanks, so without this
-        the same rearrangement would replace an interval in more than one pass and its reads would be
-        counted twice.
+        This returned a single junction until 2026-10-09, and that silently lost designed events. WGS
+        intervals are 5 Mb, so two designed breakpoints on the same clone and haplotype within 5 Mb
+        collided and only the first was ever realised. It cost five events across the two datasets --
+        ds-01 SV-0040 behind SV-0036 on chr13, SV-0044 behind SV-0016 on chr17, SV-0047 behind SV-0025
+        on chr8, ds-02 SV-0094 behind SV-0063 on chr1 and SV-0058 behind SV-0016 on chr17 -- each
+        absent from the library while the truth table claimed it. The acceptance check that counts
+        designed breakpoints against placed ones was right; the builder was wrong.
+
+        A junction is still handed out ONCE overall. The off-target bands overlap the capture flanks, so
+        without that the same rearrangement would be placed in more than one pass and its reads counted
+        twice.
         """
+        out = []
         for pos, j in self.jn_by_site.get((chrom, clone, hap), []):
             if start1 <= pos <= end1 and j["id"] not in self._jn_placed:
                 self._jn_placed.add(j["id"])
-                return j
-        return None
+                out.append((pos, j))
+        return out
 
     def __init__(self, env, events_by_chrom, purity, workdir, gc_bias=None):
         self.env = env
@@ -283,36 +318,53 @@ class WesBuilder:
                     # a pre-CNA copy carries only truncal events that predate the copy-number changes
                     clone = "T" if (src == "NORMAL" or kind == "pre_cna") else src
                     pre_only = (kind == "pre_cna")
-                    jn = None if (src == "NORMAL" or kind != "all") else \
-                        self.junction_at(chrom, start1, end1, src, hap)
-                    if jn is not None:
-                        # this copy carries the rearrangement, so it supplies the junction contig instead
-                        # of the wild-type interval
-                        seq = jn["sequence"]
-                        stats = {}
+                    jns = [] if (src == "NORMAL" or kind != "all") else \
+                        self.junctions_in(chrom, start1, end1, src, hap)
+                    seq, stats = haplotype_sequence(self.env.genome, self.env.germline, use,
+                                                    self.env.clones, chrom, hap, clone, start1, end1,
+                                                    strict=False, only_pre_cna=pre_only)
+                    # The junction contigs are spliced INTO this copy's interval, each in place of the
+                    # 2*FLANK window its own breakpoint sits in, rather than replacing the whole
+                    # interval with one contig.
+                    #
+                    # Replacing the interval is what the builder used to do, and it cost far more than
+                    # the lost events above: a WGS interval is 5 Mb and a junction contig is 1.2 kb, so
+                    # a copy carrying a junction contributed 1/4,000th of its sequence over that
+                    # interval and its reads all but disappeared. That is measurable in the delivered
+                    # data -- every one of the 10 chr6 T_LOH sites in ds-01 sits inside a
+                    # junction-replaced T hap0 interval, and T_LOH is the one tier whose allele
+                    # fraction failed acceptance, at 24 % deviation against a 12 % bound. No other tier
+                    # had a single site in those intervals and no other tier failed.
+                    #
+                    # Splicing conserves the interval's length, so coverage and allele fractions are
+                    # unchanged, the junction is present at the copy's own local depth, and any number
+                    # of junctions in one interval are each represented.
+                    seq, extra_records = splice_junctions(seq, start1, jns)
+                    for _pos, jn in jns:
                         self.junctions_used.append((jn["id"], chrom, start1, end1, src, hap))
-                    else:
-                        seq, stats = haplotype_sequence(self.env.genome, self.env.germline, use,
-                                                        self.env.clones, chrom, hap, clone, start1, end1,
-                                                        strict=False, only_pre_cna=pre_only)
                     # a designed somatic edit that fails to apply means the reads will not contain a
                     # change the truth table claims, so it is collected and raised rather than dropped
                     if stats.get("somatic_rejected"):
                         self.rejected.extend(stats["somatic_rejected"])
                     self.germline_rejected += stats.get("germline_rejected", 0)
-                    if len(seq) < 100:
+                    # The junction contigs ride along as their own records in the same file, so they
+                    # are sequenced at this copy's coverage. `extra_records` is empty unless a
+                    # breakpoint fell in this interval.
+                    to_write = ([seq] if len(seq) >= 100 else []) + extra_records
+                    if not to_write:
                         continue
                     fh = handles[key][1]
-                    # A stable id, unique across every source file. The previous name omitted `kind`
-                    # and the copy-number profile, so the "all" and "pre_cna" files produced identical
-                    # ART read ids and 860k of 2.0M names collided.
-                    self._n_rec += 1
-                    rid = f"e{self.record_prefix}{self._n_rec:09d}"
-                    fh.write(f">{rid}\n")
-                    self.record_map.append((rid, chrom, start1, end1, src, hap,
-                                            kind, tag.lstrip("_") or "on_target"))
-                    for i in range(0, len(seq), 60):
-                        fh.write(seq[i:i + 60] + "\n")
+                    for rec_seq in to_write:
+                        # A stable id, unique across every source file. The previous name omitted `kind`
+                        # and the copy-number profile, so the "all" and "pre_cna" files produced
+                        # identical ART read ids and 860k of 2.0M names collided.
+                        self._n_rec += 1
+                        rid = f"e{self.record_prefix}{self._n_rec:09d}"
+                        fh.write(f">{rid}\n")
+                        self.record_map.append((rid, chrom, start1, end1, src, hap,
+                                                kind, tag.lstrip("_") or "on_target"))
+                        for i in range(0, len(rec_seq), 60):
+                            fh.write(rec_seq[i:i + 60] + "\n")
                 n += 1
                 if max_intervals and n >= max_intervals:
                     break

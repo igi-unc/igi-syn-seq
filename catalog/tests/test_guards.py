@@ -393,6 +393,73 @@ def test_tcr_direction_check_catches_a_wholesale_flip():
         shutil.rmtree(root, ignore_errors=True)
 
 
+# --------------------------------------------------------------------------- junction placement
+
+def _pipeline():
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from igi_catalog import pipeline
+    return pipeline
+
+
+def test_every_junction_in_an_interval_is_handed_out():
+    """Two breakpoints in one 5 Mb interval must both be placed, and each only once.
+
+    Returning a single junction lost five designed events across the two datasets -- each absent from
+    the library while the truth table claimed it -- because WGS intervals are 5 Mb wide.
+    """
+    pl = _pipeline()
+
+    class Fake:
+        junctions_in = pl.WesBuilder.junctions_in
+        def __init__(self):
+            self._jn_placed = set()
+            self.jn_by_site = {("chr13", "T", 1): [
+                (58218657, {"id": "SV-0040", "sequence": "A" * 1200}),
+                (61002389, {"id": "SV-0036", "sequence": "C" * 1200}),
+                (99000000, {"id": "SV-0099", "sequence": "G" * 1200}),
+            ]}
+
+    f = Fake()
+    got = f.junctions_in("chr13", 57700001, 62700000, "T", 1)
+    assert [j["id"] for _p, j in got] == ["SV-0040", "SV-0036"], got
+
+    # Handed out once: the off-target bands overlap, so a second pass must not double-count.
+    assert f.junctions_in("chr13", 57700001, 62700000, "T", 1) == []
+    # The out-of-interval one is still available.
+    assert [j["id"] for _p, j in f.junctions_in("chr13", 97000001, 102000000, "T", 1)] == ["SV-0099"]
+    # Wrong clone or haplotype gets nothing.
+    assert f.junctions_in("chr13", 57700001, 62700000, "A", 1) == []
+
+
+def test_splice_conserves_interval_length():
+    """A copy must contribute the same number of bases whether or not it carries a rearrangement.
+
+    The builder used to replace the whole interval with one 1.2 kb contig. Every one of ds-01's 10 chr6
+    T_LOH sites sat inside such an interval, and T_LOH was the one tier whose allele fraction failed
+    acceptance -- 24 % deviation against a 12 % bound.
+    """
+    pl = _pipeline()
+    start1 = 1_000_000
+    seq = "ACGT" * 50_000                      # 200 kb interval
+    jns = [(1_050_000, {"id": "J1", "sequence": "A" * 1200}),
+           (1_120_000, {"id": "J2", "sequence": "C" * 1200})]
+
+    out, extra = pl.splice_junctions(seq, start1, jns)
+    assert extra == ["A" * 1200, "C" * 1200]
+    assert len(out) + sum(len(e) for e in extra) == len(seq), \
+        "total bases emitted must equal the wild-type interval"
+    assert len(out) == len(seq) - 2400
+
+    # No junctions: untouched, and nothing extra.
+    out2, extra2 = pl.splice_junctions(seq, start1, [])
+    assert out2 == seq and extra2 == []
+
+    # A breakpoint past the end of the edited sequence must not raise or corrupt: germline indels mean
+    # the edited interval is not exactly end1-start1+1 long.
+    out3, extra3 = pl.splice_junctions("ACGT" * 10, start1, [(start1 + 10_000, {"id": "J", "sequence": "T" * 8})])
+    assert len(extra3) == 1 and len(out3) <= 40
+
+
 # --------------------------------------------------------------------------- the sort buffer
 
 def test_sort_buffer_follows_the_allocation():
