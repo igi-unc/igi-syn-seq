@@ -447,6 +447,64 @@ def _ts(epoch):
     return datetime.datetime.fromtimestamp(epoch).strftime("%Y-%m-%d %H:%M")
 
 
+def check_tcr_r2_direction(release, results, limit=400000, min_reads=200):
+    """R2 must be ANTISENSE, not merely consistent -- and the TCR truth map can prove it.
+
+    check_tenx_r2_strand establishes that reads from one molecule agree with each other, which catches an
+    unstranded library but cannot tell antisense from sense: a library flipped wholesale the wrong way
+    would pass it. Direction matters, because Cell Ranger decides chemistry on it (SC5P-R2 antisense,
+    SC3Pv2 sense) and would then mis-call the assay rather than refuse it.
+
+    The TCR arm ships `cdr3_nt` in its truth map, so the direction is checkable against delivered data
+    with no reference and no aligner: a read covering the CDR3 must contain the REVERSE COMPLEMENT of that
+    sequence, never the sequence itself. Measured after the orientation fix:
+
+        ds-01 TCR   sense 0   antisense 61,976
+        ds-02 TCR   sense 0   antisense 59,727
+
+    The GEX arm cannot be checked this way -- its truth map carries a record id rather than sequence -- so
+    for GEX the direction rests on tenx.orient_antisense plus the consistency check. That asymmetry is
+    worth knowing rather than papering over: TCR verifies direction on delivered bases, GEX does not.
+    """
+    for mp in sorted(glob.glob(f"{release}/tenx_tcr/*/*_tcr_molecules.tsv.gz")):
+        ds_dir = os.path.dirname(mp)
+        tag = "chr1to6" if "chr1to6" in os.path.basename(mp) else "full"
+        r2s = [f for f in glob.glob(f"{ds_dir}/*_R2_001.fastq.gz")
+               if (tag == "chr1to6") == ("chr1to6" in os.path.basename(f))]
+        if not r2s:
+            continue
+        sense = anti = 0
+        with gzip.open(r2s[0], "rt") as fq, gzip.open(mp, "rt") as fm:
+            fm.readline()
+            for _ in range(limit):
+                h = fq.readline()
+                if not h:
+                    break
+                seq = fq.readline().strip(); fq.readline(); fq.readline()
+                row = fm.readline()
+                if not row:
+                    break
+                f = row.rstrip("\n").split("\t")
+                if len(f) < 6 or len(f[5]) < 20:
+                    continue
+                probe = f[5][:20]
+                if probe in seq:
+                    sense += 1
+                elif revcomp(probe) in seq:
+                    anti += 1
+        n = sense + anti
+        if n < min_reads:
+            verdict = f"SKIP (only {n} reads covering a CDR3)"
+        elif sense == 0:
+            verdict = "PASS"
+        else:
+            verdict = (f"FAIL ({sense}/{n} reads carry the CDR3 in SENSE orientation; 5' chemistry is "
+                       f"antisense, see check_tcr_r2_direction)")
+        results.append({"check": "R2 is antisense to the transcript", "file": os.path.basename(r2s[0]),
+                        "value": f"{anti} antisense / {sense} sense of {n} CDR3-covering reads",
+                        "verdict": verdict})
+
+
 def check_currency(release, results):
     """Every assembled deliverable must be NEWER than the per-chromosome reads it was assembled from.
 
@@ -652,6 +710,7 @@ def main():
     check_tcr_truth(a.release, fmt)
     check_alphabet(a.release, fmt, a.samtools, complete=not a.alphabet_sample)
     check_tenx_r2_strand(a.release, fmt)
+    check_tcr_r2_direction(a.release, fmt)
     check_currency(a.release, fmt)
     report["format"] = fmt
     report["n_fail"] += sum(1 for r in fmt if r["verdict"].startswith("FAIL"))

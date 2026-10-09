@@ -354,6 +354,45 @@ def test_r2_strand_check_detects_an_unstranded_library():
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_tcr_direction_check_catches_a_wholesale_flip():
+    """A library flipped the wrong way passes the consistency check, so direction needs its own test."""
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_dir_")
+    try:
+        import gzip as gz
+        import random as _r
+        rng = _r.Random(20261009)
+        cdr3 = "".join(rng.choice("ACGT") for _ in range(45))
+        flank = "".join(rng.choice("ACGT") for _ in range(30))
+        sense_read = flank + cdr3[:40] + flank[:20]
+        anti_read = qa.revcomp(sense_read)
+
+        def write(reads):
+            d = f"{root}/tenx_tcr/DS"
+            os.makedirs(d, exist_ok=True)
+            with gz.open(f"{d}/DS-TCR_S1_L001_R2_001.fastq.gz", "wt") as fh:
+                for i, r in enumerate(reads):
+                    fh.write(f"@r{i} 2:N:0:1\n{r}\n+\n{'I' * len(r)}\n")
+            with gz.open(f"{d}/DS_full_tcr_molecules.tsv.gz", "wt") as fh:
+                fh.write("read\tbarcode\tumi\tchain\tcdr3_aa\tcdr3_nt\tv\tj\tc\n")
+                for i in range(len(reads)):
+                    fh.write(f"r{i}\tBC\tUMI\tTRB\tCASS\t{cdr3}\tV\tJ\tC\n")
+
+        write([anti_read] * 300)
+        res = []
+        qa.check_tcr_r2_direction(root, res, min_reads=10)
+        assert res and res[0]["verdict"] == "PASS", res
+
+        # Wholesale flip: internally consistent, but the wrong way round.
+        write([sense_read] * 300)
+        res = []
+        qa.check_tcr_r2_direction(root, res, min_reads=10)
+        assert res and res[0]["verdict"].startswith("FAIL"), res
+        assert "SENSE" in res[0]["verdict"]
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------- the sort buffer
 
 def test_sort_buffer_follows_the_allocation():
