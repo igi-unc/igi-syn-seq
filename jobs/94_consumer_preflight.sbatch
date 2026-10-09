@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J igi_preflight
-#SBATCH -c 8 --mem=32G -t 8:00:00
-#SBATCH --array=1-12
+#SBATCH -c 8 --mem=48G -t 8:00:00
+#SBATCH --array=1-14
 # Push the first ~5 % of each delivered library through a tool LENS will actually use, and fail if the
 # tool chokes on it.
 #
@@ -29,12 +29,20 @@ I=$IGI_REF/imgs
 # Consumer reference bundles come from the environment, not from a path baked in here.
 P=${IGI_LENS_REFS:?set IGI_LENS_REFS in jobs/env.sh to the consumer reference directory}
 
+# 48G is set by STAR alone: the CTAT index is 26.5 GiB of Genome + SA before any reads, and STAR was
+# OOM-killed loading it under 16G. Every other tool here needs a fraction of that, but SLURM allocates
+# per task, so the heaviest sets the request -- recorded here so it is not trimmed back by someone
+# looking only at razers3.
 SM="singularity exec -B $IGI_BIND $IGI_SAMTOOLS_IMG samtools {args}"
 RAZERS="singularity exec -B $IGI_BIND $I/quay.io-biocontainers-optitype-1.3.5--0.img razers3 {args}"
 SALMON="singularity exec -B $IGI_BIND $I/quay.io-biocontainers-salmon-1.11.4--h7f96273_0.img salmon {args}"
 PBMM2="singularity exec -B $IGI_BIND $I/quay.io-biocontainers-pbmm2-1.17.0--h9ee0642_0.img pbmm2 {args}"
 LIMA="singularity exec -B $IGI_BIND $I/quay.io-biocontainers-lima-2.13.0--h9ee0642_0.img lima {args}"
 CRVDJ="singularity exec -B $IGI_BIND $I/nfcore-cellranger-7.1.0.img cellranger {args}"
+STAR="singularity exec -B $IGI_BIND $I/quay.io-biocontainers-star-2.7.10a--h9ee0642_0.img STAR {args}"
+# The STAR index that matches the GENCODE v37 annotation LENS uses, inside the CTAT bundle.
+# versionGenome 2.7.4a, which STAR 2.7.10a accepts.
+STARIDX=${IGI_STAR_INDEX:?set IGI_STAR_INDEX in jobs/env.sh to a STAR genome directory}
 
 # label : tool : reads : reference
 SPECS=(
@@ -42,6 +50,8 @@ SPECS=(
   "ds01_wes_tumor:razers3:$R/merged/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_tumor_R1.fastq.gz:"
   "ds02_wes_normal:razers3:$R/merged/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_normal_R1.fastq.gz:"
   "ds02_wes_tumor:razers3:$R/merged/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_tumor_R1.fastq.gz:"
+  "ds01_rna_star:star:$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R2.fastq.gz:$STARIDX"
+  "ds02_rna_star:star:$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R2.fastq.gz:$STARIDX"
   "ds01_rna:salmon:$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R2.fastq.gz:$P/GRCh38.GENCODEv37"
   "ds02_rna:salmon:$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R2.fastq.gz:$P/GRCh38.GENCODEv37"
   "ds01_tcr:cellranger_vdj:$R/tenx_tcr/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01-TCR_S1_L001_R1_001.fastq.gz,$R/tenx_tcr/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01-TCR_S1_L001_R2_001.fastq.gz:$P/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0"
@@ -59,6 +69,7 @@ label=${spec%%:*}; r1=${spec#*:}; tool=${r1%%:*}; r2=${r1#*:}; reads=${r2%%:*}; 
 
 case $tool in
   razers3)        CMD=$RAZERS ;;
+  star)           CMD=$STAR ;;
   salmon)         CMD=$SALMON ;;
   pbmm2)          CMD=$PBMM2 ;;
   lima)           CMD=$LIMA ;;

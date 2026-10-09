@@ -94,6 +94,14 @@ def main():
     if a.tool == "razers3":
         args = (f"-i 95 -m 1 -dr 0 -tc {a.threads} -o {work}/pf_{a.label}.bam "
                 f"/usr/local/bin/data/hla_reference_dna.fasta {cut[0]}")
+    elif a.tool == "star":
+        # The tool LENS actually points at the raw bulk-RNA FASTQs: it runs
+        # `salmon quant -a` over a transcriptome BAM, and STAR is what produces that BAM.
+        # STAR is also far stricter than salmon about FASTQ structure -- it aborts outright on a
+        # quality string whose length differs from its sequence, where a selective aligner may not.
+        args = (f"--genomeDir {a.ref} --readFilesIn {' '.join(cut)} --runThreadN {a.threads} "
+                f"--outFileNamePrefix {work}/pf_{a.label}_ --outSAMtype BAM Unsorted "
+                f"--quantMode TranscriptomeSAM")
     elif a.tool == "salmon":
         args = (f"quant -i {a.ref} -l A -1 {cut[0]} -2 {cut[1]} -p {a.threads} "
                 f"--validateMappings -o {work}/pf_{a.label}_salmon")
@@ -115,13 +123,22 @@ def main():
 
     try:
         r = run(a.cmd.format(args=args), timeout=a.timeout)
-        rc, err = r.returncode, (r.stderr or "")[-600:]
+        # STDOUT AS WELL AS STDERR. STAR prints `EXITING because of FATAL ERROR in reads input` to
+        # stdout, so reading stderr alone would classify a STAR rejection of the DATA as a setup
+        # failure -- the opposite of the distinction this script exists to make.
+        rc, err = r.returncode, ((r.stdout or "") + (r.stderr or ""))[-2000:]
     except subprocess.TimeoutExpired:
         rc, err = -1, f"timed out after {a.timeout}s"
 
     # A parse error is the signature that matters: it means the tool rejected the DATA, not the setup.
-    choke = [k for k in ("ParseError", "Unexpected character", "not a valid", "malformed",
-                         "invalid character", "Invalid FASTQ", "unexpected end")
+    # One signature per tool family, taken from the message each actually emits:
+    #   razers3/SeqAn   seqan::ParseError: Unexpected character 'Y' found.
+    #   STAR            EXITING because of FATAL ERROR in reads input: ...
+    #   salmon          Invalid FASTQ / malformed
+    #   cellranger      "not a valid" / unsupported
+    choke = [k for k in ("ParseError", "Unexpected character", "FATAL ERROR in reads input",
+                         "not a valid", "malformed", "invalid character", "Invalid FASTQ",
+                         "unexpected end", "quality string length")
              if k.lower() in err.lower()]
     out = {"label": a.label, "tool": a.tool, "reads": paths, "fraction": a.fraction,
            "exit_code": rc, "ok": rc == 0, "parse_error": bool(choke),
