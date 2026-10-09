@@ -1429,7 +1429,48 @@ A PASS from it is not a validity claim, and the clearest case is `merged/ds-02`:
 exome inputs are also from Sep 30, and that is the library that aborted razers3. Currency and validity are
 separate questions -- §17.6.2's check answers the second.
 
-#### 17.6.5 The scan reported COMPLETED having skipped 36 files
+#### 17.6.6 Normalising to N makes ART mask the window, which is a real side effect
+
+The rebuilt exome merges came out with different read counts, and the difference is not noise:
+
+```
+ds-01 normal   47,074,635  ->  47,074,726   (+91)
+ds-02 normal   32,391,933  ->  32,391,905   (-28)
+```
+
+ds-01 gaining is expected -- the `*` fix (§15) restored 960,223 reference bases that had been silently
+deleted, so there is more territory to capture. **ds-02 losing reads needed explaining**, because ds-02
+has no `*` anywhere and `normalize_bases` does not change sequence length. It is `art_illumina`:
+
+```
+-nf  --maskN    the cutoff frequency of 'N' in a window size of the read length for masking genomic
+                regions.  NOTE: default: '-nf 1' to mask all regions with 'N'.
+```
+
+**ART's default masks every region containing a single N within a read length.** Turning an ambiguity code
+into an N therefore does not produce a read with an N in it -- it removes the reads over that window
+entirely. So every ART-based arm (exome, Illumina WGS, both 10x arms) now has a ~150 bp coverage hole at
+each of the 94 ambiguous positions, and ds-01's +91 is the net of restored territory minus those holes.
+
+This is a trade, and it is worth stating which way it was made and why it was not re-made:
+
+| | delivered bases | coverage at the 94 positions |
+|---|---|---|
+| `-nf 1` (current) | no ambiguity codes, no N from this source | ~150 bp hole per position in short-read arms |
+| `-nf 0` | reads carrying N | continuous |
+
+N is in the legal alphabet, so `-nf 0` would also satisfy razers3 and Cell Ranger -- both accept N. The
+argument for it is that an artificial zero-coverage window is a stranger artefact in a truth set than a
+read with an N, and the long-read arms are inconsistent with the short-read ones either way, since Badread
+does not mask and its reads do span these positions carrying N.
+
+**Not changed, deliberately.** The magnitude is 28-91 reads in 32-47 million, and ~14 kb of masked window
+genome-wide; acting on it would mean rebuilding every ART arm a third time for an effect four orders of
+magnitude below any measurement the release makes. It is recorded here as a known artefact and an owner
+decision rather than silently chosen: if the zero-coverage windows matter for a CNV or coverage-uniformity
+check, `-nf 0` is a one-flag change and a full rebuild.
+
+### 17.6.5 The scan reported COMPLETED having skipped 36 files
 
 The release-wide scan finished `96 COMPLETED`, no failures, and had examined **576 of 612 files**. Six
 tasks wrote one result line each instead of six or seven:
