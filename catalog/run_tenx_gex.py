@@ -31,7 +31,8 @@ from igi_catalog.molecules import MoleculePool
 from igi_catalog.pipeline import quality_model
 from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
-from igi_catalog.tenx import (R1_LEN, R2_LEN, cellranger_names, five_prime_window,
+from igi_catalog.tenx import (R1_LEN, R2_LEN, art_chunk_index, art_read_strands,
+                              cellranger_names, five_prime_window, orient_antisense,
                               r1_quality, r1_sequence, reads_for_molecule)
 from igi_catalog.readnames import NAME_SPACE_STRIDE, illumina_name
 
@@ -132,10 +133,14 @@ def main():
                     fh.write(f">m{i}\n{w}\n")
             pre = os.path.join(work, f"c{chunk_i:05d}_")
             cov = R2_LEN / 450.0 * 1.02   # ~1 read per record
+            # No `-na`: it suppresses the ALN, which is the only exact record of which strand ART drew.
+            # Reads are bit-identical with and without it at the same -rs.
             cmd = art.format(args=(f"{qual} -i {fa} -l {R2_LEN} -f {cov:.4f} -ss HS25 "
-                                   f"-rs {a.seed + chunk_i} -na -o {pre}"))
+                                   f"-rs {a.seed + chunk_i} -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
             fq = f"{pre}.fq" if os.path.exists(f"{pre}.fq") else f"{pre}1.fq"
+            aln = f"{pre}.aln" if os.path.exists(f"{pre}.aln") else f"{pre}1.aln"
+            strands = art_read_strands(aln)
             if os.path.exists(fq):
                 with open(fq) as fh:
                     k = 0
@@ -144,16 +149,22 @@ def main():
                         if not h:
                             break
                         s = fh.readline().strip(); fh.readline(); q = fh.readline().strip()
-                        if k >= len(chunk):
-                            break
-                        bc, u, rec = chunk[k]
+                        rid = h[1:].strip().split()[0]
+                        # Keyed on the id ART carries through, not on position: the input FASTA skips
+                        # any window shorter than R2_LEN, and pairing the k-th read with chunk[k] put
+                        # every read after a skip on the wrong barcode, UMI and truth record.
+                        idx = art_chunk_index(rid)
+                        if idx is None or idx >= len(chunk):
+                            continue
+                        bc, u, rec = chunk[idx]
+                        s, q = orient_antisense(s, q, strands.get(rid, "+"))
                         name = illumina_name(name_base + n_reads + k)
                         f1.write(f"@{name} 1:N:0:1\n{r1_sequence(bc,u)}\n+\n{r1_quality(rng, kind='gex')}\n")
                         f2.write(f"@{name} 2:N:0:1\n{s}\n+\n{q}\n")
                         fm.write(f"{name}\t{bc}\t{u}\t{rec}\n")
                         k += 1
                 n_reads += k
-            for p in (fa, fq):
+            for p in (fa, fq, aln):
                 if os.path.exists(p):
                     os.remove(p)
             n_chunks += 1

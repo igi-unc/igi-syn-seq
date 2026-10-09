@@ -26,6 +26,7 @@ The barcode and UMI come from the shared `MoleculePool`, so a barcode-UMI-transc
 the same molecule Kinnex single cell and ONT single cell see. That only holds because `MoleculePool.draw`
 is a pure function of the cell; it used to depend on how many cells had been drawn before it.
 """
+from .genome import revcomp
 import bisect
 import json
 import os
@@ -86,6 +87,70 @@ def r1_quality(rng, length=R1_LEN, kind="gex"):
 def five_prime_window(seq, window=FIVE_PRIME_WINDOW):
     """The 5'-proximal slice of a cDNA that 5' chemistry actually sequences."""
     return seq[:window] if len(seq) > window else seq
+
+
+def art_read_strands(aln_path):
+    """read_id -> '+' or '-' from ART's ALN file: which strand of the window ART drew.
+
+    ART samples either strand with equal probability, and `-na` suppresses exactly the file that records
+    which. The GEX and TCR builders passed `-na` and wrote whatever ART emitted straight out as R2, so
+    both libraries came out UNSTRANDED -- Cell Ranger measured 45,140 sense against 44,751 antisense on
+    ds-02 GEX and refused the run, because it infers chemistry from R2 strand bias and a coin flip matches
+    no chemistry:
+
+        Unable to distinguish between [SC5P-R2, SC3Pv2] chemistries based on the R2 read mapping
+
+    Recovering the strand from the ALN rather than by testing whether the read is a substring of the
+    window: a substring test fails on any read carrying a sequencing error, which at HS25 is most of them.
+    The ALN is exact, and it costs nothing -- reads are BIT-IDENTICAL with and without `-na` at the same
+    `-rs`, verified before this was written.
+
+    ALN record format, three lines per read:
+
+        >ref_id  read_id  aln_start  strand
+        <reference segment, gapped>
+        <read, gapped>
+    """
+    strands = {}
+    if not os.path.exists(aln_path):
+        return strands
+    with open(aln_path) as fh:
+        for line in fh:
+            if line.startswith(">"):
+                f = line[1:].split()
+                if len(f) >= 4:
+                    strands[f[1]] = f[-1]
+    return strands
+
+
+def art_chunk_index(read_id):
+    """The chunk index encoded in an ART read id, e.g. `m12-1` -> 12.
+
+    This is not cosmetic. Both builders write the ART input FASTA as `>m{i}` with `i` the index within
+    the chunk, but SKIP any record whose window is shorter than the read length -- and then paired the
+    k-th read in the FASTQ with `chunk[k]`. One skipped short transcript therefore shifted every
+    subsequent read onto the wrong barcode, UMI and truth-map record. Keying on the id ART carries
+    through removes the assumption that the FASTQ is dense.
+    """
+    head = read_id.split("-")[0]
+    return int(head[1:]) if head[1:].isdigit() else None
+
+
+def orient_antisense(seq, qual, strand):
+    """Orient one R2 antisense to its transcript window, as 10x 5' chemistry produces.
+
+    In 5' chemistry the barcode and UMI are incorporated at the transcript's 5' end by template
+    switching, so R1 reads the 5' end in the sense direction and R2 reads back toward it -- antisense.
+    Cell Ranger's own chemistry definitions encode this: SC5P-R2 expects antisense R2, SC3Pv2 expects
+    sense, and its detector decides between them on the observed bias.
+
+    An ART read drawn from `+` is the sense window, so it is reverse complemented here; one drawn from
+    `-` is already the antisense strand and is left alone. The quality string is reversed with the
+    sequence, never complemented.
+    """
+    if strand == "+":
+        return revcomp(seq), qual[::-1]
+    return seq, qual
 
 
 def reads_for_molecule(rng, mean_reads):

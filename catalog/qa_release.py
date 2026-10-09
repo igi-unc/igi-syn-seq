@@ -263,6 +263,14 @@ def check_tcr_truth(release, results):
                         "verdict": "PASS" if fp >= 5 else f"FAIL ({fp})"})
 
 
+_COMP = str.maketrans("ACGTNacgtn", "TGCANtgcan")
+
+
+def revcomp(x):
+    """Local, so qa_release stays importable without the catalog package on sys.path."""
+    return x.translate(_COMP)[::-1]
+
+
 IUPAC_SET = set("RYSWKMBDHV")
 
 
@@ -485,6 +493,97 @@ def check_currency(release, results):
                             "verdict": verdict})
 
 
+def _seed_orientation(a, b, seed=25):
+    """Same / opposite / unknown orientation of two reads known to come from the same window.
+
+    Seeds rather than whole reads because ART's HS25 profile puts errors in most reads, and several
+    offsets because two 90 bp reads drawn from a 450 bp window need not overlap at all.
+    """
+    for off in (32, 20, 44, 8, 56):
+        s = a[off:off + seed]
+        if len(s) < seed:
+            continue
+        if s in b:
+            return "same"
+        if revcomp(s) in b:
+            return "opposite"
+    return "unknown"
+
+
+def check_tenx_r2_strand(release, results, limit=200000, min_pairs=50):
+    """R2 reads from one molecule must share an orientation. 10x 5' chemistry is antisense throughout.
+
+    The third defect of this release, and the second reported by a downstream consumer rather than caught
+    here. Both 10x builders simulated R2 with `art_illumina ... -na`; ART draws either strand with equal
+    probability and `-na` suppresses the ALN that records which, so the libraries were UNSTRANDED. Cell
+    Ranger infers chemistry from R2 strand bias and refused the ds-02 run outright:
+
+        Unable to distinguish between [SC5P-R2, SC3Pv2] chemistries based on the R2 read mapping
+        Total Reads = 100000  Mapped reads = 92806  Sense reads = 45140  Antisense reads = 44751
+
+    A coin flip matches no chemistry. Nothing here measured orientation, so nothing here could have seen
+    it -- the same gap as the alphabet before check_alphabet existed.
+
+    This check needs NO reference and no aligner, which is what lets it live in the release QA: reads
+    sharing a truth-map record were drawn from the same 5' window, so they must agree in orientation.
+    Under a random strand draw an informative pair disagrees half the time; in a correct library, never.
+    So it detects the defect without knowing which direction is right; the direction itself is asserted
+    separately, in tenx.orient_antisense, against Cell Ranger's own chemistry definitions.
+
+    Measured on the delivered libraries when it was written -- all six at a coin flip, which also settled
+    that TCR was affected and not merely suspected:
+
+        ds-01 GEX full      2006 same / 1996 opposite
+        ds-02 GEX full      1997 same / 2003 opposite
+        ds-01 TCR           2184 same / 2233 opposite
+        ds-02 TCR           2290 same / 2264 opposite
+    """
+    for arm, pat, mpat in (("tenx_gex", "*_R2_001.fastq.gz", "*_gex_molecules.tsv.gz"),
+                           ("tenx_tcr", "*_R2_001.fastq.gz", "*_tcr_molecules.tsv.gz")):
+        for r2 in sorted(glob.glob(f"{release}/{arm}/*/{pat}")):
+            ds_dir = os.path.dirname(r2)
+            tag = "chr1to6" if "chr1to6" in os.path.basename(r2) else "full"
+            maps = [m for m in glob.glob(f"{ds_dir}/{mpat}") if (tag == "chr1to6") == ("chr1to6" in m)]
+            if not maps:
+                continue
+            seqs = [l for i, l in enumerate(_fq_head(r2, limit * 4)) if i % 4 == 1]
+            if not seqs:
+                continue
+            groups = {}
+            with gzip.open(maps[0], "rt") as fh:
+                fh.readline()
+                for i, line in enumerate(fh):
+                    if i >= len(seqs):
+                        break
+                    f = line.rstrip("\n").split("\t")
+                    if len(f) < 4:
+                        continue
+                    groups.setdefault(tuple(f[3:]), []).append(seqs[i])
+            same = opp = 0
+            for reads in groups.values():
+                if len(reads) < 2:
+                    continue
+                for other in reads[1:]:
+                    v = _seed_orientation(reads[0], other)
+                    if v == "same":
+                        same += 1
+                    elif v == "opposite":
+                        opp += 1
+                if same + opp >= 4000:
+                    break
+            n = same + opp
+            if n < min_pairs:
+                verdict = f"SKIP (only {n} informative pairs in {len(seqs):,} reads)"
+            elif opp == 0:
+                verdict = "PASS"
+            else:
+                verdict = (f"FAIL ({opp}/{n} pairs from one molecule disagree -- R2 is unstranded; "
+                           f"Cell Ranger cannot infer chemistry, see check_tenx_r2_strand)")
+            results.append({"check": "R2 orientation is consistent", "file": os.path.basename(r2),
+                            "value": f"{same} same / {opp} opposite of {n} informative pairs",
+                            "verdict": verdict})
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--release", required=True)
@@ -552,6 +651,7 @@ def main():
     check_tenx_format(a.release, fmt)
     check_tcr_truth(a.release, fmt)
     check_alphabet(a.release, fmt, a.samtools, complete=not a.alphabet_sample)
+    check_tenx_r2_strand(a.release, fmt)
     check_currency(a.release, fmt)
     report["format"] = fmt
     report["n_fail"] += sum(1 for r in fmt if r["verdict"].startswith("FAIL"))

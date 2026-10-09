@@ -256,6 +256,104 @@ def test_drop_empty_records_removes_sequenceless_segments():
         shutil.rmtree(root, ignore_errors=True)
 
 
+# --------------------------------------------------------------------------- 10x R2 orientation
+
+def _tenx():
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from igi_catalog import tenx
+    return tenx
+
+
+def test_art_strand_recovery_and_orientation():
+    """R2 must come out antisense whichever strand ART drew, with the quality reversed alongside."""
+    t = _tenx()
+    root = tempfile.mkdtemp(prefix="igi_art_")
+    try:
+        aln = os.path.join(root, "c.aln")
+        with open(aln, "w") as fh:
+            fh.write("##ART_Illumina\tread_length\t90\n@CM\tart_illumina\n@SQ\tm0\t450\n")
+            fh.write(">m0\tm0-1\t12\t+\nACGT\nACGT\n")
+            fh.write(">m7\tm7-1\t99\t-\nTTGC\nTTGC\n")
+        strands = t.art_read_strands(aln)
+        assert strands == {"m0-1": "+", "m7-1": "-"}, strands
+
+        # '+' is the sense window, so it is flipped; '-' is already antisense and is left alone.
+        assert t.orient_antisense("AACCGGTT", "ABCDEFGH", "+") == ("AACCGGTT"[::-1].translate(
+            str.maketrans("ACGT", "TGCA")), "HGFEDCBA")
+        assert t.orient_antisense("AACCGGTT", "ABCDEFGH", "-") == ("AACCGGTT", "ABCDEFGH")
+
+        # A missing ALN must not silently leave the library unstranded: default '+' means "flip", so an
+        # absent strand record produces a consistently oriented library rather than a random one.
+        assert t.art_read_strands(os.path.join(root, "nope.aln")) == {}
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_art_chunk_index_survives_a_skipped_record():
+    """The read id carries the chunk index, so a skipped short window cannot shift the truth map.
+
+    Both builders write the ART input as `>m{i}` over the chunk but SKIP any window shorter than the
+    read length, then paired the k-th FASTQ read with chunk[k]. One skip put every later read on the
+    wrong barcode, UMI and record.
+    """
+    t = _tenx()
+    assert t.art_chunk_index("m0-1") == 0
+    assert t.art_chunk_index("m12-1") == 12
+    assert t.art_chunk_index("m7") == 7
+    assert t.art_chunk_index("notaread") is None
+    # chunk of 3 with the middle window too short: ART emits m0 and m2, never m1.
+    emitted = ["m0-1", "m2-1"]
+    assert [t.art_chunk_index(r) for r in emitted] == [0, 2], \
+        "positional pairing would have mapped these to chunk[0] and chunk[1]"
+
+
+def test_r2_strand_check_detects_an_unstranded_library():
+    """The QA check must fail a library whose molecule-mates disagree, and pass one that agrees."""
+    qa = _qa()
+    t = _tenx()
+    root = tempfile.mkdtemp(prefix="igi_strand_")
+    try:
+        import gzip as gz
+        # A RANDOM window, not a repeat. My first fixture used "ACGT"*40 + "GATC"*40, and both of those
+        # repeats are their own reverse complement, so every seed matched in both orientations and the
+        # check reported PASS on a deliberately unstranded library. The fixture was wrong, not the check.
+        import random as _r
+        _rng = _r.Random(20261009)
+        window = "".join(_rng.choice("ACGT") for _ in range(200))
+        a = window[10:100]
+        b = window[30:120]
+
+        def write(kind, reads):
+            d = f"{root}/tenx_gex/DS"
+            os.makedirs(d, exist_ok=True)
+            with gz.open(f"{d}/DS-GEX_S1_L001_R2_001.fastq.gz", "wt") as fh:
+                for i, r in enumerate(reads):
+                    fh.write(f"@r{i} 2:N:0:1\n{r}\n+\n{'I' * len(r)}\n")
+            with gz.open(f"{d}/DS_full_gex_molecules.tsv.gz", "wt") as fh:
+                fh.write("read\tbarcode\tumi\trecord\n")
+                for i in range(len(reads)):
+                    fh.write(f"r{i}\tBC\tUMI\tENST1\n")
+
+        # Consistently oriented: every read antisense to the window.
+        write("good", [t.orient_antisense(x, "I" * len(x), "+")[0] for x in (a, b)] * 60)
+        res = []
+        qa.check_tenx_r2_strand(root, res, limit=1000, min_pairs=10)
+        assert res and res[0]["verdict"] == "PASS", res
+
+        # Unstranded: half the reads left sense.
+        mixed = []
+        for i in range(60):
+            mixed.append(a if i % 2 else t.orient_antisense(a, "I" * len(a), "+")[0])
+            mixed.append(b)
+        write("bad", mixed)
+        res = []
+        qa.check_tenx_r2_strand(root, res, limit=1000, min_pairs=10)
+        assert res and res[0]["verdict"].startswith("FAIL"), res
+        assert "unstranded" in res[0]["verdict"]
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------- the sort buffer
 
 def test_sort_buffer_follows_the_allocation():
