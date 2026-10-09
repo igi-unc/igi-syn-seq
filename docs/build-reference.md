@@ -1139,3 +1139,18 @@ and Illumina DNA arms will carry the codes until they are next rebuilt.
 
 The exome hit is the one that matters for the decision in §17.3, because it shows short reads are not
 immune and therefore that a sampled zero on a 10x arm is not evidence of a clean library.
+
+So the 10x arms were checked properly rather than sampled. **Both ds-02 GEX R2 libraries are clean over
+their entire length** -- every read of the ~140 M-read full release and the ~50 M-read chr1to6 subset, zero
+non-ACGTN characters:
+
+```
+IGI-SYN-SEQ-02-GEX_S1_L001_R2_001.fastq.gz           non-ACGTN: NONE   (full library, 5.0 GB)
+IGI-SYN-SEQ-02-chr1to6-GEX_S1_L001_R2_001.fastq.gz   non-ACGTN: NONE   (full library, 1.9 GB)
+```
+
+Cell Ranger will therefore run on ds-02 as delivered, and §17.3's FAIL rule for the 10x arms is a guard
+against a future build rather than a description of a current failure. The reason the exome can carry a
+code while GEX does not is that a GEX read has to come from an *expressed* transcript, so one of the 94
+positions must fall inside an expressed exon, where exome capture only requires it to fall inside a
+captured one.
