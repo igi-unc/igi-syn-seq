@@ -1476,7 +1476,7 @@ the rebuilds drain.
 
 `catalog/tests/test_guards.py` pins down the guards added on 2026-10-08 and 2026-10-09. It needs no
 cluster and no data, takes 0.2 s, and runs either as `python3 catalog/tests/test_guards.py` or under
-pytest. **11 tests.**
+pytest. **16 tests.**
 
 Each guard is tested because its entire value is doing what it claims, and this build has three times now
 shipped or graded data behind a check that did not:
@@ -1492,23 +1492,33 @@ shipped or graded data behind a check that did not:
 | `rescale_quality` is an integer dB shift | the per-base form creeping back, which sits on the knife edge at scale 8.9125 (§14.3) |
 | `rescale_quality` saturates | the reasoning for 10.0 over the measured 5.15 being lost |
 | `check_currency` | a stage not running, leaving a deliverable older than its inputs (§17.6.4) -- the one failure mode no per-stage guard can see |
+| SAM `*` is not a base | the placeholder for "no sequence stored" being graded as a symbolic allele |
+| `drop_empty_records` | a zero-length skera segment shipping, and `@RG`/`PU` being lost in the rewrite |
+| ART strand recovery | R2 going back to whatever strand ART drew (§19) |
+| `art_chunk_index` | positional pairing returning, which shifts the truth map after a skipped window (§19.4) |
+| the R2 strand check | an unstranded library passing QA |
 
 The suite is checked by mutation rather than only by running it green, because a test that cannot fail is
 worth nothing. Each line below is a real edit to the source, the suite run, and the edit reverted:
 
 ```
-baseline                              11/11
-the scan samples by default again      9/11   <- the §17.6 defect, reintroduced
-the globs stop at R1 again             9/11
-the WARN tier restored for DNA arms    7/11
-sort-buffer cap removed                9/11
-normalisation table drops V and B      9/11
-Phred shift forced to 0                8/11
-currency comparison never fires       10/11
-currency check iterates nothing       10/11
+baseline                              16/16
+the scan samples by default again     15/16   <- the §17.6 defect, reintroduced
+the globs stop at R1 again            14/16
+the WARN tier restored for DNA arms   13/16
+sort-buffer cap removed               15/16
+normalisation table drops V and B     15/16
+Phred shift forced to 0               14/16
+currency comparison never fires       15/16
+currency check iterates nothing       15/16
+strand check never fails              15/16
+orientation made a no-op              14/16
+chunk index always returns 0          15/16
+quality not reversed with the read    15/16
 ```
 
-One procedural note, because it cost me the check once: **commit before mutating.** I reverted a mutation
+One procedural note, because it cost me a check twice -- I made the same mistake again while mutating the
+R2 strand check: **commit before mutating.** I reverted a mutation
 with `git checkout --` on a file whose new function was not yet committed, and discarded the function along
 with the mutation. Everything above was re-measured with the tree clean first.
 
@@ -1518,3 +1528,104 @@ satisfying one of them.
 
 `revcomp("ACGTRY") == "YRACGT"` is asserted deliberately, documenting the untreated behaviour rather than
 the desired one, so that anyone who fixes `COMP` properly is told that this test encodes the old contract.
+
+## 19. 10x R2 was unstranded, because ART drew either strand and `-na` discarded the record
+
+The third generator defect, and the second reported by a downstream consumer rather than caught here.
+
+### 19.1 What failed
+
+`cellranger_count` on ds-02 `ar-gex-tumor`, four attempts, exit 1:
+
+```
+Unable to distinguish between [SC5P-R2, SC3Pv2] chemistries based on the R2 read mapping
+Total Reads = 100000   Mapped reads = 92806   Sense reads = 45140   Antisense reads = 44751
+```
+
+Cell Ranger infers chemistry from R2 strand bias -- a real 5' v2 library is almost entirely antisense, a
+3' library almost entirely sense -- so a coin flip matches no chemistry and the pipestance stops before
+counting a single read. Nothing else was wrong: the metadata says 10x 5' v2 and R1 is the expected 26 bp.
+
+### 19.2 Cause
+
+Both `run_tenx_gex.py` and `run_tenx_tcr.py` build an ART input FASTA of sense 5' windows and run
+
+```
+art_illumina ... -l 90 -ss HS25 -rs <seed> -na
+```
+
+`art_illumina` samples **either strand with equal probability**, and `-na` suppresses exactly the ALN file
+that records which strand each read was drawn from. Whatever ART emitted was written straight out as R2,
+so the orientation was lost at the point it was decided.
+
+### 19.3 The fix, and two things about the method
+
+Drop `-na`, read the strand from the ALN, and orient every R2 antisense (`tenx.orient_antisense`),
+reversing the quality string alongside the sequence. Verified through the real code path on 400 ART reads:
+
+| | sense | antisense |
+|---|---|---|
+| before | 217 | 183 |
+| **after** | **0** | **400** |
+
+Two measurements that shaped the method rather than being assumed:
+
+- **Reads are bit-identical with and without `-na`** at the same `-rs`, checked before writing the fix.
+  So the ALN costs nothing in reproducibility -- `-na` was never buying anything but a deleted file.
+- **Recovering the strand by substring test does not work.** The obvious alternative -- ask whether the
+  read or its reverse complement is a substring of the window -- holds only for error-free reads, and
+  under HS25 most reads carry an error. The ALN is exact.
+
+The direction is antisense because that is what 5' chemistry produces: the barcode and UMI are
+incorporated at the transcript's 5' end by template switching, so R1 reads the 5' end in sense and R2
+reads back toward it. Cell Ranger's own definitions encode this -- SC5P-R2 expects antisense, SC3Pv2
+sense -- and its detector decides between them on the observed bias.
+
+### 19.4 A second defect in the same loops
+
+Both builders write the ART input as `>m{i}` indexed over the chunk, but **skip** any record whose window
+is shorter than the read length:
+
+```python
+w = five_prime_window(seq_by_rec[rec])
+if len(w) < R2_LEN:
+    continue                      # record i is never written
+```
+
+and then paired the k-th read in the FASTQ with `chunk[k]`. One skipped short transcript therefore shifted
+**every subsequent read onto the wrong barcode, UMI and truth-map record** -- a silent truth corruption,
+not a read defect, so no alphabet or length check could ever have seen it. Both loops now key on the index
+ART carries through in the read id, which removes the assumption that the FASTQ is dense.
+
+### 19.5 The check that should have existed
+
+`qa_release.check_tenx_r2_strand`, and the useful property is that it needs **no reference and no
+aligner**: reads sharing a truth-map record were drawn from the same 5' window, so they must agree in
+orientation. Under a random strand draw an informative pair disagrees half the time; in a correct library,
+never. It therefore detects the defect without knowing which direction is correct -- the direction is
+asserted separately, in the generator, against Cell Ranger's definitions.
+
+Run against the delivered libraries it fails all six at a coin flip, which also settled that **TCR is
+affected rather than merely suspected** (the report could not confirm it, since `cellranger vdj` had not
+been reached):
+
+```
+ds-01 GEX full      2006 same / 1996 opposite        ds-01 GEX chr1to6   1994 / 2007
+ds-02 GEX full      1997 same / 2003 opposite        ds-02 GEX chr1to6   2018 / 1982
+ds-01 TCR           2184 same / 2233 opposite
+ds-02 TCR           2290 same / 2264 opposite
+```
+
+One note on building that check, because it is the same trap in miniature: my first test fixture made its
+window from `"ACGT" * 40` and `"GATC" * 40`, and **each of those repeats is its own reverse complement**,
+so every seed matched in both orientations and the check reported PASS on a deliberately unstranded
+library. The fixture was wrong, not the check. A palindromic sequence is exactly the input that makes an
+orientation test vacuous, which is a reason to build fixtures from random sequence rather than from
+something readable.
+
+### 19.6 What this costs
+
+GEX and TCR regenerate for both datasets -- `32_tenx_gex --array=1-2`, `33_tenx_tcr --array=1-2`. The ~7 h
+GEX arm is the long pole. Note that the 10x arms were the ones previously verified **clean** on the
+alphabet by complete count, which is worth stating plainly: a library can be correct in every base and
+still be unusable, and no amount of checking the alphabet would have found this.
