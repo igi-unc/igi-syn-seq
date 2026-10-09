@@ -987,7 +987,25 @@ the other's counterpart:
 `EditSet.add` in §15.2 was a single chokepoint that every edit had to pass. This is the
 same shape of fix: the buffer is decided in one place per language rather than at each call site.
 
-### 16.3 The fix changes no output, so nothing needs rebuilding
+### 16.3 Confirmed on the workload that failed
+
+The rerun of ds-01 bulk RNA sorted the real file inside the allocation that had killed it:
+
+```
+keyed.tsv    48.4 GB     written 23:36   (the intermediate the unbounded sort wanted in RAM)
+sorted.tsv   48.4 GB     written 23:44   (complete -- the sort took about 8 minutes)
+peak RSS      8.84 G     against a 16 G allocation
+```
+
+So a 48.4 GB sort now runs with a step footprint of 8.84 G -- the 4 G buffer plus the Python process and
+the gzip writers alongside it -- where before the buffer alone grew toward the size of the input and the
+step was OOM-killed at 1 h 44. The 48.4 GB measured here is close to the ~51 GB predicted from 80 M pairs
+at ~638 B per record, and it is the number that explains the old 59.8 G release-scale peak in §16.1.
+
+The external merge is not the bottleneck anyone might fear: eight minutes for 48.4 GB across roughly a
+dozen runs, against a 21 % penalty measured on the small case.
+
+### 16.4 The fix changes no output, so nothing needs rebuilding
 
 Buffer size could in principle change the order of records whose keys tie, which would change which read
 receives which Illumina name. It does not. GNU sort's last-resort comparison falls back to the whole line
@@ -1003,7 +1021,7 @@ and only the OOM-killed ds-01 bulk RNA arm had to be rerun. Correctness of the r
 re-verified independently: names unique, R1 and R2 in step, the read-name map aligned to the FASTQ order,
 and every source record recovered.
 
-### 16.4 What is still open
+### 16.5 What is still open
 
 `run_rna.py` has no resume path -- it re-assembles records and re-simulates every bin on each invocation.
 Rerunning the killed task therefore cost the full ~1 h 45 m rather than just the sort. That is a deliberate
