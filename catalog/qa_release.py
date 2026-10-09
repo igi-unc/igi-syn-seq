@@ -18,6 +18,7 @@ and says there is nothing to compare it with, rather than inventing a bound.
     python3 qa_release.py --release /path/to/release --out qa_report.json
 """
 import argparse
+import datetime
 import glob
 import gzip
 import json
@@ -400,6 +401,71 @@ def check_alphabet(release, results, samtools="samtools", complete=True, limit=4
                         "verdict": _alphabet_verdict(sorted(counts), f)})
 
 
+
+# Which directory a deliverable is assembled FROM. The merged libraries and the chr1to6 subsets are built
+# out of the per-chromosome arms, so each of these is a "newer than its inputs" relation that must hold.
+ASSEMBLED_FROM = {
+    "merged":          "wes",
+    "wgs_merged":      "wgs",
+    "ont_wgs_merged":  "ont_wgs",
+    "pacbio_merged":   "pacbio",
+    "wes_chr1to6":     "wes",
+    "wgs_chr1to6":     "wgs",
+    "ont_wgs_chr1to6": "ont_wgs",
+    "pacbio_chr1to6":  "pacbio",
+}
+
+
+def _ts(epoch):
+    return datetime.datetime.fromtimestamp(epoch).strftime("%Y-%m-%d %H:%M")
+
+
+def check_currency(release, results):
+    """Every assembled deliverable must be NEWER than the per-chromosome reads it was assembled from.
+
+    This check exists because of the question "so all of the ds-01 files are now valid?", which I could
+    not answer from the build logs. Nine arms had been regenerated overnight and every one reported
+    COMPLETED with no failures, so the arms were current -- but no merge had run afterwards, and the
+    deliverables are the MERGED libraries, which the staged inputs symlink to. Every file a consumer could
+    open still predated the rebuild, the exome merge by nine days, and it still carried ~9,000 `*`
+    characters a day after that defect was fixed and the reads were regenerated.
+
+    The individual stages do compare mtimes and would have refused to ship a stale output, so nothing
+    would have been delivered wrongly. But a per-stage guard only fires when that stage runs, and the
+    failure mode here was a stage NOT RUNNING. Nothing looked at the release as a whole and asked whether
+    it was current, so "all arms completed" read as "the release is ready" -- to me, in my own reporting.
+
+    A fix that has not reached the file the consumer opens has not reached the consumer, and that is a
+    property of the release tree rather than of any one job, so this is the layer that has to check it.
+
+    **A PASS here is not a statement that the deliverable is correct.** It says only that it was assembled
+    from the reads currently on disk. `merged/IGI-SYN-SEQ-02` passes precisely because its exome inputs are
+    also from Sep 30 -- and that library is the one that aborted razers3. Currency and validity are
+    different questions, and check_alphabet answers the second. Together "current and clean" means
+    something; either one alone does not.
+    """
+    for out_dir, in_dir in sorted(ASSEMBLED_FROM.items()):
+        for ds_path in sorted(glob.glob(f"{release}/{out_dir}/*")):
+            if not os.path.isdir(ds_path):
+                continue
+            ds = os.path.basename(ds_path)
+            outs = [f for f in glob.glob(f"{ds_path}/*") if os.path.isfile(f)]
+            ins = [f for f in glob.glob(f"{release}/{in_dir}/{ds}/*") if os.path.isfile(f)]
+            if not outs or not ins:
+                continue
+            newest_in = max(os.path.getmtime(f) for f in ins)
+            oldest_out = min(os.path.getmtime(f) for f in outs)
+            lag_h = (newest_in - oldest_out) / 3600.0
+            if lag_h > 0:
+                verdict = (f"FAIL (stale by {lag_h:,.1f} h -- re-run the stage that builds {out_dir}/; "
+                           f"its inputs in {in_dir}/ are newer)")
+            else:
+                verdict = "PASS"
+            results.append({"check": "deliverable newer than inputs", "file": f"{out_dir}/{ds}",
+                            "value": f"output {_ts(oldest_out)}, newest input {_ts(newest_in)}",
+                            "verdict": verdict})
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--release", required=True)
@@ -467,6 +533,7 @@ def main():
     check_tenx_format(a.release, fmt)
     check_tcr_truth(a.release, fmt)
     check_alphabet(a.release, fmt, a.samtools, complete=not a.alphabet_sample)
+    check_currency(a.release, fmt)
     report["format"] = fmt
     report["n_fail"] += sum(1 for r in fmt if r["verdict"].startswith("FAIL"))
     print()

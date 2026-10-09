@@ -21,6 +21,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 from array import array
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -138,6 +139,40 @@ def test_alphabet_verdict_cause_naming():
     # Mixed: the symbolic allele dominates, because it is a generator defect and the other is not.
     assert qa._alphabet_verdict(["*", "Y"], "/r/ont_wgs/DS/x.fastq.gz").startswith("FAIL")
     assert qa._alphabet_verdict(["Y"], "/r/tenx_tcr/DS/x_R1_001.fastq.gz").startswith("FAIL")
+
+
+def test_currency_catches_a_deliverable_older_than_its_inputs():
+    """A stage that never ran leaves a stale deliverable, and no per-stage mtime guard can see that.
+
+    This is the shape of the real failure: nine arms regenerated and reporting COMPLETED, no merge run
+    afterwards, so every library a consumer could open predated the rebuild by up to nine days.
+    """
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_currency_")
+    try:
+        os.makedirs(f"{root}/wes/DS"); os.makedirs(f"{root}/merged/DS")
+        # The merged library is written first, then the per-chromosome reads are regenerated.
+        open(f"{root}/merged/DS/DS_normal_R1.fastq.gz", "w").close()
+        old = time.time() - 9 * 86400
+        os.utime(f"{root}/merged/DS/DS_normal_R1.fastq.gz", (old, old))
+        open(f"{root}/wes/DS/DS_chr1_normal_R1.fastq.gz", "w").close()
+
+        results = []
+        qa.check_currency(root, results)
+        assert len(results) == 1, results
+        assert results[0]["verdict"].startswith("FAIL"), results
+        assert "stale by 21" in results[0]["verdict"] or "stale by 2" in results[0]["verdict"], \
+            f"the lag should be about 216 h: {results[0]['verdict']}"
+        assert "wes/" in results[0]["verdict"], "it must name the input directory to re-run from"
+
+        # Re-running the merge clears it.
+        now = time.time()
+        os.utime(f"{root}/merged/DS/DS_normal_R1.fastq.gz", (now, now))
+        results = []
+        qa.check_currency(root, results)
+        assert results[0]["verdict"] == "PASS", results
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
 
 
 # --------------------------------------------------------------------------- the sort buffer
