@@ -10,8 +10,15 @@ def revcomp(s): return s.translate(COMP)[::-1]
 #
 #  - No instrument emits them. A real sequencer reading an ambiguous locus reports a definite base or N,
 #    because the ambiguity is in the reference's knowledge, not in the molecule.
-#  - Strict consumers refuse them. Cell Ranger rejects any base outside ACGTN, which is how the `*`
-#    defect surfaced; an ambiguity code reaching a 10x arm would reproduce that failure exactly.
+#  - Consumers refuse them, and not only the one we predicted. This comment first said "Cell Ranger
+#    rejects any base outside ACGTN ... an ambiguity code reaching a 10x arm would reproduce that
+#    failure exactly" -- true, but it understated the blast radius, and the arm that actually broke was
+#    the exome. OptiType's razers3 aborts while loading its first chunk with
+#        seqan::ParseError: Unexpected character 'Y' found.
+#    because SeqAn's reader accepts only A, C, G, T and N. It failed all seven retries while every
+#    aligner in the same run read the file without complaint. The rule is therefore not "normalise for
+#    the strict consumers we can name" but "a delivered base is a base", because a reference dataset
+#    cannot know what will read it.
 #  - revcomp() above maps only ACGTN, so an IUPAC base survives reverse-complementing UNCHANGED. That is
 #    latent rather than observed: the paths that would hit it are minus-strand transcripts
 #    (transcriptome.py), inverted SV segments (rearrange.py) and fusion partners. The one strand-flipped
