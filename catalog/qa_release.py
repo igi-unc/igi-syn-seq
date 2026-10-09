@@ -278,64 +278,88 @@ IUPAC_SET = set("RYSWKMBDHV")
 # strips the legal alphabet so the per-character loop only ever runs on an offence, which makes a clean
 # library cost one gsub per read and nothing else. Memory is bounded by the number of DISTINCT offending
 # characters, not by the library, so this streams a 67 GB BAM in constant space.
+# ONE PASS PER FILE computes everything the structural checks need: record count, the non-ACGTN tally,
+# sequence-less records, sequence/quality length disagreement, the Phred range, and the GC and N counts.
+# The release is 1.3 TB, so a check that needs its own pass over it is a check that gets skipped -- and
+# a skipped check is how every defect in this release reached a consumer. Sharing the pass is what makes
+# six checks affordable instead of one.
+#
 # The regex pre-test is not a micro-optimisation: `gsub` rebuilds the string on every read it touches,
 # and skipping it on the ~99.9999 % of reads that are clean took one exome library from 105 s to 11 s --
-# 9.5x, same counts. Over a 1.3 TB release that is the difference between a check that runs on every
-# build and one that gets skipped because it is too slow, which is how a check stops being a check.
+# 9.5x, same counts.
 #
-# `ph` (placeholder) is set for BAM input only. In SAM, a SEQ field of exactly `*` means "no sequence
-# stored" -- it is not a base at all, and counting it as a symbolic allele was a false positive in this
-# scan's first version: ds-02's chr1to6 Kinnex BAM reported `* x7` with zero `*` embedded in any sequence.
-# A record with no sequence is still wrong in a deliverable, so it is counted and reported, but under its
-# own name, because it needs a different fix from a `*` written into the middle of a read.
-_TALLY = (r'{ n++; if (ph && $0 == "*") { e++; next }'
-          r'  if ($0 ~ /[^ACGTNacgtn]/) { s = $0; gsub(/[ACGTNacgtn]/, "", s);'
-          r'  for (i = 1; i <= length(s); i++) c[substr(s, i, 1)]++ } }'
-          r'END { printf "RECORDS %d\nEMPTY %d\n", n, e; for (k in c) printf "CHAR %s %d\n", k, c[k] }')
+# `ph` (placeholder) is set for BAM input only. In SAM a SEQ of exactly `*` means "no sequence stored",
+# which is not a base; counting it as a symbolic allele was a false positive -- ds-02's chr1to6 Kinnex
+# BAM reported `* x7` with zero `*` embedded in any sequence.
+_TALLY = (r'{ n++;'
+          r'  if (ph && $1 == "*") { e++; next }'
+          r'  L = length($1);'
+          r'  if (length($2) != L) { qmis++ }'
+          r'  gc += gsub(/[GCgc]/, "&", $1);'
+          r'  nn += gsub(/[Nn]/, "&", $1);'
+          r'  bases += L;'
+          r'  q0 += gsub(/!/, "&", $2);'
+          r'  qbad += gsub(/[^!-~]/, "&", $2);'
+          r'  if ($1 ~ /[^ACGTNacgtn]/) { s = $1; gsub(/[ACGTNacgtn]/, "", s);'
+          r'    for (i = 1; i <= length(s); i++) c[substr(s, i, 1)]++ } }'
+          r'END { printf "RECORDS %d\nEMPTY %d\nQUALMISMATCH %d\nGC %d\nN %d\nBASES %d\n",'
+          r'        n, e, qmis, gc, nn, bases;'
+          r'      printf "Q0 %d\nQBAD %d\n", q0+0, qbad+0;'
+          r'      for (k in c) printf "CHAR %s %d\n", k, c[k] }')
+
+# Quality is checked with two gsub counts rather than a per-base loop. Indexing every base into a
+# Phred table cost 167 million index() calls on ONE 1.9 M-read library and would have made a 1.3 TB
+# scan unaffordable -- and an unaffordable check is a check that gets skipped. The two counts still
+# establish the whole guarantee: Phred+33 is legal only in '!'..'~' (Q0..Q93), and `!` is Q0, which SAM
+# defines as "no quality available" and no instrument emits as a called base's score.
+
+def _scan_reads(path, samtools="samtools", complete=True, limit=400000):
+    """One pass over a deliverable. Returns a stats dict, or None if it could not be read.
+
+    COMPLETE BY DEFAULT, and that is the point. The first version of the alphabet check read 400,000
+    lines -- 100,000 reads -- off the front of each file and declared it clean if it saw nothing. The
+    exome carries IUPAC codes at about ONE READ PER MILLION; the library that aborted razers3 held a
+    single `Y` in 4,858,789,950 bases, so a 100,000-read sample would have reported `none` 99.69 % of
+    the time. A sample can witness contamination; it cannot establish absence below its own resolution,
+    and absence is what every consumer depends on.
+    """
+    if path.endswith(".bam"):
+        src = f"{samtools} view {shlex.quote(path)} | cut -f10,11"
+        ph = 1
+    else:
+        src = f"pigz -dc {shlex.quote(path)} | awk 'NR % 4 == 2 || NR % 4 == 0' | paste - -"
+        ph = 0
+    if complete:
+        # No `head` in the pipeline, so pipefail can stay on: "nothing was read" must never be
+        # indistinguishable from "nothing offended".
+        cmd = f"set -o pipefail; {src} | awk -F'\t' -v ph={ph} '{_TALLY}'"
+    else:
+        cmd = (f"{src} | head -{limit // 4} | "
+               f"awk -F'\t' -v ph={ph} '{_TALLY}'")
+    r = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True)
+    if r.returncode != 0:
+        return None
+    st = {"records": 0, "empty": 0, "qual_mismatch": 0, "gc": 0, "n": 0, "bases": 0,
+          "q0": 0, "qbad": 0, "chars": {}}
+    keys = {"RECORDS": "records", "EMPTY": "empty", "QUALMISMATCH": "qual_mismatch", "GC": "gc",
+            "N": "n", "BASES": "bases", "Q0": "q0", "QBAD": "qbad"}
+    for line in r.stdout.splitlines():
+        f = line.split()
+        if not f:
+            continue
+        if f[0] in keys:
+            st[keys[f[0]]] = int(f[1])
+        elif f[0] == "CHAR":
+            st["chars"][f[1].upper()] = st["chars"].get(f[1].upper(), 0) + int(f[2])
+    return st
 
 
 def _scan_alphabet(path, samtools="samtools", complete=True, limit=400000):
-    """Count non-ACGTN characters in a deliverable's sequence.
-
-    Returns (n_records, {char: count}, n_empty), where n_empty counts records carrying no sequence at
-    all -- SAM's `*` placeholder, which is not a base and must not be reported as one.
-
-    COMPLETE BY DEFAULT, and that is the whole point of this function. The first version of this check
-    read 400,000 lines -- 100,000 reads -- off the front of each file and declared the alphabet clean if
-    it saw nothing. The exome arm carries IUPAC codes at roughly ONE READ PER MILLION, because only 94
-    reference positions are ambiguous and an exome covers few of them, so a 100,000-read sample misses
-    them with probability ~0.9 and reports PASS on a library that aborts razers3 on load. A sample can
-    witness contamination; it cannot establish absence at a rate below its own resolution, and absence is
-    exactly what every consumer of these files depends on.
-
-    `limit` applies only when `complete` is False, which exists for a fast pre-flight and never for a
-    verdict -- the value string says which was done, so no reader has to guess.
-    """
-    if path.endswith(".bam"):
-        src = f"{samtools} view {shlex.quote(path)} | cut -f10"
-        ph = 1
-    else:
-        src = f"pigz -dc {shlex.quote(path)} | awk 'NR % 4 == 2'"
-        ph = 0
-    if complete:
-        # No `head` in the pipeline, so pipefail is safe and a decompression failure cannot masquerade
-        # as a clean library -- the difference between "nothing offended" and "nothing was read".
-        cmd = f"set -o pipefail; {src} | awk -v ph={ph} '{_TALLY}'"
-    else:
-        cmd = f"{src} | head -{limit // 4} | awk -v ph={ph} '{_TALLY}'"
-    r = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True)
-    if r.returncode != 0:
+    """(n_records, {char: count}, n_empty) -- the alphabet view of _scan_reads."""
+    st = _scan_reads(path, samtools, complete, limit)
+    if st is None:
         return None, {}, 0
-    n, counts, empty = 0, {}, 0
-    for line in r.stdout.splitlines():
-        p = line.split()
-        if p[:1] == ["RECORDS"]:
-            n = int(p[1])
-        elif p[:1] == ["EMPTY"]:
-            empty = int(p[1])
-        elif p[:1] == ["CHAR"]:
-            counts[p[1].upper()] = counts.get(p[1].upper(), 0) + int(p[2])
-    return n, counts, empty
+    return st["records"], st["chars"], st["empty"]
 
 
 def _alphabet_verdict(bad, path=""):
@@ -568,6 +592,151 @@ def _seed_orientation(a, b, seed=25):
     return "unknown"
 
 
+def check_read_structure(release, results, samtools="samtools", complete=True):
+    """Structural sanity of every delivered record, from the pass the alphabet check already makes.
+
+    These are the checks nothing in this release had, which is why nothing could have caught the three
+    defects that reached consumers. They cost nothing extra: the alphabet pass already reads every base,
+    so it counts these at the same time.
+
+      sequence/quality length   a record whose quality string is a different length from its sequence is
+                                malformed. bwa and minimap2 reject it; some tools read past the end.
+      Phred 0                   SAM defines Q0 as "no quality available". No instrument emits it for a
+                                called base, and a caller may treat the base as unusable.
+      Phred out of range        Phred+33 is legal only in '!'..'~' (Q0..Q93). Anything else means the
+                                quality string is not a quality string.
+      sequence-less records     SEQ='*' in a BAM. A delivered read with no bases (see drop_empty_records).
+      N fraction                a jump here means the reference masking or the generator changed; ART
+                                masks N-containing windows rather than emitting N (section 17.6.6), so
+                                the short-read arms should be at or near zero.
+      GC fraction               a systematic strand, complement or reference error moves GC. The human
+                                genome is ~41 % and exons are GC-richer, so the band is wide on purpose:
+                                it is a tripwire for gross corruption, not a calibration.
+    """
+    for f in delivered_sequence_files(release):
+        st = _scan_reads(f, samtools, complete)
+        base = os.path.basename(f)
+        if st is None:
+            results.append({"check": "record structure", "file": base,
+                            "value": "UNREADABLE", "verdict": "FAIL (could not read the file)"})
+            continue
+        n, nb = st["records"], st["bases"]
+        if not n:
+            continue
+        for label, bad, detail in (
+                ("sequence and quality lengths agree", st["qual_mismatch"],
+                 "records where len(QUAL) != len(SEQ)"),
+                ("no Phred 0 bases", st["q0"], "bases at Q0, which SAM defines as no quality available"),
+                ("quality string is Phred+33", st["qbad"], "characters outside '!'..'~'"),
+                ("every record has a sequence", st["empty"], "records with no sequence")):
+            results.append({"check": label, "file": base,
+                            "value": f"{bad:,} of {n:,} records" if bad else f"0 of {n:,} records",
+                            "verdict": "PASS" if bad == 0 else f"FAIL ({bad:,} {detail})"})
+        if nb:
+            gc, nfrac = st["gc"] / nb, st["n"] / nb
+            results.append({"check": "GC fraction is plausible", "file": base,
+                            "value": f"{gc:.4f} over {nb:,} bases",
+                            "verdict": "PASS" if 0.30 <= gc <= 0.65 else
+                                       f"FAIL ({gc:.4f} outside 0.30-0.65; a strand, complement or "
+                                       f"reference error moves GC)"})
+            results.append({"check": "N fraction is negligible", "file": base,
+                            "value": f"{nfrac:.2e} ({st['n']:,} N of {nb:,})",
+                            "verdict": "PASS" if nfrac <= 0.01 else f"FAIL ({nfrac:.2%} N)"})
+
+
+def check_mate_pairing(release, results):
+    """R1 and R2 must hold the same reads in the same order, and the same number of them.
+
+    Nothing in this release checked it, and a desynchronised pair is invisible to every other check: both
+    mates are the right length, the right alphabet, the right quality, and individually valid. An aligner
+    then pairs read i of R1 with read i of R2 and reports confident, wholly fictional insert sizes and
+    discordant pairs -- so it surfaces as a structural-variant call rather than as a file error.
+
+    This release has already produced the same class of defect once, on the 10x arms: the ART input FASTA
+    skipped short windows while the reader paired the k-th read with chunk[k], so one skip shifted every
+    later read onto the wrong barcode, UMI and truth record (section 19.4). That was R2-against-truth
+    rather than R1-against-R2, and it is the reason this check exists.
+
+    Names are compared in full, streaming both files once together, because an off-by-one that starts
+    deep in a library is exactly what a head-of-file sample cannot see.
+    """
+    for r1 in sorted(glob.glob(f"{release}/*/*/*_R1.fastq.gz")
+                     + glob.glob(f"{release}/*/*/*_R1_001.fastq.gz")):
+        r2 = r1.replace("_R1.fastq.gz", "_R2.fastq.gz").replace("_R1_001.fastq.gz", "_R2_001.fastq.gz")
+        if not os.path.exists(r2):
+            results.append({"check": "mates are paired", "file": os.path.basename(r1),
+                            "value": "no R2 alongside this R1",
+                            "verdict": "FAIL (unpaired library)"})
+            continue
+        cmd = ("set -o pipefail; paste "
+               f"<(pigz -dc {shlex.quote(r1)} | awk 'NR % 4 == 1') "
+               f"<(pigz -dc {shlex.quote(r2)} | awk 'NR % 4 == 1') "
+               "| awk -F'\t' '{ n++; split($1, a, \" \"); split($2, b, \" \");"
+               "   if (a[1] == \"\" || b[1] == \"\") short++;"
+               "   else if (a[1] != b[1]) mism++ }"
+               " END { printf \"%d %d %d\\n\", n, mism+0, short+0 }'")
+        r = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True)
+        if r.returncode != 0 or not r.stdout.split():
+            results.append({"check": "mates are paired", "file": os.path.basename(r1),
+                            "value": "UNREADABLE", "verdict": "FAIL (could not read the pair)"})
+            continue
+        n, mism, short = (int(x) for x in r.stdout.split()[:3])
+        if mism == 0 and short == 0:
+            verdict = "PASS"
+        elif short:
+            verdict = f"FAIL ({short:,} records present in one mate only -- the files differ in length)"
+        else:
+            verdict = f"FAIL ({mism:,} of {n:,} pairs have different read names -- mates are out of step)"
+        results.append({"check": "mates are paired", "file": os.path.basename(r1),
+                        "value": f"{n:,} pairs, {mism:,} name mismatches, {short:,} one-sided",
+                        "verdict": verdict})
+
+
+def check_bam_integrity(release, results, samtools="samtools"):
+    """A delivered BAM must be complete, and a PacBio BAM must have a .pbi that matches it.
+
+    `samtools quickcheck` verifies the header parses and the EOF block is present, which is the one
+    cheap way to catch a truncated file -- a BAM cut short mid-write reads fine for most of its length
+    and fails only at the end, so a sampled check passes it.
+
+    The .pbi matters because pbmm2 and the Iso-Seq tools index by it: a missing or stale .pbi is not a
+    read defect but it stops the consumer just as firmly. It was already missing from the delivered
+    libraries once, which is why 72_pacbio_pbi exists.
+    """
+    bams = sorted(glob.glob(f"{release}/kinnex_*/*/*_segmented.bam")
+                  + glob.glob(f"{release}/pacbio_merged/*/*_hifi.bam"))
+    for b in bams:
+        base = os.path.basename(b)
+        # `-u` because these are UNALIGNED BAMs, which is what a HiFi or Kinnex deliverable is.
+        # Without it quickcheck exits 8 with "had no targets in header" on every one of them -- it
+        # requires @SQ lines by default. My first version omitted it and reported all 12 delivered BAMs
+        # as truncated, which is the check being wrong rather than the data; running it against the real
+        # files is what surfaced that. samtools' own docs say the warning text "should not be parsed by
+        # scripts", so the verdict comes from the exit status and the message is shown only for a human.
+        r = subprocess.run(f"{samtools} quickcheck -u -v {shlex.quote(b)}", shell=True,
+                           capture_output=True, text=True)
+        ok = r.returncode == 0
+        results.append({"check": "BAM is complete", "file": base,
+                        "value": "header parses, EOF block present" if ok
+                                 else (r.stdout + r.stderr).strip()[:70],
+                        "verdict": "PASS" if ok else "FAIL (truncated or malformed BAM)"})
+        if "_hifi.bam" not in b:
+            continue
+        pbi = b + ".pbi"
+        if not os.path.exists(pbi):
+            results.append({"check": ".pbi present and current", "file": base, "value": "missing",
+                            "verdict": "FAIL (no .pbi; pbmm2 and the Iso-Seq tools index by it)"})
+        elif os.path.getmtime(pbi) < os.path.getmtime(b):
+            results.append({"check": ".pbi present and current", "file": base,
+                            "value": f"{_ts(os.path.getmtime(pbi))} older than BAM "
+                                     f"{_ts(os.path.getmtime(b))}",
+                            "verdict": "FAIL (stale .pbi -- re-run 72_pacbio_pbi)"})
+        else:
+            results.append({"check": ".pbi present and current", "file": base,
+                            "value": f"{os.path.getsize(pbi):,} bytes, newer than the BAM",
+                            "verdict": "PASS"})
+
+
 def check_tenx_r2_strand(release, results, limit=200000, min_pairs=50):
     """R2 reads from one molecule must share an orientation. 10x 5' chemistry is antisense throughout.
 
@@ -709,6 +878,9 @@ def main():
     check_tenx_format(a.release, fmt)
     check_tcr_truth(a.release, fmt)
     check_alphabet(a.release, fmt, a.samtools, complete=not a.alphabet_sample)
+    check_read_structure(a.release, fmt, a.samtools, complete=not a.alphabet_sample)
+    check_bam_integrity(a.release, fmt, a.samtools)
+    check_mate_pairing(a.release, fmt)
     check_tenx_r2_strand(a.release, fmt)
     check_tcr_r2_direction(a.release, fmt)
     check_currency(a.release, fmt)

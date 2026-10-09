@@ -393,6 +393,136 @@ def test_tcr_direction_check_catches_a_wholesale_flip():
         shutil.rmtree(root, ignore_errors=True)
 
 
+# --------------------------------------------------------------------------- record structure
+
+def _fq_records(path, recs):
+    import gzip as gz
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with gz.open(path, "wt") as fh:
+        for name, seq, qual in recs:
+            fh.write(f"@{name} 1:N:0:1\n{seq}\n+\n{qual}\n")
+
+
+def test_read_structure_catches_malformed_records():
+    """A quality string of the wrong length, a Q0 base, or a non-Phred character must each fail."""
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_struct_")
+    try:
+        qa.ont_deliverables = lambda rel: []
+        good = [("r%d" % i, "ACGTACGTAC", "IIIIIIIIII") for i in range(20)]
+
+        _fq_records(f"{root}/wes/DS/DS_a_R1.fastq.gz", good)
+        res = []
+        qa.check_read_structure(root, res)
+        assert all(r["verdict"] == "PASS" for r in res), [r for r in res if r["verdict"] != "PASS"]
+
+        shutil.rmtree(f"{root}/wes")
+        _fq_records(f"{root}/wes/DS/DS_b_R1.fastq.gz", good + [("bad", "ACGTACGTAC", "III")])
+        res = []
+        qa.check_read_structure(root, res)
+        v = {r["check"]: r["verdict"] for r in res}
+        assert v["sequence and quality lengths agree"].startswith("FAIL"), v
+
+        shutil.rmtree(f"{root}/wes")
+        _fq_records(f"{root}/wes/DS/DS_c_R1.fastq.gz", good + [("q0", "ACGTACGTAC", "IIIII!IIII")])
+        res = []
+        qa.check_read_structure(root, res)
+        v = {r["check"]: r["verdict"] for r in res}
+        assert v["no Phred 0 bases"].startswith("FAIL"), v
+
+        # chr(127) is above '~' (Q93) and so outside Phred+33. Note what CANNOT be used here: a tab or
+        # a space inside the quality string is consumed as a field separator by the scan, so it is
+        # reported as a length mismatch rather than as a bad character. Still a FAIL, under a different
+        # name -- but a fixture built from a tab tests the wrong path, which is what it did at first.
+        shutil.rmtree(f"{root}/wes")
+        _fq_records(f"{root}/wes/DS/DS_d_R1.fastq.gz",
+                    good + [("bq", "ACGTACGTAC", "IIIII" + chr(127) + "IIII")])
+        res = []
+        qa.check_read_structure(root, res)
+        v = {r["check"]: r["verdict"] for r in res}
+        assert v["quality string is Phred+33"].startswith("FAIL"), v
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_read_structure_flags_implausible_gc():
+    """GC is a tripwire for gross corruption: a poly-A library is not a human library."""
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_gc_")
+    try:
+        qa.ont_deliverables = lambda rel: []
+        _fq_records(f"{root}/wes/DS/DS_gc_R1.fastq.gz",
+                    [("r%d" % i, "GCGCGCGCGC", "IIIIIIIIII") for i in range(20)])
+        res = []
+        qa.check_read_structure(root, res)
+        v = {r["check"]: r["verdict"] for r in res}
+        assert v["GC fraction is plausible"].startswith("FAIL"), v
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_mate_pairing_catches_desynchronised_mates():
+    """Both mates can be individually perfect and still be out of step."""
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_mates2_")
+    try:
+        names = ["r%04d" % i for i in range(200)]
+        mk = lambda ns: [(n, "ACGTACGTAC", "IIIIIIIIII") for n in ns]
+
+        _fq_records(f"{root}/wgs/DS/DS_x_R1.fastq.gz", mk(names))
+        _fq_records(f"{root}/wgs/DS/DS_x_R2.fastq.gz", mk(names))
+        res = []
+        qa.check_mate_pairing(root, res)
+        assert res and res[0]["verdict"] == "PASS", res
+
+        # one record dropped from R2: every pair after it is shifted
+        _fq_records(f"{root}/wgs/DS/DS_x_R2.fastq.gz", mk(names[:100] + names[101:]))
+        res = []
+        qa.check_mate_pairing(root, res)
+        assert res[0]["verdict"].startswith("FAIL"), res
+        assert "out of step" in res[0]["verdict"] or "one mate only" in res[0]["verdict"]
+
+        # R2 missing entirely
+        os.remove(f"{root}/wgs/DS/DS_x_R2.fastq.gz")
+        res = []
+        qa.check_mate_pairing(root, res)
+        assert res[0]["verdict"].startswith("FAIL") and "unpaired" in res[0]["verdict"], res
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_pbi_must_be_present_and_newer_than_its_bam():
+    """A stale .pbi stops pbmm2 as firmly as a bad read, and it has been missing before."""
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_pbi_")
+    try:
+        d = f"{root}/pacbio_merged/DS"
+        os.makedirs(d)
+        bam = f"{d}/DS_tumor_hifi.bam"
+        open(bam, "w").write("x")
+        res = []
+        qa.check_bam_integrity(root, res, samtools="true")       # stub: quickcheck always succeeds
+        v = {r["check"]: r["verdict"] for r in res}
+        assert v[".pbi present and current"].startswith("FAIL"), v
+
+        open(bam + ".pbi", "w").write("y")
+        old = time.time() - 3600
+        os.utime(bam + ".pbi", (old, old))
+        res = []
+        qa.check_bam_integrity(root, res, samtools="true")
+        v = {r["check"]: r["verdict"] for r in res}
+        assert "stale" in v[".pbi present and current"], v
+
+        now = time.time()
+        os.utime(bam + ".pbi", (now, now))
+        res = []
+        qa.check_bam_integrity(root, res, samtools="true")
+        v = {r["check"]: r["verdict"] for r in res}
+        assert v[".pbi present and current"] == "PASS", v
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------- junction placement
 
 def _pipeline():
