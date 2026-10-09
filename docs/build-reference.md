@@ -1154,3 +1154,35 @@ against a future build rather than a description of a current failure. The reaso
 code while GEX does not is that a GEX read has to come from an *expressed* transcript, so one of the 94
 positions must fall inside an expressed exon, where exome capture only requires it to fall inside a
 captured one.
+
+## 18. Regression tests for the guards
+
+`catalog/tests/test_guards.py` pins down the four guards added on 2026-10-08. It needs no cluster and no
+data, takes 0.2 s, and runs either as `python3 catalog/tests/test_guards.py` or under pytest.
+
+Each guard is tested because its entire value is doing what it claims, and this build has twice shipped or
+graded data behind a check that did not:
+
+| test | what would otherwise go unnoticed |
+|---|---|
+| `check_alphabet` verdicts | a `*` passing, or IUPAC failing a release it should only warn about -- and the reverse, IUPAC *warning* on a 10x arm where Cell Ranger will refuse the run |
+| WARN does not count as FAIL | the warn/fail distinction being cosmetic |
+| `sort_buffer_mb` | the buffer drifting back to something the allocation does not bound (§16) |
+| `normalize_bases` | an ambiguity code dropped from the translation table (§17) |
+| `revcomp` after normalisation | the uncomplemented-ambiguity path reopening |
+| `rescale_quality` is an integer dB shift | the per-base form creeping back, which sits on the knife edge at scale 8.9125 (§14.3) |
+| `rescale_quality` saturates | the reasoning for 10.0 over the measured 5.15 being lost |
+
+The suite was checked by mutation rather than only by running it green, because a test that cannot fail is
+worth nothing. Removing `STRICT_CONSUMER_DIRS`, raising the sort-buffer cap, dropping `V`/`B` from the
+ambiguity table and neutering the Phred shift each break the tests that cover them:
+
+```
+10x arms no longer strict      -> 6/8   (both alphabet tests)
+sort buffer cap removed        -> 7/8
+normalisation drops V/B        -> 7/8
+rescale shift forced to 0      -> 6/8   (both rescale-identity tests)
+```
+
+`revcomp("ACGTRY") == "YRACGT"` is asserted deliberately, documenting the untreated behaviour rather than
+the desired one, so that anyone who fixes `COMP` properly is told that this test encodes the old contract.
