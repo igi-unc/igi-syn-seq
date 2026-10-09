@@ -25,6 +25,7 @@ import math
 import csv
 import os
 import re
+import shlex
 import subprocess
 
 # (name, target, tolerance) where tolerance is a fraction of the target; None means "report, do not judge"
@@ -264,93 +265,135 @@ def check_tcr_truth(release, results):
 IUPAC_SET = set("RYSWKMBDHV")
 
 
-# Arms whose consumer refuses a non-ACGTN base outright. Cell Ranger fails the whole run on one character
-# rather than dropping the read, so for these the alphabet guarantee has to be absolute; minimap2, pbmm2
-# and bwa all tolerate ambiguity codes, so for the rest it does not.
-STRICT_CONSUMER_DIRS = ("tenx_gex", "tenx_tcr")
+# One awk pass per deliverable: count the records, and tally every character that is not ACGTN. `gsub`
+# strips the legal alphabet so the per-character loop only ever runs on an offence, which makes a clean
+# library cost one gsub per read and nothing else. Memory is bounded by the number of DISTINCT offending
+# characters, not by the library, so this streams a 67 GB BAM in constant space.
+_TALLY = (r'{ n++; s = $0; gsub(/[ACGTNacgtn]/, "", s);'
+          r'  if (length(s)) for (i = 1; i <= length(s); i++) c[substr(s, i, 1)]++ }'
+          r'END { printf "RECORDS %d\n", n; for (k in c) printf "CHAR %s %d\n", k, c[k] }')
 
 
-def _strict_consumer(path):
-    return any(f"/{d}/" in path for d in STRICT_CONSUMER_DIRS)
+def _scan_alphabet(path, samtools="samtools", complete=True, limit=400000):
+    """Count non-ACGTN characters in a deliverable's sequence. Returns (n_records, {char: count}).
+
+    COMPLETE BY DEFAULT, and that is the whole point of this function. The first version of this check
+    read 400,000 lines -- 100,000 reads -- off the front of each file and declared the alphabet clean if
+    it saw nothing. The exome arm carries IUPAC codes at roughly ONE READ PER MILLION, because only 94
+    reference positions are ambiguous and an exome covers few of them, so a 100,000-read sample misses
+    them with probability ~0.9 and reports PASS on a library that aborts razers3 on load. A sample can
+    witness contamination; it cannot establish absence at a rate below its own resolution, and absence is
+    exactly what every consumer of these files depends on.
+
+    `limit` applies only when `complete` is False, which exists for a fast pre-flight and never for a
+    verdict -- the value string says which was done, so no reader has to guess.
+    """
+    if path.endswith(".bam"):
+        src = f"{samtools} view {shlex.quote(path)} | cut -f10"
+    else:
+        src = f"pigz -dc {shlex.quote(path)} | awk 'NR % 4 == 2'"
+    if complete:
+        # No `head` in the pipeline, so pipefail is safe and a decompression failure cannot masquerade
+        # as a clean library -- the difference between "nothing offended" and "nothing was read".
+        cmd = f"set -o pipefail; {src} | awk '{_TALLY}'"
+    else:
+        cmd = f"{src} | head -{limit // 4} | awk '{_TALLY}'"
+    r = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True)
+    if r.returncode != 0:
+        return None, {}
+    n, counts = 0, {}
+    for line in r.stdout.splitlines():
+        p = line.split()
+        if p[:1] == ["RECORDS"]:
+            n = int(p[1])
+        elif p[:1] == ["CHAR"]:
+            counts[p[1].upper()] = counts.get(p[1].upper(), 0) + int(p[2])
+    return n, counts
 
 
 def _alphabet_verdict(bad, path=""):
-    """Verdict for a set of offending characters, naming the cause and respecting the consumer.
+    """Verdict for a set of offending characters, naming the cause so the fix is unambiguous.
 
-    A symbolic allele is a generator defect and always FAILS.
+    EVERY non-ACGTN character FAILS, wherever it appears. This was not always so, and the history is the
+    argument for it: the codes were first reported as WARN outside the 10x arms, on the reasoning that
+    minimap2, pbmm2 and bwa all tolerate ambiguity and only Cell Ranger refuses a run outright. That
+    reasoning was an ENUMERATION OF THE CONSUMERS I HAPPENED TO KNOW, and it was wrong within a day:
+    OptiType's razers3 aborts on load with `seqan::ParseError: Unexpected character 'Y' found`, because
+    SeqAn's reader accepts only A, C, G, T and N. It killed HLA typing on the normal exome through all
+    seven retries while every aligner in the same run stayed quiet.
 
-    IUPAC codes are a different matter: GRCh38 genuinely contains 94 of them and the viral reference 497,
-    they are normalised to N at source now (genome.normalize_bases), and the arms that still carry them
-    were built before that and clear on their next rebuild. Whether that is worth failing a release over
-    depends entirely on who reads the file:
-
-      - On a 10x arm it FAILS. Cell Ranger refuses the whole run on a single character, so there is no
-        such thing as a tolerable rate here, and a sampled zero is not evidence of a clean library -- the
-        exome arm showed one `M` in 80,000 reads, so short reads are not immune.
-      - Everywhere else it WARNS. minimap2, pbmm2 and bwa tolerate the codes, the rate is ~2e-7 per base,
-        and failing over a known, scheduled condition would only teach people to ignore failures.
-
-    Either way it is reported on every run, so it cannot be forgotten.
+    The lesson generalises past razers3. A delivered base either is a base or it is not, and a reference
+    dataset cannot know what will read it -- callers, typers, assemblers, counters, things not written
+    yet. Ambiguity codes are normalised to N at source now (genome.normalize_bases), so a clean alphabet
+    costs nothing to guarantee and the only arms that fail here are the ones built before that, which
+    need rebuilding regardless. Tolerating a defect because the tools we tested happen to survive it is
+    how this reached someone else's pipeline in the first place.
     """
     if not bad:
         return "PASS"
+    tag = "".join(sorted(bad))
     chars = set(bad)
-    tag = "".join(bad)
     if chars <= IUPAC_SET:
-        if _strict_consumer(path):
-            return (f"FAIL ({tag}; IUPAC codes in a 10x arm -- Cell Ranger refuses the run on one "
-                    f"character, rebuild this arm)")
-        return f"WARN ({tag}; IUPAC codes -- arm predates genome.normalize_bases, clears on rebuild)"
+        return (f"FAIL ({tag}; IUPAC codes -- razers3/SeqAn aborts on load and Cell Ranger refuses the "
+                f"run, rebuild this arm under genome.normalize_bases)")
     if chars & IUPAC_SET:
         return f"FAIL ({tag}; IUPAC codes AND a symbolic allele -- see check_alphabet)"
     return f"FAIL ({tag}; symbolic allele written into the sequence -- generator defect)"
 
 
-def check_alphabet(release, results, samtools="samtools", limit=400000):
-    """Every delivered base must be A, C, G, T or N.
+def delivered_sequence_files(release):
+    """Every shipped file whose sequence a consumer reads -- BOTH MATES, not just R1.
 
-    This is the check that was missing. A VCF ALT column carries symbolic alleles as well as sequence --
-    `*` for an allele removed by a spanning deletion, `<DEL>`, breakend notation -- and the generator
-    appended whatever allele the genotype selected straight into the sequence. 2.65 % of the HG002 Q100
-    records carry a `*`, so literal `*` characters reached the delivered IGI-SYN-SEQ-01 reads of every
-    arm built from the genome, and the same records silently deleted 960,223 reference bases across
-    74,017 sites. The aligners tolerated the character and Cell Ranger refused it, which is how it
-    surfaced: downstream, in someone else's run, rather than here.
-
-    A length check cannot see this and an accuracy check cannot either. One grep over the reads can.
-
-    There are two distinct causes and the verdict names which one, because they need different fixes:
-
-      *, <DEL>, breakend notation  -- a symbolic VCF allele written into the sequence. A generator defect;
-                                      EditSet.add now rejects these at the point every edit passes.
-      R Y S W K M B D H V          -- IUPAC ambiguity codes, which GRCh38 and the viral reference really
-                                      do contain (one M and one R on chr1, 497 in virus_unmasked). Not
-                                      invented by us, but no instrument emits them and strict consumers
-                                      refuse them, so genome.normalize_bases turns them into N at every
-                                      point sequence enters. A FAIL here means the arm predates that
-                                      normalisation and needs rebuilding, not that the code is wrong.
+    The earlier globs ended at `*_R1.fastq.gz` and `*_R1_001.fastq.gz`, so half of every paired library
+    went unexamined, including the 10x R2 that carries the cDNA and is the only mate Cell Ranger aligns.
     """
-    for f in (sorted(glob.glob(f"{release}/*/*/*_R1.fastq.gz"))
-              + sorted(glob.glob(f"{release}/*/*/*_R1_001.fastq.gz"))
-              + ont_deliverables(release)):
-        seqs = [l for i, l in enumerate(_fq_head(f, limit)) if i % 4 == 1]
-        if not seqs:
+    pats = ("*_R1.fastq.gz", "*_R2.fastq.gz", "*_R1_001.fastq.gz", "*_R2_001.fastq.gz")
+    out = []
+    for p in pats:
+        out += glob.glob(f"{release}/*/*/{p}")
+    out += ont_deliverables(release)
+    out += glob.glob(f"{release}/kinnex_*/*/*_segmented.bam")
+    out += glob.glob(f"{release}/pacbio_merged/*/*_hifi.bam")
+    return sorted(set(out))
+
+
+def check_alphabet(release, results, samtools="samtools", complete=True, limit=400000):
+    """Every delivered base must be A, C, G, T or N. Counted completely, over every shipped file.
+
+    This is the check that was missing, and it has now caught two different defects that every other
+    check in this release passed over:
+
+      *, <DEL>, breakend notation  -- a symbolic VCF allele written into the sequence. 2.65 % of the
+                                      HG002 Q100 records carry a `*`, so literal `*` characters reached
+                                      the delivered reads of every ds-01 arm built from the genome, and
+                                      the same records silently deleted 960,223 reference bases across
+                                      74,017 sites. A generator defect; EditSet.add now rejects these at
+                                      the point every edit passes through.
+      R Y S W K M B D H V          -- IUPAC ambiguity codes, which GRCh38 itself contains at 94
+                                      positions (36 on chr10) and the viral reference at 497. Not
+                                      invented here, but no instrument emits them and strict consumers
+                                      abort on them, so genome.normalize_bases turns them into N at
+                                      every point sequence enters.
+
+    Both surfaced downstream, in someone else's run, rather than here -- the first in Cell Ranger, the
+    second in razers3. A length check cannot see either and an accuracy check cannot either. One
+    complete pass over the bases can, which is why this one does not sample.
+    """
+    for f in delivered_sequence_files(release):
+        n, counts = _scan_alphabet(f, samtools, complete, limit)
+        if n is None:
+            results.append({"check": "bases are ACGTN", "file": os.path.basename(f),
+                            "value": "UNREADABLE -- decompression or samtools failed",
+                            "verdict": "FAIL (could not read the file; this is not a clean alphabet)"})
             continue
-        bad = sorted({c for l in seqs for c in l.upper()} - set("ACGTN"))
-        results.append({"check": "bases are ACGTN", "file": os.path.basename(f),
-                        "value": f"{len(seqs):,} reads, offending characters: {bad or 'none'}",
-                        "verdict": _alphabet_verdict(bad, f)})
-    for f in (sorted(glob.glob(f"{release}/kinnex_*/*/*_segmented.bam"))
-              + sorted(glob.glob(f"{release}/pacbio_merged/*/*_hifi.bam"))):
-        out = subprocess.run(f"{samtools} view {f} 2>/dev/null | head -{limit // 4} | cut -f10",
-                             shell=True, capture_output=True, text=True).stdout
-        seqs = out.splitlines()
-        if not seqs:
+        if not n:
             continue
-        bad = sorted({c for l in seqs for c in l.upper()} - set("ACGTN"))
+        unit = "records" if f.endswith(".bam") else "reads"
+        scope = "complete" if complete else f"first {limit // 4:,} sampled"
+        detail = ", ".join(f"{c}x{counts[c]:,}" for c in sorted(counts)) or "none"
         results.append({"check": "bases are ACGTN", "file": os.path.basename(f),
-                        "value": f"{len(seqs):,} records, offending characters: {bad or 'none'}",
-                        "verdict": _alphabet_verdict(bad, f)})
+                        "value": f"{n:,} {unit} ({scope}), offending: {detail}",
+                        "verdict": _alphabet_verdict(sorted(counts), f)})
 
 
 def main():
@@ -359,6 +402,11 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--samtools", default="samtools")
     ap.add_argument("--limit", type=int, default=40000)
+    # The alphabet check reads every base of every deliverable, which is minutes per library and the
+    # only way to establish absence at ~1e-6 per read. This makes it sample instead, for a fast
+    # pre-flight only -- a sampled PASS is not evidence of a clean alphabet and the report says so.
+    ap.add_argument("--alphabet-sample", action="store_true",
+                    help="sample the alphabet check instead of counting completely (pre-flight only)")
     a = ap.parse_args()
 
     found = {
@@ -414,7 +462,7 @@ def main():
     check_pacbio_format(a.release, fmt, a.samtools)
     check_tenx_format(a.release, fmt)
     check_tcr_truth(a.release, fmt)
-    check_alphabet(a.release, fmt, a.samtools)
+    check_alphabet(a.release, fmt, a.samtools, complete=not a.alphabet_sample)
     report["format"] = fmt
     report["n_fail"] += sum(1 for r in fmt if r["verdict"].startswith("FAIL"))
     print()

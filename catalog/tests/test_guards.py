@@ -50,7 +50,7 @@ def _write_fq(path, seqs):
 
 
 def test_check_alphabet_verdicts():
-    """A symbolic allele always fails; an ambiguity code fails only where the consumer is strict."""
+    """Any non-ACGTN character fails, in every arm -- the consumer enumeration was wrong."""
     qa = _qa()
     root = tempfile.mkdtemp(prefix="igi_alphabet_")
     try:
@@ -64,17 +64,66 @@ def test_check_alphabet_verdicts():
         # ont_deliverables resolves the real release layout; point it at the fixture instead.
         qa.ont_deliverables = lambda rel: sorted(glob.glob(f"{rel}/ont_wgs/*/*_ont_wgs.fastq.gz"))
         results = []
-        qa.check_alphabet(root, results, limit=400000)
+        qa.check_alphabet(root, results)
         got = {r["file"]: r["verdict"].split(" ")[0] for r in results}
 
         assert got["DS_full_rna_R1.fastq.gz"] == "PASS", got
         assert got["DS_bad_rna_R1.fastq.gz"] == "FAIL", "a `*` in the sequence must fail"
-        assert got["DS_chr1_tumor_R1.fastq.gz"] == "WARN", "IUPAC in a bwa-consumed arm warns"
-        assert got["DS_chr3_tumor_ont_wgs.fastq.gz"] == "WARN", "IUPAC in a minimap2-consumed arm warns"
-        assert got["DS-GEX_S1_L001_R1_001.fastq.gz"] == "FAIL", \
-            "IUPAC in a 10x arm must FAIL: Cell Ranger refuses the run on one character"
-        # A WARN must not inflate the release's failure count, or the distinction is pointless.
-        assert sum(1 for r in results if r["verdict"].startswith("FAIL")) == 2, results
+        # These two were WARN until razers3 aborted on a 'Y' in the normal exome. An ambiguity code is
+        # not tolerable anywhere: we do not get to decide what reads a reference dataset.
+        assert got["DS_chr1_tumor_R1.fastq.gz"] == "FAIL", "IUPAC in the exome aborts razers3"
+        assert got["DS_chr3_tumor_ont_wgs.fastq.gz"] == "FAIL", "IUPAC must fail in every arm"
+        assert got["DS-GEX_S1_L001_R1_001.fastq.gz"] == "FAIL", "Cell Ranger refuses the run"
+        assert sum(1 for r in results if r["verdict"].startswith("FAIL")) == 4, results
+        assert not any(r["verdict"].startswith("WARN") for r in results), \
+            "there is no WARN tier any more; a tolerated defect is how this reached a user"
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_alphabet_check_is_complete_not_sampled():
+    """The offence must be found when it sits past the sample window, which is where it really sits.
+
+    The exome carries ambiguity codes at about one read per million -- chr10 normal held exactly one `R`
+    in 1,860,880 reads -- so the 100,000-read sample the check started with reported `none` on a library
+    that aborts razers3. This is that failure in miniature: one offending read behind 150,000 clean ones.
+    """
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_deep_")
+    try:
+        _write_fq(f"{root}/wes/DS/DS_chr1_tumor_R1.fastq.gz",
+                  ["ACGTACGTAC"] * 150000 + ["ACGTYCGTAC"])
+        qa.ont_deliverables = lambda rel: []
+        f = f"{root}/wes/DS/DS_chr1_tumor_R1.fastq.gz"
+
+        n, counts = qa._scan_alphabet(f, complete=True)
+        assert (n, counts) == (150001, {"Y": 1}), (n, counts)
+
+        ns, cs = qa._scan_alphabet(f, complete=False, limit=400000)
+        assert (ns, cs) == (100000, {}), "the sample is expected to miss it -- that is the point"
+
+        results = []
+        qa.check_alphabet(root, results)
+        assert results[0]["verdict"].startswith("FAIL"), results
+        assert "complete" in results[0]["value"], "the report must say the scan was complete"
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_alphabet_check_reads_both_mates():
+    """R2 was never scanned, and on a 10x arm R2 is the only mate Cell Ranger aligns."""
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_mates_")
+    try:
+        _write_fq(f"{root}/tenx_gex/DS/DS-GEX_S1_L001_R1_001.fastq.gz", ["ACGTACGTAC"] * 4)
+        _write_fq(f"{root}/tenx_gex/DS/DS-GEX_S1_L001_R2_001.fastq.gz", ["ACGTACGTAC", "ACGTYCGTAC"])
+        qa.ont_deliverables = lambda rel: []
+        results = []
+        qa.check_alphabet(root, results)
+        got = {r["file"]: r["verdict"].split(" ")[0] for r in results}
+        assert "DS-GEX_S1_L001_R2_001.fastq.gz" in got, f"R2 was not examined at all: {got}"
+        assert got["DS-GEX_S1_L001_R2_001.fastq.gz"] == "FAIL", got
+        assert got["DS-GEX_S1_L001_R1_001.fastq.gz"] == "PASS", got
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
@@ -84,8 +133,9 @@ def test_alphabet_verdict_cause_naming():
     qa = _qa()
     assert qa._alphabet_verdict([]) == "PASS"
     assert "symbolic allele" in qa._alphabet_verdict(["*"], "/r/rna/DS/x_R1.fastq.gz")
-    assert "IUPAC" in qa._alphabet_verdict(["Y"], "/r/ont_wgs/DS/x.fastq.gz")
-    # Mixed: the symbolic allele dominates and the arm no longer matters.
+    v = qa._alphabet_verdict(["Y"], "/r/ont_wgs/DS/x.fastq.gz")
+    assert "IUPAC" in v and "razers3" in v, "the verdict must name the consumer that actually aborted"
+    # Mixed: the symbolic allele dominates, because it is a generator defect and the other is not.
     assert qa._alphabet_verdict(["*", "Y"], "/r/ont_wgs/DS/x.fastq.gz").startswith("FAIL")
     assert qa._alphabet_verdict(["Y"], "/r/tenx_tcr/DS/x_R1_001.fastq.gz").startswith("FAIL")
 
