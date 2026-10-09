@@ -535,6 +535,16 @@ def check_tcr_r2_direction(release, results, limit=400000, min_reads=200):
 #   ds-01 exome normal (rebuilt)   mapped 1.00000  proper 0.99982  identity 0.997307
 #                                  softclip 0.00026  plus 0.50000  insert 335
 #   ds-01 10x TCR R2 (rebuilt)     mapped 1.00000  identity 0.998729  softclip 0.13485  plus 0.00000
+#   ds-01 ONT WGS chr10 tumour     mapped 0.99975  identity 0.982205  softclip 0.00070  plus 0.48962
+#   ds-02 HiFi chr10 tumour        mapped 0.97725  identity 0.994987  softclip 0.01160  plus 0.49731
+#
+# `mean_identity` HERE IS NOT THE READ ERROR RATE, and the bands must not be read as a calibration of
+# it. NM counts every difference from the reference, so on a tumour library it includes the germline
+# variation (~1 per kb) and every designed somatic variant as well as sequencing error. The HiFi number
+# above, 0.994987, is therefore BELOW the 0.99695 established for that arm by measuring reads simulated
+# from an UNMODIFIED reference (section 14, jobs/measure/alignment_identity.py) -- the two do not
+# disagree, they measure different things, and only the latter calibrates the simulator. This band is a
+# tripwire for gross corruption, like the GC band; the calibration lives in section 14.
 #
 # The 10x softclip band is wide because R2 is cDNA aligned to the GENOME: a read spanning an exon
 # junction is clipped, and that is correct behaviour rather than a defect. The strand band is the
