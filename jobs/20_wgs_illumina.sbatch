@@ -1,6 +1,13 @@
 #!/bin/bash
 #SBATCH -J igi_wgs
-#SBATCH -c 8 --mem=48G -t 24:00:00
+#SBATCH -c 8 --mem=64G -t 24:00:00
+# 64G, not 48G. The previous build peaked at 47,767,545 K = 45.5 GiB against a 48 GiB request --
+# a 2.8 % margin, which is not a margin. The junction fix (§19) also restored the full interval
+# sequence on every interval carrying a breakpoint, where the old code substituted a 1.2 kb
+# contig, so the arm now holds slightly more per interval than when 45.5 GiB was measured.
+# Peak is dominated by something far larger than one interval so the increase should be small,
+# but an OOM here halts an afterok chain of eight downstream stages, and the cost of being wrong
+# is a lost night against a few GB of allocation.
 #SBATCH --array=1-96
 # Illumina short-read WGS at 30x, tumour and normal (owner decision 2026-10-01). Same array layout as
 # 10_wes.sbatch: 24 chromosomes x 2 libraries x 2 datasets.
