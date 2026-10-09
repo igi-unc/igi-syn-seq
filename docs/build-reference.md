@@ -835,8 +835,19 @@ once from the scale, rather than per base where it would sit on that edge. The r
 bit-identical to the per-base form across the whole Phred range at every scale tried, so the only thing
 that changed the output was the constant.
 
-Delivered result: claimed error 3.21e-03 (identity 0.996790) against a true 3.05e-03 -- 1.05x, on the safe
-side. All three PacBio arms read `pacbio_identity` and all three are wired to the scale
+**Delivered result, measured on a rebuilt BAM rather than predicted:**
+
+| | claimed error/bp | claimed identity | `rq` | vs true 3.05e-03 |
+|---|---|---|---|---|
+| scale 5.15 (first attempt) | 2.198e-03 | 0.997802 | 0.997802 | **0.72x -- optimistic** |
+| scale 10.0, predicted | 3.210e-03 | 0.996790 | — | 1.05x |
+| scale 10.0, **delivered** | **3.202e-03** | **0.996798** | 0.996801 | **1.049x -- pessimistic** |
+
+Prediction and delivery agree to 0.3 %, and `rq` tracks the quality string to six decimals, so it is still
+being derived from the rescaled array rather than carrying its own figure. The reads now assert slightly
+more error than they carry, which is the direction that cannot mislead.
+
+All three PacBio arms read `pacbio_identity` and all three are wired to the scale
 (`run_pacbio_wgs.py`, `run_kinnex_bulk.py`, `run_kinnex_sc.py`), so all three were rebuilt again. They were
 cancelled 1 h 20 m into their run to do it: the alternative was letting 20-44 h of Kinnex wall time
 complete and then discarding it.
