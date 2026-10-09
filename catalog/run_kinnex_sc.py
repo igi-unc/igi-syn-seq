@@ -36,7 +36,7 @@ from igi_catalog.genome_build import read_events
 from igi_catalog.kinnex import MasArrays, SizeSelection, tenx_segment
 from igi_catalog.longread import chunk_fasta, combine_fastq, run_chunks
 from igi_catalog.molecules import MoleculePool
-from igi_catalog.pacbio_bam import source_of, write_hifi_bam
+from igi_catalog.pacbio_bam import source_of, write_hifi_bam, drop_empty_records
 from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
 
@@ -232,9 +232,11 @@ def main():
     seg_bam = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_sc_segmented.bam")
     subprocess.run(paths["skera_cmd"].format(
         args=f"split {pre_bam} {paths['kinnex_adapters_fasta']} {seg_bam}"), shell=True, check=True)
+    n_empty = drop_empty_records(seg_bam)
     n_seg = int(subprocess.run(paths["samtools_cmd"].format(args=f"view -c {seg_bam}"), shell=True,
                                capture_output=True, text=True).stdout.strip() or 0)
-    log(f"  post-skera: {n_seg:,} segments -> {os.path.basename(seg_bam)}")
+    log(f"  post-skera: {n_seg:,} segments -> {os.path.basename(seg_bam)}"
+        + (f"  (dropped {n_empty} zero-length)" if n_empty else ""))
 
     import gzip
     mpath = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_sc_arrays.tsv.gz")

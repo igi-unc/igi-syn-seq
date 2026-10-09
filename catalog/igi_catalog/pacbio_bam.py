@@ -315,3 +315,47 @@ def pbindex(bam, cmd=None):
     if os.path.exists(pbi):
         os.remove(pbi)
     raise RuntimeError(f"pbindex produced an empty index for {bam}")
+
+def drop_empty_records(bam):
+    """Remove records with no sequence from a skera-split BAM, in place. Returns the number dropped.
+
+    `skera split` can emit a ZERO-LENGTH segment, and it is not our arrays that cause it. The release scan
+    found 11 such records in ds-01's chr1to6 Kinnex library and 7 in ds-02's, written out as SAM's `SEQ=*`
+    placeholder -- which is not a base, and which an earlier version of check_alphabet mis-reported as a
+    symbolic allele. Mechanism, from the segment names skera assigns (`<movie>/<zmw>/ccs/<qs>_<qe>`):
+
+        161745/ccs/5867_12020    len 6153
+        161745/ccs/12033_12033   len 0
+        161745/ccs/12050_13683   len 1633
+
+    The adapters are 17 bp. Between the two real segments lie 30 bp carrying TWO adapter alignments -- one
+    error-shortened to 13 bp (12020-12033) and one exact (12033-12050) -- which overlap in the underlying
+    sequence, so the gap between their inner ends is empty and skera emits a segment of length zero.
+    KinnexArray.build lays out `adapter + molecule + adapter + molecule ... + adapter` and molecule
+    sampling drops any record without a sequence, so two adapters are never adjacent in what we hand
+    skera; the double match is skera's aligner on a noisy adapter copy. It is plausibly inflated by our
+    reads sitting at 1.72x real HiFi error (see section 14), which gives an adapter more room to match
+    twice than a real one has.
+
+    Dropped rather than kept, for two reasons:
+
+      - A delivered read with no bases is invalid whoever produced it. SeqAn-based readers abort on
+        malformed input rather than skipping it, which is the razers3 lesson (section 17.6).
+      - It corrupts the truth-map join. The arrays map records `segment_index` over OUR molecule order,
+        so a consumer pairing skera's emitted segments to it positionally is shifted by every phantom
+        segment after the first. Dropping them makes that join correct, so this is not cosmetic.
+
+    At 7 in 5,460,256 the volume is immaterial; the malformedness is not.
+    """
+    import pysam
+    tmp = bam + ".tmp"
+    dropped = 0
+    with pysam.AlignmentFile(bam, "rb", check_sq=False) as src:
+        with pysam.AlignmentFile(tmp, "wb", header=src.header) as out:
+            for rec in src.fetch(until_eof=True):
+                if rec.query_sequence is None or len(rec.query_sequence) == 0:
+                    dropped += 1
+                    continue
+                out.write(rec)
+    os.replace(tmp, bam)
+    return dropped

@@ -34,7 +34,7 @@ from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.kinnex import MasArrays, SizeSelection
 from igi_catalog.longread import chunk_fasta, combine_fastq, run_chunks
-from igi_catalog.pacbio_bam import source_of, write_hifi_bam
+from igi_catalog.pacbio_bam import source_of, write_hifi_bam, drop_empty_records
 from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
 
@@ -197,10 +197,14 @@ def main():
     seg_bam = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_bulk_segmented.bam")
     sk = paths["skera_cmd"]
     subprocess.run(sk.format(args=f"split {pre_bam} {ad} {seg_bam}"), shell=True, check=True)
+    # skera can emit a zero-length segment; see pacbio_bam.drop_empty_records for the mechanism and
+    # for why they are dropped rather than delivered (they also shift the arrays-map join).
+    n_empty = drop_empty_records(seg_bam)
     sam = paths["samtools_cmd"]
     n_seg = int(subprocess.run(sam.format(args=f"view -c {seg_bam}"), shell=True,
                                capture_output=True, text=True).stdout.strip() or 0)
-    print(f"  post-skera: {n_seg:,} segments -> {os.path.basename(seg_bam)}", flush=True)
+    print(f"  post-skera: {n_seg:,} segments -> {os.path.basename(seg_bam)}"
+          + (f"  (dropped {n_empty} zero-length)" if n_empty else ""), flush=True)
 
     # Truth: which molecules each array carried, and which arrays reached a read.
     mpath = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_bulk_arrays.tsv.gz")

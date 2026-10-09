@@ -21,6 +21,10 @@ import os
 import shutil
 import subprocess
 import sys
+try:
+    import pytest
+except ImportError:
+    pytest = None
 import tempfile
 import time
 from array import array
@@ -203,6 +207,51 @@ def test_currency_catches_a_deliverable_older_than_its_inputs():
         results = []
         qa.check_currency(root, results)
         assert results[0]["verdict"] == "PASS", results
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_drop_empty_records_removes_sequenceless_segments():
+    """A skera segment of length zero must not be delivered, and the header must survive the rewrite.
+
+    skera emits these when two adapter alignments overlap -- the release scan found 11 in ds-01's
+    chr1to6 Kinnex library and 7 in ds-02's. The @RG/PU assertion is not incidental: skera names each
+    segment from PU, and a previous defect produced `/1/ccs/17_2371` across every delivered Kinnex
+    segment when PU was missing, so a filter that quietly dropped the header would reintroduce it.
+    """
+    pysam = pytest.importorskip("pysam") if pytest else __import__("pysam")
+    qa_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.insert(0, qa_dir)
+    from igi_catalog.pacbio_bam import drop_empty_records
+
+    root = tempfile.mkdtemp(prefix="igi_empty_")
+    try:
+        sam = os.path.join(root, "mini.sam")
+        with open(sam, "w") as fh:
+            fh.write("@HD\tVN:1.6\tSO:unknown\n")
+            fh.write("@RG\tID:synthetic\tPL:PACBIO\tPU:m84000_260101_000000_s0\n")
+            for name, seq in (("1/ccs/0_10", "ACGTACGTAC"), ("1/ccs/27_27", "*"),
+                              ("1/ccs/44_52", "ACGTACGT"), ("2/ccs/0_0", "*"),
+                              ("2/ccs/17_23", "ACGTAC")):
+                q = "*" if seq == "*" else "I" * len(seq)
+                fh.write(f"m84000_260101_000000_s0/{name}\t4\t*\t0\t255\t*\t*\t0\t0\t"
+                         f"{seq}\t{q}\tRG:Z:synthetic\n")
+        bam = os.path.join(root, "mini.bam")
+        with pysam.AlignmentFile(sam, "r", check_sq=False) as src:
+            with pysam.AlignmentFile(bam, "wb", header=src.header) as out:
+                for r in src.fetch(until_eof=True):
+                    out.write(r)
+
+        assert drop_empty_records(bam) == 2
+
+        with pysam.AlignmentFile(bam, "rb", check_sq=False) as f:
+            recs = list(f.fetch(until_eof=True))
+            rg = f.header.to_dict().get("RG")
+        assert [r.query_name.split("/")[-1] for r in recs] == ["0_10", "44_52", "17_23"], \
+            "surviving records must keep their order"
+        assert all(r.query_sequence for r in recs)
+        assert rg and rg[0].get("PU") == "m84000_260101_000000_s0", \
+            "the rewrite must preserve @RG/PU, which skera's segment naming depends on"
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
