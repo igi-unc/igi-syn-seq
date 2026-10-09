@@ -912,6 +912,20 @@ fires on a deliberately malformed allele.
 
 All of ds-01 was regenerated except **10x TCR**, which is built from GENCODE V/J germline anchors rather
 than the individual's genome; it was checked empirically for `*` across its whole library and had none.
+
+**Confirmed on the worst-affected arm.** ONT bulk RNA carried the highest rate of `*` of any deliverable,
+4,147 non-ACGTN characters per 300,000 reads, which is about 13,800 per million. The rebuilt arm
+(2026-10-08 18:15 to 23:42, 5 h 27, 49.8 GB) measures **zero** in a one-million-read sample.
+
+Being exact about what that does and does not establish, since the two fixes landed hours apart: this build
+contains the `*` fix (committed 16:40) but **not** the §17 ambiguity-code normalisation (22:19), because
+Python loads its modules when the process starts. So the result validates the `*` fix and says nothing
+about the other one. The arm's freedom from ambiguity codes has the same cause as 10x GEX's -- its reads
+come from expressed transcripts, so one of the reference's 94 positions would have to fall inside an
+expressed exon.
+
+Its peak RSS was 20.6 G against the 320 G it was still requesting, which independently supports the 48 G
+this arm was reduced to in §12.4.
 ds-01's chr1to6 subsets and merges had to be redone as well, because they were derived from the corrupt
 reads. `70_stage_inputs.sh` now holds back **any** chr1to6 deliverable older than what it was derived
 from, which was not a hypothetical precaution: this fix invalidated every ds-01 library while that
