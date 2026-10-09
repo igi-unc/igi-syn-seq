@@ -619,6 +619,56 @@ def check_alignment(release, results):
                                        f"oriented library)"})
 
 
+def check_consumer_preflight(release, results):
+    """Did the tools LENS actually uses accept the first 5 % of each library?
+
+    This is the check closest to the thing that kept going wrong. All three defects that reached a
+    consumer were found BY a consumer -- the `*` allele by Cell Ranger, the IUPAC bases by OptiType's
+    razers3, the unstranded R2 by Cell Ranger's chemistry detector -- and each had passed everything this
+    file asserted at the time. Every check here encodes a property somebody thought to assert; a real
+    tool's parser encodes every property ITS authors thought to assert, which is a far larger set and not
+    one I have to enumerate correctly in advance.
+
+    Verified on the library that failed: razers3 now exits 0 on ds-02's rebuilt normal exome, the exact
+    file and exact tool that aborted four times on `Unexpected character 'Y'`.
+
+    A `parse_error` signature is reported separately from a non-zero exit, because they mean different
+    things: a parse error is the tool rejecting the DATA, while a bare non-zero exit can be the tool
+    being unhappy with its reference, its memory or its own setup. Both fail, but only the first is a
+    defect in the release.
+
+    A missing report is a FAIL. The preflight not having run is the same state as nine COMPLETED arms
+    behind stale deliverables (section 17.6.4) -- the absence of evidence reported as success.
+    """
+    d = f"{release}/preflight"
+    found = sorted(glob.glob(f"{d}/*.json"))
+    if not found:
+        results.append({"check": "consumer preflight present", "file": "preflight/",
+                        "value": "no reports",
+                        "verdict": "FAIL (94_consumer_preflight has not run; no consumer has read "
+                                   "this release)"})
+        return
+    for jf in found:
+        try:
+            r = json.load(open(jf))
+        except Exception as e:
+            results.append({"check": "consumer preflight present", "file": os.path.basename(jf),
+                            "value": str(e)[:60], "verdict": "FAIL (unreadable report)"})
+            continue
+        label, tool = r.get("label", "?"), r.get("tool", "?")
+        pct = f"{r.get('fraction', 0) * 100:.0f}%"
+        if r.get("parse_error"):
+            verdict = (f"FAIL ({tool} rejected the data: {r.get('signature')} -- this is a defect in "
+                       f"the release, not in the tool's setup)")
+        elif not r.get("ok"):
+            verdict = (f"FAIL ({tool} exited {r.get('exit_code')} with no parse-error signature; "
+                       f"check its reference and resources before blaming the reads)")
+        else:
+            verdict = "PASS"
+        results.append({"check": f"{tool} accepts the input", "file": label,
+                        "value": f"first {pct}, exit {r.get('exit_code')}", "verdict": verdict})
+
+
 def check_currency(release, results):
     """Every assembled deliverable must be NEWER than the per-chromosome reads it was assembled from.
 
@@ -985,6 +1035,7 @@ def main():
     check_tenx_r2_strand(a.release, fmt)
     check_tcr_r2_direction(a.release, fmt)
     check_alignment(a.release, fmt)
+    check_consumer_preflight(a.release, fmt)
     check_currency(a.release, fmt)
     report["format"] = fmt
     report["n_fail"] += sum(1 for r in fmt if r["verdict"].startswith("FAIL"))

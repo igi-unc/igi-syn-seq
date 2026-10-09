@@ -440,6 +440,36 @@ def test_alignment_check_judges_and_never_stays_quiet():
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_consumer_preflight_separates_a_parse_error_from_a_setup_failure():
+    """A tool rejecting the data is a release defect; a tool unhappy with its own setup is not."""
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_pf_")
+    try:
+        res = []
+        qa.check_consumer_preflight(root, res)
+        assert len(res) == 1 and "has not run" in res[0]["verdict"], res
+
+        d = f"{root}/preflight"
+        os.makedirs(d)
+        json.dump({"label": "ds02_wes_normal", "tool": "razers3", "fraction": 0.05,
+                   "exit_code": 0, "ok": True, "parse_error": False},
+                  open(f"{d}/a.json", "w"))
+        json.dump({"label": "ds01_wes_normal", "tool": "razers3", "fraction": 0.05,
+                   "exit_code": 1, "ok": False, "parse_error": True,
+                   "signature": "Unexpected character"}, open(f"{d}/b.json", "w"))
+        json.dump({"label": "ds01_rna", "tool": "salmon", "fraction": 0.05,
+                   "exit_code": 2, "ok": False, "parse_error": False}, open(f"{d}/c.json", "w"))
+        res = []
+        qa.check_consumer_preflight(root, res)
+        by = {r["file"]: r["verdict"] for r in res}
+        assert by["ds02_wes_normal"] == "PASS", by
+        assert "rejected the data" in by["ds01_wes_normal"], by
+        assert "before blaming the reads" in by["ds01_rna"], by
+        assert sum(1 for v in by.values() if v.startswith("FAIL")) == 2, by
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------- record structure
 
 def _fq_records(path, recs):
