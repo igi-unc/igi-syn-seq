@@ -1201,10 +1201,33 @@ per file) found:
 | ds-01 exome | 1 | `chr21_tumor_R1`, a single `M` in 80,000 reads |
 | ds-02 exome | 0 | at this sample size |
 
-Illumina WGS and HiFi WGS have not been scanned; by the mechanism they should carry them at a rate between
-the exome's and ONT's, since they are whole-genome but short or shorter. The three ds-01 PacBio arms
-resubmitted in §14.3 and ds-02's pending PacBio rebuild pick the normalisation up automatically. The ONT
-and Illumina DNA arms will carry the codes until they are next rebuilt.
+### 17.5 The normalisation works, and ds-01's arms are a per-task mixture
+
+An accident of timing produced a clean natural experiment. The normalisation was committed at 22:19:57,
+every job of the 2026-10-08 rebuild was submitted before it, and Python imports its modules when a process
+starts -- so within a 48-task array, tasks scheduled before that minute ran the old code and tasks
+scheduled after ran the new one. For the ds-01 PacBio array, **28 tasks started before and 20 after**.
+
+chr10 appears twice in that array, once per library, on either side of the line. Same chromosome, same 36
+reference positions, same reference file; the only difference is which code the process loaded:
+
+```
+chr10 tumour  (task 10, started 21:57:43, old code)   73 Y  50 R  36 W  31 M  27 K  6 S  2 V  2 B
+chr10 normal  (task 34, started 22:26:46, new code)   none
+```
+
+227 characters against zero. That is the normalisation verified on delivered data rather than on a unit
+test, and the character counts are themselves consistent with §17's complement-class argument -- Y/R at
+73/50, M/K at 31/27, W and S self-complementing, and the B/V pair at 2/2.
+
+It also means **no arm of ds-01 is uniformly normalised**, and which tasks are depends on when SLURM
+happened to schedule them. Per §17.3 that is a WARN rather than a defect for every arm except the 10x
+ones, which were verified clean over their full libraries anyway. A uniformly normalised dataset requires
+rebuilding each arm entirely after 22:19:57, which is not worth doing on its own account; ds-02's pending
+PacBio rebuild will be the first arm built wholly with it.
+
+Illumina WGS and HiFi WGS were not scanned exhaustively; by the mechanism they carry codes at a rate
+between the exome's and ONT's, since they are whole-genome but short or shorter.
 
 The exome hit is the one that matters for the decision in §17.3, because it shows short reads are not
 immune and therefore that a sampled zero on a 10x arm is not evidence of a clean library.
