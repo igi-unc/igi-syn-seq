@@ -913,7 +913,21 @@ fires on a deliberately malformed allele.
 All of ds-01 was regenerated except **10x TCR**, which is built from GENCODE V/J germline anchors rather
 than the individual's genome; it was checked empirically for `*` across its whole library and had none.
 
-**Confirmed on the worst-affected arm.** ONT bulk RNA carried the highest rate of `*` of any deliverable,
+**The reported blocker is resolved, and verified by complete count.** 10x GEX was the arm Cell Ranger
+refused, so it is the one that had to be checked exhaustively rather than sampled -- Cell Ranger fails the
+whole run on one character, so a sampled zero would have proved nothing:
+
+```
+IGI-SYN-SEQ-01-GEX_S1_L001_R1_001.fastq.gz   846 M   non-ACGTN over the FULL library: NONE
+IGI-SYN-SEQ-01-GEX_S1_L001_R2_001.fastq.gz   4.8 G   non-ACGTN over the FULL library: NONE
+```
+
+Every read of all 140,980,551 pairs, both the barcode/UMI read and the cDNA read. The rebuild also wrote
+**140,980,551** pairs against the pre-rebuild library's 140,980,551, so the seed derivation still
+reproduces the same library and the rebuild changed the bases and nothing else. 4,000 cells, 7 h 10,
+peak RSS 8.25 G against the 24 G this arm was reduced to.
+
+**Confirmed on the worst-affected arm too.** ONT bulk RNA carried the highest rate of `*` of any deliverable,
 4,147 non-ACGTN characters per 300,000 reads, which is about 13,800 per million. The rebuilt arm
 (2026-10-08 18:15 to 23:42, 5 h 27, 49.8 GB) measures **zero** in a one-million-read sample.
 
