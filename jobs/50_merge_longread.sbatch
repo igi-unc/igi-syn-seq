@@ -14,7 +14,12 @@
 # 1,000,832 record ids duplicated while the integrity check of the day passed.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# NOT $BASH_SOURCE: sbatch copies the script to /var/spool/slurmd/job<N>/slurm_script, so
+# dirname $BASH_SOURCE is the spool directory and lib.sh is not there. This failed all four tasks
+# of the exome merge with "lib.sh: No such file or directory" -- introduced by the sort-buffer fix
+# (0b89bd5) into three merge stages at once, none of which ran again until now. IGI_ENV is an
+# absolute path by contract (submit.sh refuses without it), so its directory is the jobs/ dir.
+source "$(dirname "$IGI_ENV")/lib.sh"
 # Rebuild when the output is MISSING OR OLDER THAN ITS NEWEST INPUT, not merely when it is missing.
 # The guards here used to be `[ -s "$out" ] || cat ...`, which is right for resuming an interrupted merge
 # and wrong for every rebuild: after the copy-number fix re-simulated all 96 WGS chromosomes, the merge

@@ -20,7 +20,12 @@
 # resuming an interrupted merge and wrong for every rebuild; it shipped stale data twice in one release.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+# NOT $BASH_SOURCE: sbatch copies the script to /var/spool/slurmd/job<N>/slurm_script, so
+# dirname $BASH_SOURCE is the spool directory and lib.sh is not there. This failed all four tasks
+# of the exome merge with "lib.sh: No such file or directory" -- introduced by the sort-buffer fix
+# (0b89bd5) into three merge stages at once, none of which ran again until now. IGI_ENV is an
+# absolute path by contract (submit.sh refuses without it), so its directory is the jobs/ dir.
+source "$(dirname "$IGI_ENV")/lib.sh"
 stale() {
   local out=$1; shift
   [ -s "$out" ] || return 0
