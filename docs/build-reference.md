@@ -1429,6 +1429,49 @@ A PASS from it is not a validity claim, and the clearest case is `merged/ds-02`:
 exome inputs are also from Sep 30, and that is the library that aborted razers3. Currency and validity are
 separate questions -- §17.6.2's check answers the second.
 
+#### 17.6.5 The scan reported COMPLETED having skipped 36 files
+
+The release-wide scan finished `96 COMPLETED`, no failures, and had examined **576 of 612 files**. Six
+tasks wrote one result line each instead of six or seven:
+
+```
+[1] IGI-SYN-SEQ-01_chr1to6_kinnex_bulk_segmented.bam -> 5610724   *=11
+slurm_script: line 48: read: read error: 0: Stale file handle
+SCAN TASK 1 DONE
+```
+
+Every task would build the shared file list via tmp+`mv` if it found none. The `mv` is atomic, so that
+looked safe -- but a task that already had the list **open** lost its NFS file handle the moment another
+task's `mv` replaced the inode. A `while read` loop treats a failed read as end of input, so the loop
+exited normally, the script printed `DONE`, and the exit status was 0.
+
+**This is the defect the scan exists to find, occurring in the scan.** It is the same shape as every other
+one in this release:
+
+| where | reported | actually |
+|---|---|---|
+| stage guards (§11) | success | skipped the rebuild because an output existed |
+| `check_alphabet` (§17.6.2) | `none` | sampled 0.3 % of a library that aborts razers3 |
+| overnight rebuild (§17.6.4) | nine arms COMPLETED | no merge ran; deliverables nine days stale |
+| this scan | 96 COMPLETED | 36 files never examined |
+
+Each one reported success without having done the work, and each was caught by something other than the
+check itself. Three changes, the third being the general one:
+
+- **One writer.** Task 1 builds the list and nobody else writes it, so no inode is replaced under a
+  reader.
+- **Read it once.** `mapfile` pulls the list into memory before any scanning, so no descriptor stays open
+  across the scan and nothing done to the file afterwards can truncate the loop.
+- **Completeness is part of the result.** The task counts what it was assigned, counts what it finished,
+  and exits 1 on a mismatch. "36 files went unexamined behind exit 0" must not be expressible, and the
+  only way to get that is for the job to assert its own coverage rather than infer it from not having
+  crashed.
+
+The run also produced **43 `ERROR` rows** -- 35 exome, 8 PacBio -- files being rewritten by the concurrent
+rebuilds as the scan read them. That is `pipefail` doing its job: without it the truncated read would have
+reported *clean*, which is the dangerous answer rather than merely a wrong one. They are re-scanned once
+the rebuilds drain.
+
 ## 18. Regression tests for the guards
 
 `catalog/tests/test_guards.py` pins down the guards added on 2026-10-08 and 2026-10-09. It needs no
