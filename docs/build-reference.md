@@ -774,7 +774,7 @@ pbsim3 + ccs route's figure of `rq 0.99754` came from the quality estimate too, 
 invalidates, so it is not established either; whichever route is tried next must have ITS true error
 measured by alignment first. pbsim3's error models were also removed from this site as non-durable.
 
-### 14.3 The quality strings were ours to fix, and are fixed
+### 14.3 The quality strings were ours to fix, and the first fix did not work
 
 The true/claimed error ratio is **5.15 at every request**, because the qscore model is keyed to the
 REQUESTED identity rather than the realised one. So raising `--identity` improves the sequence and leaves
@@ -782,14 +782,64 @@ the claim exactly as optimistic as before -- reads at the floor would assert Q32
 
 That assertion is the F24 defect itself, and unlike the floor it is entirely in our hands, because we write
 the BAM. `pacbio_bam.rescale_quality` multiplies each base's error probability by
-`pacbio_qual_error_scale` (5.15, the measured ratio) before the read is written, which preserves the
-per-position structure of the qscore model while making the aggregate honest; `rq` then follows from the
-rescaled array rather than needing a correction of its own. Phred is clamped to [1, 93] -- 0 means "no
-quality available" in SAM. Verified: a badread-shaped quality string claiming 0.99939 becomes 0.99695,
-which is the measured true accuracy at the floor.
+`pacbio_qual_error_scale` before the read is written, which preserves the per-position structure of the
+qscore model; `rq` then follows from the rescaled array rather than needing a correction of its own.
 
-All three PacBio arms read `pacbio_identity`, so all three are affected and all three were wired to the
-scale: `run_pacbio_wgs.py`, `run_kinnex_bulk.py`, `run_kinnex_sc.py`.
+Setting that scale to the measured 5.15 was the obvious move and it was **not enough**. Measured on the
+delivered ds-01 HiFi BAM after the first rebuild, the reads claimed 0.997802 -- with `rq` matching the
+quality string exactly, so the wiring was right -- against a true 0.996948. Still 1.39x optimistic, not
+1.00x.
+
+**The correction saturates.** The error mass is concentrated on a handful of very bad bases:
+
+| Phred | bases | share of claimed error mass |
+|---|---|---|
+| Q3 | 523 | 8.8 % |
+| Q4 | 1,124 | 15.0 % |
+| Q5 | 1,162 | 12.3 % |
+| Q6 | 1,155 | 9.7 % |
+
+**45.8 % of the claimed error mass sits on the 0.08 % of bases at Q3-Q7**, and those are exactly the bases
+whose error probability cannot be multiplied by five without exceeding 1. Over 5.0 M bases:
+
+| | mean implied error | identity |
+|---|---|---|
+| raw badread claim | 5.95e-04 | 0.999405 |
+| x5.15, uncapped arithmetic | 3.07e-03 | 0.996935 |
+| x5.15 as actually applied | **2.20e-03** | 0.997801 |
+
+An effective 3.70x against the 5.15x asked for.
+
+The scale that lands on the measured true error is **10.0**, solved numerically. Two independent quality
+distributions -- 16.7 kb genomic and 2.0 kb cDNA -- solve to the same value, which is why one constant
+still covers all three arms.
+
+A second measured property decided the exact number. BAM Phred is integer and every input here is an
+integer, so a constant scale shifts every base by the same whole number of decibels: the achievable
+aggregate moves in ~1 dB steps and **no scale lands exactly on the target**. The two candidate plateaus:
+
+| scale | genomic claimed/true | cDNA claimed/true |
+|---|---|---|
+| 7.5 - 8.91 | 0.93x (optimistic) | 0.95x |
+| **9.0 - 11.0** | **1.05x (pessimistic)** | **1.07x** |
+
+10.0 is taken from the pessimistic plateau, because a read understating its own accuracy is harmless where
+overstating it is the defect being fixed -- the same rule already applied to the ONT arms in §14.1. Within
+that plateau 10.0 is chosen because it is exactly 10 dB and so needs no rounding at all: the boundary
+between the two plateaus sits at scale 8.9125, where a config float a few thousandths either way flips
+every base by a whole Phred. Sitting a constant on that edge would have made the delivered qualities
+depend on float rounding.
+
+`rescale_quality` therefore applies the correction as the integer decibel shift it actually is, computed
+once from the scale, rather than per base where it would sit on that edge. The rewrite was checked to be
+bit-identical to the per-base form across the whole Phred range at every scale tried, so the only thing
+that changed the output was the constant.
+
+Delivered result: claimed error 3.21e-03 (identity 0.996790) against a true 3.05e-03 -- 1.05x, on the safe
+side. All three PacBio arms read `pacbio_identity` and all three are wired to the scale
+(`run_pacbio_wgs.py`, `run_kinnex_bulk.py`, `run_kinnex_sc.py`), so all three were rebuilt again. They were
+cancelled 1 h 20 m into their run to do it: the alternative was letting 20-44 h of Kinnex wall time
+complete and then discarding it.
 
 ### 14.4 The QA accuracy target had to move, and why that is not moving the goalposts
 
@@ -798,6 +848,12 @@ become the simulator's own true accuracy, 0.99695, not real HiFi's 0.99823. The 
 reads describe themselves correctly", which is answerable, instead of "did Badread reach real HiFi", which
 it cannot. The gap is a simulator limit and belongs in this document, not in a check that fails on every
 release.
+
+The target stays at the measured true accuracy 0.99695 rather than moving to the 0.99679 the reads now
+claim, because the point of the check is that the two agree. The ~1 dB quantization residue from §14.3 is
+absorbed by the tolerance deliberately: delivered 0.996790 against target 0.99695 is 0.00016, well inside
+the +/-0.0015 allowed for `pacbio` and the +/-0.0020 for the two Kinnex arms. If a future change puts a
+delivered claim outside that band, the right response is to re-solve the scale, not to widen the band.
 
 ## 15. A VCF ALT column is not restricted to sequence
 

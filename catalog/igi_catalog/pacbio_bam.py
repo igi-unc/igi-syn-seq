@@ -154,27 +154,48 @@ def _emit(out, name, seq, qual, zmw, np_passes, ec, rq, qs=8, rg="synthetic"):
 
 
 def rescale_quality(qual, scale):
-    """Multiply every base's error PROBABILITY by `scale` and return the new Phred array.
+    """Make the quality string describe the error the reads actually carry.
 
     Badread builds sequence from an error model and qualities from a separate qscore model, and for the
-    PacBio model they disagree: measured against the alignment, the reads carry 5.15x the error their
+    PacBio model they disagree: measured against the alignment, the reads carry about 5.15x the error their
     quality strings claim, at EVERY identity request (jobs/81_calibrate_identity.sbatch). The ratio is
-    constant because the qscore model is keyed to the REQUESTED identity, not the realised one, so
-    raising --identity improves the sequence and leaves the claim exactly as optimistic as before.
+    constant because the qscore model is keyed to the REQUESTED identity, not the realised one, so raising
+    --identity improves the sequence and leaves the claim exactly as optimistic as before. That is the F24
+    defect itself -- reads asserting an accuracy they do not have -- and unlike the error floor it is ours
+    to fix, because we write the BAM.
 
-    That is the F24 defect itself -- reads asserting an accuracy they do not have -- and unlike the error
-    floor it is ours to fix, because we write the BAM. Scaling the per-base error probability preserves
-    the shape of the qscore model, which has real per-position structure, while making the aggregate
-    honest; `rq` then follows from the rescaled array rather than needing its own correction.
+    `scale` multiplies each base's error PROBABILITY, which preserves the qscore model's per-position
+    structure. Two things stop that from being a plain multiply, and both had to be measured rather than
+    assumed (see docs/build-reference.md §14.3):
 
-    Phred is clamped to [1, 93]: 0 means "no quality available" in SAM and 93 is the encodable maximum.
+    1. It SATURATES. 45.8 % of the claimed error mass sits on the 0.08 % of bases at Q3-Q7, whose
+       probability cannot be multiplied by five without exceeding 1. Setting `scale` to the measured 5.15
+       therefore raised the aggregate by only 3.70x, leaving reads still 1.39x optimistic. The scale that
+       lands on the measured true error is 10.0, solved numerically against both the genomic and the cDNA
+       quality distributions, which agree.
+    2. Its effect is QUANTIZED. BAM Phred is integer and every input here is an integer, so a constant
+       scale shifts every base by the same whole number of decibels: the achievable aggregate moves in ~1 dB
+       steps, and no scale lands exactly on the target. 10.0 is chosen as the smallest step that is
+       PESSIMISTIC (claimed error 1.05x true, rather than 0.93x one step below) because a read understating
+       its own accuracy is harmless where overstating it is the defect being fixed -- the same rule applied
+       to the ONT arms. It is also exactly 10 dB, so it needs no rounding at all; the alternative plateau
+       boundary sits at scale 8.9125, where a float a few thousandths either way flips every base by a
+       whole Phred.
+
+    So the correction is applied as the integer decibel shift it actually is, computed once, rather than
+    per base where it would sit on that knife edge. `rq` then follows from the rescaled array.
+
+    Phred is clamped to [1, 93]: 0 means "no quality available" in SAM and 93 is the encodable maximum. The
+    floor also caps implied error at Q1 (p = 0.79), which is the right ceiling for a base that is wrong.
     """
     if not scale or scale == 1.0:
         return qual
+    shift = int(round(10.0 * math.log10(scale)))
+    if shift == 0:
+        return qual
     out = array("B", bytes(len(qual)))
     for i, q in enumerate(qual):
-        e = min(0.75, (10.0 ** (-q / 10.0)) * scale)
-        out[i] = max(1, min(93, int(round(-10.0 * math.log10(e)))))
+        out[i] = max(1, min(93, q - shift))
     return out
 
 

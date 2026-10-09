@@ -53,8 +53,12 @@ kinnex_sc_size_selection: /path/to/catalog/resources/kinnex_sc_size_selection.js
 # error model and qualities from a separate qscore model, and these two disagree by 5.15x.
 pacbio_identity: "100,100,0"               # -> true 0.99695 by alignment; 1.72x real HiFi error
 # Multiplies each base's error probability so the quality strings stop claiming an accuracy the reads do
-# not have. 5.15 is the measured true/claimed error ratio, which is constant across identity requests.
-pacbio_qual_error_scale: 5.15
+# not have. The measured true/claimed error ratio is 5.15 and constant across identity requests, but
+# setting that as the scale raises the aggregate by only 3.70x: the correction saturates, because 45.8 %
+# of the claimed error mass sits on the 0.08 % of bases at Q3-Q7, whose probability cannot be multiplied
+# by five without exceeding 1. 10.0 is solved against the measured true error, agrees between the genomic
+# and cDNA quality distributions, and is exactly a 10 dB Phred shift. See build-reference.md §14.3.
+pacbio_qual_error_scale: 10.0
 pacbio_length_mean: 16689
 pacbio_length_sd: 4593
 pacbio_error_model: pacbio2021
