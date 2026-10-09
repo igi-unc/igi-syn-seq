@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_ont_sc
-#SBATCH -c 48 --mem=320G -t 48:00:00
+#SBATCH -c 48 --mem=48G -t 48:00:00
 #SBATCH --array=1-2
 # ONT R10.4.1 single-cell cDNA, 10x 5' v2 structure. Seed MUST be 9100: this is the fourth assay sharing
 # the cell roster and molecule pool with Kinnex sc, 10x GEX and 10x TCR, and a different seed gives a

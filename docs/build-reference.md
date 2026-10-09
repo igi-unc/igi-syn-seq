@@ -474,7 +474,7 @@ still have no acceptance arm**, which is now the largest open gap.
 
 ---
 
-## 9. Review findings of 2026-10-05 and what each one changed
+## 11. Review findings of 2026-10-05 and what each one changed
 
 Eight defects were found by review of the delivered data. Four were in the packaging and were repaired in
 place; three needed the reads simulated again; one was a measurement that turned out to be right once the
@@ -491,7 +491,7 @@ over the library, a read defect costs the whole arm.
 | B6 | 10x read names were `@IGI-SYN-SEQ-01:1`; R1 qualities had 663 distinct strings in 20,000 reads | the two 10x builders never used `readnames.illumina_name`; `r1_quality` was a flat two-level draw | `illumina_name` with a name-space slice; `r1_quality` draws per cycle from `resources/tenx_r1_quality.json` | **re-simulate 4 libraries** |
 | B7 | CDR3s were random peptides with internal cysteines, unrelated to the V/J the truth table named | `cells.CellRoster._cdr3` drew uniformly over 20 amino acids | `vdj.recombine` from `resources/vdj_germline.json`; clonotype table gains V/J/C, `cdr3_nt` and `flagpost_antigen` | **re-simulate 2 libraries** |
 
-### 9.1 The R1 quality target was R1, not R2
+### 11.1 The R1 quality target was R1, not R2
 
 The review compared 10x R1's 663 distinct quality strings against R2's 19,461 and read the gap as a
 defect in R1. Half right. Measuring the real IPISRC044 library gives **2,819** distinct strings in 20,000
@@ -499,7 +499,7 @@ reads over the first 26 cycles, because real R1 is only 26 four-level-binned cyc
 Q2/Q9/Q24/Q40) and genuinely has low variety. R2's 19,461 was never the right target. The per-cycle model
 now gives 2,947 against that real 2,819, and the old 663 was indeed wrong.
 
-### 9.2 Why the roster did not have to be rebuilt for B7
+### 11.2 Why the roster did not have to be rebuilt for B7
 
 `CellRoster` has one shared random stream, and after the clonotype loop it uses it to assign doublets and
 partner barcodes. Those draws are already inside four delivered libraries -- Kinnex single cell, ONT
@@ -513,7 +513,7 @@ Verified by rebuilding the roster and diffing it against the delivered `IGI-SYN-
 **0 of 4,000** cells, while `trb`, `tra` and `tra2` differ in all of them. Only the 10x TCR arm needed
 rebuilding.
 
-### 9.3 Fitted resources added
+### 11.3 Fitted resources added
 
 | File | Measured from | Holds |
 |---|---|---|
@@ -521,7 +521,7 @@ rebuilding.
 | `resources/tenx_r1_quality.json` | 500k R1 reads each of `DSCOLAB_IPISRC044_T3_SCG1` and `..._T3_TCR1` | per-cycle quality distributions for GEX and TCR |
 | `resources/vdj_germline.json` | GENCODE v37 TR segments over GRCh38 | per V the CDR3 nucleotides from the conserved Cys, per J those to the conserved Phe, plus framework |
 
-### 9.4 Verification
+### 11.4 Verification
 
 The repaired HiFi BAM was put through the PacBio toolchain rather than inspected by eye: `pbindex` indexes
 it (949 of 949 reads), `pbindexdump` reads the index, `extracthifi` keeps 949 of 949, `zmwfilter` parses
@@ -531,7 +531,7 @@ the arrays still line up with their truth rows.
 
 ---
 
-## 10. Focal copy-number events, and why they were missing
+## 12. Focal copy-number events, and why they were missing
 
 Found by acceptance, not by review: `PTEN_homdel` came back with an observed depth ratio of **1.0** against
 an expected 0.30, and `RB1_homdel` **1.03** against 0.379. The expectation was right -- 0.30 is 1 minus
@@ -548,7 +548,7 @@ Three builders had the same defect in three different sizes.
 The windows and the whole-chromosome plan were both shortcuts that assumed copy number is constant over
 the span they stand for. That assumption is what was never checked.
 
-### 10.1 The fix
+### 12.1 The fix
 
 `Clones.cn_boundaries(chrom)` returns every 1-based coordinate where copy number can change, across all
 clones and both the CNA and designed-SV interval indexes.
@@ -564,7 +564,7 @@ clones and both the CNA and designed-SV interval indexes.
 `run_pacbio_wgs.py` also stopped carrying its own copy of the derived-chromosome loop. The copies had
 drifted: this fix landed in `derived.py` and would silently have missed PacBio.
 
-### 10.2 Verification
+### 12.2 Verification
 
 Summed plan weight at the event over the same at a control locus on the same chromosome:
 
@@ -585,7 +585,7 @@ focal deletions were entirely missing -- because the event sits in the window's 
 three points touches it. On the old tiling the containment check fails 14 of 264 windows over five
 chromosomes; on the new one, 0 of 275.
 
-### 10.3 What this cost
+### 12.3 What this cost
 
 Rebuilding all three WGS arms is 504 task-hours, measured from the previous runs rather than estimated:
 48 Illumina tumour tasks at 4.23 h, 48 normal at 1.30 h, 96 PacBio at 1.41 h, 96 ONT at 1.08 h. Wall
@@ -599,17 +599,28 @@ tasks and reported success, leaving the deliverables identical to the ones the r
 missing, empty, or older than its newest input.
 
 
-### 10.4 Memory requests, and why they are a throughput decision
+### 12.4 Memory requests, and why they are a throughput decision
 
 The QOS caps total memory per user (4,500 G here), not just the job count, so an over-request does not buy
 safety -- it buys fewer concurrent tasks. Measured peak RSS over every prior task of each arm:
 
 | Arm | tasks measured | mean RSS | peak RSS | requested | now |
 |---|---|---|---|---|---|
-| Illumina WGS | 244 | 9.1 G | 45.5 G | 48 G | 48 G, unchanged -- the tail is already close |
-| PacBio HiFi WGS | 120 | 5.4 G | 11.6 G | 64 G | **24 G** |
-| ONT WGS | 158 | 6.0 G | 39.6 G | 64 G | **48 G** |
-| ONT bulk RNA | 2 | — | 29.0 G | 320 G | **48 G** |
+| Illumina WGS | 362 | 10.3 G | 45.8 G | 48 G | 48 G, unchanged -- the tail is already close |
+| PacBio HiFi WGS | 282 | 6.0 G | 11.6 G | 64 G | **24 G** |
+| ONT WGS | 314 | 7.2 G | 39.6 G | 64 G | **48 G** |
+| ONT bulk RNA | 3 | 25.7 G | 27.7 G | 320 G | **48 G** |
+| ONT single-cell RNA | 3 | 23.1 G | 23.2 G | 320 G | **48 G** |
+| bulk RNA | 3 | 2.7 G | 4.5 G | 320 G | **16 G** |
+| 10x GEX | 4 | 7.8 G | 7.9 G | 320 G | **24 G** |
+| Kinnex bulk | 2 | 8.0 G | 8.2 G | 320 G | **24 G** |
+| Kinnex single-cell | 4 | 33.6 G | 46.6 G | 320 G | **64 G** |
+
+The ONT RNA rows were written here before the scripts were changed, and for a while the table recorded an
+intention rather than a fact: `41_ont_bulk_rna.sbatch` and `42_ont_sc_rna.sbatch` still asked for 320 G
+after this section said they asked for 48 G. They now match. A table that describes the build is only
+useful if it is checked against the build, so the numbers above were regenerated from `sacct` accounting
+rather than copied forward.
 
 The cost of getting this wrong was concrete twice in one day. The ONT bulk RNA job sat at
 `QOSMaxMemoryPerUser` indefinitely asking for 320 G against a 29 G peak, and an ETA was reported for a job
@@ -620,7 +631,7 @@ Size the request from the measured peak plus headroom for the tail, not from the
 number.
 
 
-## 11. The chr1to6 subset
+## 13. The chr1to6 subset
 
 The subset exists so an end-to-end LENS run takes hours rather than days. Design §12 asked for it to be
 derived from the full release "by alignment, not re-simulated"; it is derived from the full release by
@@ -637,7 +648,7 @@ Two jobs and one script:
 | `jobs/91_merge_chr1to6.sbatch` | 16 tasks | `<arm>_chr1to6/<ds>/<ds>_chr1to6_*` for WES, WGS, ONT WGS, PacBio |
 | `jobs/90_subset_chr1to6.sbatch` | 12 tasks | `<arm>/<ds>/<ds>_chr1to6_<arm>*` for the six RNA arms |
 
-### 11.1 The record map
+### 13.1 The record map
 
 `catalog/subset_chr1to6.py map` writes one row per transcript record: `rec`, `source`, the chromosomes it
 resolves to, and the keep flag. Resolution is per source class -- GENCODE transcript for `reference` and
@@ -649,7 +660,7 @@ Cross-checked against the truth tables' own `chr1to6` flags: 75 of 75 expressed 
 datasets. Result: 442,380 of 1,226,495 records on chr1-6 for ds-01 (36.1 %) and 463,011 of 1,259,951 for
 ds-02 (36.7 %).
 
-### 11.2 Streaming, and the lockstep assertion
+### 13.2 Streaming, and the lockstep assertion
 
 Every arm streams its deliverable and its truth sidecar **in lockstep and asserts the read names agree**,
 read by read, rather than trusting that they do. The sidecars were written in emission order, but an arm
@@ -657,7 +668,7 @@ that was ever resumed or re-merged could have broken that, and a silent misalign
 read downstream. All reads and writes go through `pigz`; the gzip module is the bottleneck on a 49 GB
 FASTQ.
 
-### 11.3 Kinnex: which molecule is a segment?
+### 13.3 Kinnex: which molecule is a segment?
 
 An array is built `adapter_0 m_0 adapter_1 m_1 ... adapter_k`, so `skera split` returns one segment per
 bracketed molecule and the segment's molecule index is **`min(dl, dr)`** of its two adapter tags. Taking
@@ -675,7 +686,7 @@ Two things this surfaced, neither of which a naive implementation would have not
   would remove reads nothing can account for, and an unexplained hole in a benchmark library is worse than
   an unexplained extra read.
 
-### 11.4 Verification before launch
+### 13.4 Verification before launch
 
 Each of the four code paths was run against truncated copies of the real deliverables and checked by an
 independent reimplementation, not by eye:
@@ -691,7 +702,7 @@ At full scale the kept fractions are 34-38 % across the six arms. One number fro
 not survive: 10x GEX retains **3,972 / 3,977 of 4,000** barcodes rather than all of them, because a few
 cells have no chr1-6 molecule at all. §12 now says 99.3 % instead of "all".
 
-### 11.5 Naming is a correctness requirement
+### 13.5 Naming is a correctness requirement
 
 `preflight_resolve_inputs` walks every search directory recursively and matches on the basename, so
 `inputs/fastqs/<ds>/full` and `.../chr1to6` are one namespace. Every chr1to6 name therefore carries a
@@ -700,12 +711,12 @@ prefix of another, within or across releases. 10x TCR is the single row whose tw
 file, and it is linked under `full/` only.
 
 
-## 12. The PacBio error floor, and the quality strings
+## 14. The PacBio error floor, and the quality strings
 
 F24 found that the delivered HiFi reads carried 5.1x the error their quality strings claimed. The follow-up
 established two separate facts, and only one of them is fixable here.
 
-### 12.1 Every long-read identity setting had been calibrated against the wrong thing
+### 14.1 Every long-read identity setting had been calibrated against the wrong thing
 
 `jobs/measure/measure_longread.py` derives accuracy from the base-quality string, and from `rq` for a real
 HiFi BAM. For a REAL read that is a fair measurement: the quality string is the instrument's own estimate.
@@ -726,7 +737,7 @@ ONT came out fine, and errs in the harmless direction:
 For both, the quality strings UNDERSTATE accuracy (ratio 0.54-0.93), which does not touch the sequence.
 No ONT change was made.
 
-### 12.2 PacBio has an error floor, not a calibration offset
+### 14.2 PacBio has an error floor, not a calibration offset
 
 Across six requests the EXCESS over the nominal error rate is constant rather than proportional:
 
@@ -744,12 +755,26 @@ produce real HiFi, whose error is 1.77e-03: the best it can do is **1.72x real**
 effect at the limit. `pacbio_identity` is set to the floor, `"100,100,0"`, which is 1.72x real instead of
 the 5.15x that `99.4` delivered.
 
+The floor is a per-base property, not a per-read one, which had to be checked rather than assumed: the
+three arms driven by `pacbio_identity` deliver very different read lengths, and the Kinnex arms were
+resubmitted at the new setting before this check returned. A 2 kb cDNA read floors in the same place as a
+16.7 kb genomic one:
+
+| case | read length | true error | true Q | true/claimed |
+|---|---|---|---|---|
+| genomic (`pacbio`) | 16.7 kb | 3.05e-03 | 25.15 | 5.152 |
+| cDNA (`kinnex`) | 2.0 kb | **2.92e-03** | 25.34 | 4.989 |
+
+4 % apart on a QA band of +/-0.0020, so one `pacbio_qual_error_scale` covers all three arms and no arm
+needed re-queueing. Had the cDNA floor differed materially, the Kinnex libraries -- the longest-wall-time
+arms in the build, at 20-44 h each -- would have had to be rebuilt a third time.
+
 **Reaching real HiFi needs a different simulator, and that decision is not made here.** Note that the
-pbsim3 + ccs route's figure of `rq 0.99754` came from the quality estimate too, by the same method §12.1
+pbsim3 + ccs route's figure of `rq 0.99754` came from the quality estimate too, by the same method §14.1
 invalidates, so it is not established either; whichever route is tried next must have ITS true error
 measured by alignment first. pbsim3's error models were also removed from this site as non-durable.
 
-### 12.3 The quality strings were ours to fix, and are fixed
+### 14.3 The quality strings were ours to fix, and are fixed
 
 The true/claimed error ratio is **5.15 at every request**, because the qscore model is keyed to the
 REQUESTED identity rather than the realised one. So raising `--identity` improves the sequence and leaves
@@ -766,10 +791,156 @@ which is the measured true accuracy at the floor.
 All three PacBio arms read `pacbio_identity`, so all three are affected and all three were wired to the
 scale: `run_pacbio_wgs.py`, `run_kinnex_bulk.py`, `run_kinnex_sc.py`.
 
-### 12.4 The QA accuracy target had to move, and why that is not moving the goalposts
+### 14.4 The QA accuracy target had to move, and why that is not moving the goalposts
 
 `qa_release.py` derives accuracy from the quality strings, so with those calibrated the PacBio targets
 become the simulator's own true accuracy, 0.99695, not real HiFi's 0.99823. The check now asks "do the
 reads describe themselves correctly", which is answerable, instead of "did Badread reach real HiFi", which
 it cannot. The gap is a simulator limit and belongs in this document, not in a check that fails on every
 release.
+
+## 15. A VCF ALT column is not restricted to sequence
+
+Reported from a LENS run: Cell Ranger refused the ds-01 10x GEX reads because they contained a literal
+`*`. The report's diagnosis was exactly right, and the stray character turned out to be the mild half of
+the defect.
+
+`germline_edits` appended whatever allele the haplotype genotype selected straight into the sequence. The
+HG002 Q100 VCF uses the spanning-deletion allele `*` at **157,318 of 5,945,526 records (2.65 %)**, always
+as the second ALT of a multiallelic site. Keeping multiallelic records -- which was right, and which put
+178,123 HG002 genotypes back into the sequence -- is what let these reach the builder. IPISRC044 has none,
+because its VCF went through SHAPEIT5 normalisation, which is why ds-02 was clean and ds-01 was not.
+
+### 15.1 Why the character was the smaller problem
+
+`*` in VCF means "this allele is removed by a spanning deletion recorded elsewhere", so the correct action
+is to apply **nothing**: the deletion's own edit already removes those bases. Instead `EditSet.apply`
+replaced `len(REF)` reference bases with the single character `*`, so each affected site did two wrong
+things at once:
+
+```
+ 74,017  sites where a haplotype selected `*`
+960,223  reference bases deleted across the two haplotypes, mean 13 bp, longest REF 63,066
+  2.65%  of VCF records carry a `*` ALT; ds-02: zero
+```
+
+Delivered ds-01 reads carried the character at roughly 692 per million in bulk RNA, 7 in 10x GEX and 6 in
+WGS, and 18 per 2 M records in the Kinnex bulk BAM. But nearly a megabase of spurious deletion per dataset
+would read to a germline caller as **74,017 false-positive deletions absent from the truth VCF**. The
+character blocked one tool loudly; the deletions would have quietly distorted every variant-calling result
+on ds-01, which is the failure mode a truth set exists to prevent.
+
+### 15.2 The fix, at one chokepoint
+
+- `germline_edits` treats `*` as a no-op and counts them in `spanning_deletion_alleles`, so the skip is
+  reported rather than silent.
+- `EditSet.add` **rejects any allele outside `ACGTN`**. That is the single chokepoint every edit passes
+  through, so no future source can reintroduce this. `rna.py` had spliced `.edits` in directly in four
+  places, walking past the check; those now go through a validating `extend()`, which also carries the
+  counter across.
+- `qa_release.py` gained `check_alphabet`: every delivered base must be `ACGTN`, over both FASTQ and BAM.
+
+The last point is the lesson worth keeping. The release already had checks on read length, accuracy, read
+names, truth-map resolution and format conformance, and **not one of them asked whether the delivered
+bases were bases**. A length check cannot see this; an accuracy check cannot either. The check was verified
+both ways round -- it fires on the old ds-01 and passes on ds-02.
+
+`EditSet.add` is also the model for §16.2: decide the constraint once, where everything must pass, rather
+than at each call site.
+
+### 15.3 Verification and blast radius
+
+Verified on `chr1:750000-1000000`, the window carrying the first affected records: both haplotypes build
+with zero non-base characters, with 2 and 4 spanning-deletion alleles correctly skipped, and the new guard
+fires on a deliberately malformed allele.
+
+All of ds-01 was regenerated except **10x TCR**, which is built from GENCODE V/J germline anchors rather
+than the individual's genome; it was checked empirically for `*` across its whole library and had none.
+ds-01's chr1to6 subsets and merges had to be redone as well, because they were derived from the corrupt
+reads. `70_stage_inputs.sh` now holds back **any** chr1to6 deliverable older than what it was derived
+from, which was not a hypothetical precaution: this fix invalidated every ds-01 library while that
+dataset's chr1to6 subsets were still being written from the old reads.
+
+
+## 16. A memory request does not bound GNU sort
+
+§12.4 right-sized every arm from its measured peak. One of those cuts then failed: `igi_rna` task 1 for
+ds-01 was OOM-killed at 16 G on 2026-10-08, and not inside the Python builder but inside GNU `sort`:
+
+```
+subprocess.CalledProcessError: Command '['sort', '-T', ..., '-k1,1', '-o', sorted.tsv, keyed.tsv]'
+    died with <Signals.SIGKILL: 9>
+slurmstepd: error: Detected 1 oom_kill event in StepId=11577347.batch
+```
+
+### 16.1 Why the request was never the bound
+
+`readnames.shuffle_and_rename` keys every read by a seeded digest, sorts on disk, and renames in the sorted
+order. Its docstring said "the peak memory is the sort buffer rather than the library". That was true as
+written and false in effect, because nothing bounded the sort buffer.
+
+GNU sort chooses its default buffer from the machine's **physical** memory. It does not read the cgroup
+limit that a SLURM step runs under. On this cluster's 503 G nodes it will therefore try to hold the whole
+input, whatever `--mem` said:
+
+| | input | peak RSS | wall |
+|---|---|---|---|
+| `sort` (default buffer) | 0.93 G | **1003 M** -- the entire input | 6.15 s |
+| `sort -S 128M` | 0.93 G | **134 M** | 7.44 s |
+
+So the buffer tracked library size, and the 320 G request had not bounded anything either -- it merely
+happened to exceed whatever sort chose. The accounting shows the same thing at release scale: the
+full-library RNA arm peaked at **59.8 G**, against a keyed intermediate of about 51 G for 80 M pairs
+(~638 B per record). The arm was not using 59.8 G to simulate reads; it was using it to sort them.
+
+This also reframes §12.4. Four arms route through this sort -- bulk RNA, exome, Illumina WGS and all three
+ONT arms via `longread.py` -- so their measured peaks were substantially the sort's appetite for the
+library rather than the cost of simulation. Illumina WGS peaking at 45.8 G against a 48 G request was the
+clearest symptom: that is a per-chromosome keyed file, not a working set.
+
+### 16.2 The fix
+
+Derive the buffer from the step's own allocation, so a step's footprint is a property of the job and not of
+whichever node it lands on. A quarter of the allocation, floored at 256 M and capped at 8 G, leaves room
+for the Python process, the gzip writers and sort's per-thread overhead, which all sit alongside the
+buffer. Outside SLURM the floor applies -- slower, but it cannot be killed.
+
+The same rule is written twice, because both a Python and a shell caller need it, and each is marked as
+the other's counterpart:
+
+- `sort_buffer_mb` / `sort_buffer_arg` in `catalog/igi_catalog/readnames.py`, spliced into the `sort` call.
+- `sort_buffer_mb` / `sort_buffer_arg` in `jobs/lib.sh`, a new tracked, site-independent companion to the
+  untracked `env.sh`, sourced by the three merge scripts whose read-name uniqueness proof also ran an
+  unbounded `sort -u` over a whole library (`11_merge`, `50_merge_longread`, `91_merge_chr1to6`). Those had
+  not failed yet; they were the same latent bug one node size away.
+
+`EditSet.add` in §15.2 was a single chokepoint that every edit had to pass. This is the
+same shape of fix: the buffer is decided in one place per language rather than at each call site.
+
+### 16.3 The fix changes no output, so nothing needs rebuilding
+
+Buffer size could in principle change the order of records whose keys tie, which would change which read
+receives which Illumina name. It does not. GNU sort's last-resort comparison falls back to the whole line
+when the keys compare equal, and whole lines here are unique, so the order is total. Checked against a
+400,000-record file deliberately collapsed onto 2,000 distinct keys -- about 200 ties per key:
+
+```
+-S 1M  -S 8M  -S 64M  -S 1024M  unbounded   ->  all md5 1ff0aeb126149fa19ae1e8a35c766514
+```
+
+Byte-identical at every buffer size. Libraries already built with the unbounded sort are therefore valid,
+and only the OOM-killed ds-01 bulk RNA arm had to be rerun. Correctness of the rename itself was
+re-verified independently: names unique, R1 and R2 in step, the read-name map aligned to the FASTQ order,
+and every source record recovered.
+
+### 16.4 What is still open
+
+`run_rna.py` has no resume path -- it re-assembles records and re-simulates every bin on each invocation.
+Rerunning the killed task therefore cost the full ~1 h 45 m rather than just the sort. That is a deliberate
+trade for now: the alternative is caching 50 G intermediates, and this build has twice shipped or graded
+stale data when a step trusted an output that merely existed (see the note at the top of `11_merge.sbatch`).
+
+The post-fix peaks have not been re-measured. Every arm's request above was sized against a sort that was
+free to take the library, so several are now larger than they need to be -- Illumina WGS most of all. They
+should be re-measured once the current rebuild drains, and this table revised against that, not against
+the figures here.

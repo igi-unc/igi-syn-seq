@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -J igi_ont_bulk
-#SBATCH -c 48 --mem=320G -t 48:00:00
+#SBATCH -c 48 --mem=48G -t 48:00:00
 #SBATCH --array=1-2
 # ONT R10.4.1 bulk cDNA. No MAS array: one molecule is one read, which is the whole difference from the
 # Kinnex bulk arm. cDNA model constants are the IPISRC044 R10.4.1 SUP measurements (910/461), distinct from

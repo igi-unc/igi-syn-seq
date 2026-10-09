@@ -20,6 +20,7 @@
 # resuming an interrupted merge and wrong for every rebuild; it shipped stale data twice in one release.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 stale() {
   local out=$1; shift
   [ -s "$out" ] || return 0
@@ -66,7 +67,7 @@ case "$asy" in
       fi
     done
     n=$(zcat $M/${d}_chr1to6_${l}${sfx}_R1.fastq.gz | awk 'NR%4==1' | wc -l)
-    u=$(zcat $M/${d}_chr1to6_${l}${sfx}_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 -u | wc -l)
+    u=$(zcat $M/${d}_chr1to6_${l}${sfx}_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 $(sort_buffer_arg) -u | wc -l)
     echo "  reads $n, distinct names $u"
     [ "$n" -eq "$u" ] || { echo "FAIL: duplicate read names after merge"; exit 1; }
     for what in readmap records; do

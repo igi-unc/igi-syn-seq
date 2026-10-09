@@ -14,6 +14,7 @@
 # 1,000,832 record ids duplicated while the integrity check of the day passed.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 # Rebuild when the output is MISSING OR OLDER THAN ITS NEWEST INPUT, not merely when it is missing.
 # The guards here used to be `[ -s "$out" ] || cat ...`, which is right for resuming an interrupted merge
 # and wrong for every rebuild: after the copy-number fix re-simulated all 96 WGS chromosomes, the merge
@@ -50,7 +51,7 @@ case "$asy" in
       fi
     done
     n=$(zcat $M/${d}_${l}_wgs_R1.fastq.gz | awk 'NR%4==1' | wc -l)
-    u=$(zcat $M/${d}_${l}_wgs_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 -u | wc -l)
+    u=$(zcat $M/${d}_${l}_wgs_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 $(sort_buffer_arg) -u | wc -l)
     echo "  reads $n, distinct names $u"
     [ "$n" -eq "$u" ] || { echo "FAIL: duplicate read names"; exit 1; }
     for what in readmap records; do

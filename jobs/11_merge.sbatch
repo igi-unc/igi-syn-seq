@@ -13,6 +13,7 @@
 # scored a 2026-10-05 alignment of a 2026-10-06 library in 35 minutes instead of 21 hours. Compare mtimes.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 O=$IGI_WORK/release/wes; M=$IGI_WORK/release/merged
 LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1)); d=${DATASETS[$((i/2))]}; l=${LB[$((i%2))]}
@@ -42,7 +43,7 @@ for f in $O/$d/${d}_chr*_${l}_junctions.tsv; do
 done
 echo "--- $d $l ---"
 n=$(zcat $M/$d/${d}_${l}_R1.fastq.gz | awk 'NR%4==1' | wc -l)
-u=$(zcat $M/$d/${d}_${l}_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 -u | wc -l)
+u=$(zcat $M/$d/${d}_${l}_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 $(sort_buffer_arg) -u | wc -l)
 echo "reads $n, distinct names $u"
 [ "$n" -eq "$u" ] || { echo "FAIL: duplicate read names after merge"; exit 1; }
 echo "records $(zcat $M/$d/${d}_${l}_records.tsv.gz | tail -n +2 | wc -l), junctions $(tail -n +2 $M/$d/${d}_${l}_junctions.tsv | wc -l)"
