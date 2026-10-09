@@ -264,22 +264,42 @@ def check_tcr_truth(release, results):
 IUPAC_SET = set("RYSWKMBDHV")
 
 
-def _alphabet_verdict(bad):
-    """Verdict for a set of offending characters, naming which of the two causes it is.
+# Arms whose consumer refuses a non-ACGTN base outright. Cell Ranger fails the whole run on one character
+# rather than dropping the read, so for these the alphabet guarantee has to be absolute; minimap2, pbmm2
+# and bwa all tolerate ambiguity codes, so for the rest it does not.
+STRICT_CONSUMER_DIRS = ("tenx_gex", "tenx_tcr")
 
-    A symbolic allele is a generator defect and FAILS. IUPAC codes alone WARN instead: they come from
-    ambiguity that GRCh38 and the viral reference genuinely contain, they are normalised to N at source
-    now (genome.normalize_bases), and the arms that still carry them were built before that and clear on
-    their next rebuild. The rate is ~2e-7 per base and every aligner tolerates it, so failing the release
-    over a known, scheduled, cosmetic condition would only teach people to ignore failures. It is still
-    reported on every run, so it cannot be forgotten, and it goes back to FAIL the moment a symbolic
-    allele appears alongside it.
+
+def _strict_consumer(path):
+    return any(f"/{d}/" in path for d in STRICT_CONSUMER_DIRS)
+
+
+def _alphabet_verdict(bad, path=""):
+    """Verdict for a set of offending characters, naming the cause and respecting the consumer.
+
+    A symbolic allele is a generator defect and always FAILS.
+
+    IUPAC codes are a different matter: GRCh38 genuinely contains 94 of them and the viral reference 497,
+    they are normalised to N at source now (genome.normalize_bases), and the arms that still carry them
+    were built before that and clear on their next rebuild. Whether that is worth failing a release over
+    depends entirely on who reads the file:
+
+      - On a 10x arm it FAILS. Cell Ranger refuses the whole run on a single character, so there is no
+        such thing as a tolerable rate here, and a sampled zero is not evidence of a clean library -- the
+        exome arm showed one `M` in 80,000 reads, so short reads are not immune.
+      - Everywhere else it WARNS. minimap2, pbmm2 and bwa tolerate the codes, the rate is ~2e-7 per base,
+        and failing over a known, scheduled condition would only teach people to ignore failures.
+
+    Either way it is reported on every run, so it cannot be forgotten.
     """
     if not bad:
         return "PASS"
     chars = set(bad)
     tag = "".join(bad)
     if chars <= IUPAC_SET:
+        if _strict_consumer(path):
+            return (f"FAIL ({tag}; IUPAC codes in a 10x arm -- Cell Ranger refuses the run on one "
+                    f"character, rebuild this arm)")
         return f"WARN ({tag}; IUPAC codes -- arm predates genome.normalize_bases, clears on rebuild)"
     if chars & IUPAC_SET:
         return f"FAIL ({tag}; IUPAC codes AND a symbolic allele -- see check_alphabet)"
@@ -319,7 +339,7 @@ def check_alphabet(release, results, samtools="samtools", limit=400000):
         bad = sorted({c for l in seqs for c in l.upper()} - set("ACGTN"))
         results.append({"check": "bases are ACGTN", "file": os.path.basename(f),
                         "value": f"{len(seqs):,} reads, offending characters: {bad or 'none'}",
-                        "verdict": _alphabet_verdict(bad)})
+                        "verdict": _alphabet_verdict(bad, f)})
     for f in (sorted(glob.glob(f"{release}/kinnex_*/*/*_segmented.bam"))
               + sorted(glob.glob(f"{release}/pacbio_merged/*/*_hifi.bam"))):
         out = subprocess.run(f"{samtools} view {f} 2>/dev/null | head -{limit // 4} | cut -f10",
@@ -330,7 +350,7 @@ def check_alphabet(release, results, samtools="samtools", limit=400000):
         bad = sorted({c for l in seqs for c in l.upper()} - set("ACGTN"))
         results.append({"check": "bases are ACGTN", "file": os.path.basename(f),
                         "value": f"{len(seqs):,} records, offending characters: {bad or 'none'}",
-                        "verdict": _alphabet_verdict(bad)})
+                        "verdict": _alphabet_verdict(bad, f)})
 
 
 def main():

@@ -1064,11 +1064,13 @@ Appearing in only one assay is a property of this seed, not a safety margin:
   the ambiguity lives in the reference's knowledge, not in the molecule. A synthetic read carrying `Y` is
   not realistic however faithful it is to the FASTA.
 - **Strict consumers refuse them**, and that is exactly how §15 surfaced: Cell Ranger rejects any base
-  outside ACGTN. Every RNA arm, both 10x arms and the exome measured **zero**, so there was no Cell Ranger
-  exposure -- but `rna_assembly.viral_records` puts raw viral sequence into *expressed* transcript records,
-  and the viral reference holds 497 of these codes. Whether any reach a 10x library depends on which
-  accession is expressed and where coverage lands. That is luck, not design, and the failure it would
-  produce is the one just fixed.
+  outside ACGTN, and it fails the whole run on one character rather than dropping the read. A full scan of
+  the ONT WGS and exome arms found that short reads are *not* immune: `IGI-SYN-SEQ-01_chr21_tumor_R1`
+  carries one `M` in an 80,000-read sample, from one of chr21's three positions falling in a captured
+  exon. A sampled zero therefore proves nothing about a library -- 300,000 reads of 10x GEX measured zero,
+  but the delivered library is ~140 M reads, and the relevant question is whether it contains *one*
+  character, not what its rate is. `rna_assembly.viral_records` also puts raw viral sequence into
+  *expressed* transcript records, and the viral reference holds 497 codes.
 - **`revcomp` does not complement them.** `genome.COMP` maps only `ACGTNacgtn`, so an ambiguity code
   survives reverse-complementing **unchanged** -- `revcomp("ACGTRY")` returns `"YRACGT"`, where `Y` should
   become `R` and `R` become `Y`. This is a defect in the helper rather than an observed corruption, and the
@@ -1097,23 +1099,43 @@ above to clean. This is the §15.2 shape of fix again -- one place that everythi
 
 ### 17.3 Why QA warns rather than fails
 
-`check_alphabet` now separates the two causes, because they need different responses:
+`check_alphabet` separates the two causes, because they need different responses, and for IUPAC the
+response depends on **who reads the file**:
 
-| characters | verdict | meaning |
-|---|---|---|
-| `*`, `<DEL>`, breakend notation | **FAIL** | a symbolic allele in the sequence; a generator defect |
-| `R Y S W K M B D H V` | **WARN** | reference ambiguity; arm predates the normalisation, clears on rebuild |
-| both together | **FAIL** | the symbolic allele dominates |
+| characters | arm | verdict | meaning |
+|---|---|---|---|
+| `*`, `<DEL>`, breakend notation | any | **FAIL** | a symbolic allele in the sequence; a generator defect |
+| `R Y S W K M B D H V` | 10x GEX, 10x TCR | **FAIL** | Cell Ranger refuses the run on one character |
+| `R Y S W K M B D H V` | everything else | **WARN** | reference ambiguity; clears on next rebuild |
+| both together | any | **FAIL** | the symbolic allele dominates |
 
-A FAIL that we have decided not to act on is worse than a warning, because it teaches people to ignore
-failures. The rate is ~2e-7 per base, every aligner tolerates it, and no RNA arm is affected, so the arms
-that still carry these codes are not worth a dedicated rebuild -- they clear whenever each arm is next
-built. The condition is still reported on every run, so it cannot be forgotten, and it returns to FAIL the
-moment a symbolic allele appears beside it.
+The split is the point. A FAIL that we have decided not to act on is worse than a warning, because it
+teaches people to ignore failures -- and for the long-read and short-read DNA arms that is what a FAIL
+would be: minimap2, pbmm2 and bwa all tolerate ambiguity codes, the rate is ~2e-7 per base, and the arms
+clear whenever each is next built.
+
+But **there is no tolerable rate for a 10x arm.** Cell Ranger fails the whole run on a single character
+rather than dropping the read, which is exactly how §15 surfaced. That makes a sampled zero worthless as
+evidence there: 300,000 reads of GEX measured clean, but the delivered library is ~140 M reads, and the
+exome arm's single `M` in 80,000 reads proves short reads do span these positions. So for the two 10x arms
+the guarantee has to be absolute, and the check says so.
 
 ### 17.4 What still carries them
 
-Everything built before this change: both datasets' ONT WGS, and by the same mechanism their Illumina WGS
-and HiFi WGS at a lower rate. The three ds-01 PacBio arms resubmitted in §14.3 and ds-02's pending PacBio
-rebuild will pick the normalisation up; the ONT and Illumina DNA arms will carry the codes until they are
-next rebuilt. No arm needs rebuilding *for this reason alone*.
+Measured, not inferred. A scan of every ONT WGS and exome deliverable in both datasets (80,000-read sample
+per file) found:
+
+| arm | files carrying codes | note |
+|---|---|---|
+| ds-01 ONT WGS | 17 | chr2, 3, 6, 7, 9, 10, 12, 13, 16, 17, 21, 22, X |
+| ds-02 ONT WGS | 19 | same mechanism, different seed |
+| ds-01 exome | 1 | `chr21_tumor_R1`, a single `M` in 80,000 reads |
+| ds-02 exome | 0 | at this sample size |
+
+Illumina WGS and HiFi WGS have not been scanned; by the mechanism they should carry them at a rate between
+the exome's and ONT's, since they are whole-genome but short or shorter. The three ds-01 PacBio arms
+resubmitted in §14.3 and ds-02's pending PacBio rebuild pick the normalisation up automatically. The ONT
+and Illumina DNA arms will carry the codes until they are next rebuilt.
+
+The exome hit is the one that matters for the decision in §17.3, because it shows short reads are not
+immune and therefore that a sampled zero on a 10x arm is not evidence of a clean library.
