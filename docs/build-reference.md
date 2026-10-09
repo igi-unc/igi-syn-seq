@@ -1415,11 +1415,25 @@ Two things follow, and the second is the uncomfortable one:
   was real and the regenerated reads are clean; the delivery path was never re-run. A fix that has not
   reached the file the consumer opens has not reached the consumer.
 
+`qa_release.check_currency` now asks this of the release as a whole, because a per-stage mtime guard only
+fires when that stage runs and the failure here was a stage *not running*. Run against the tree as it
+stood, it reports **12 of 16 assembled deliverables stale** -- two of which I had not found by hand:
+
+```
+merged/ds-01          194.6 h      pacbio_merged/ds-02    66.7 h
+wgs_merged/ds-01      112.6 h      wgs_merged/ds-02       45.6 h
+ont_wgs_merged/ds-01   76.9 h      ... 7 more, to wes_chr1to6/ds-01 at 1.8 h
+```
+
+A PASS from it is not a validity claim, and the clearest case is `merged/ds-02`: it passes because its
+exome inputs are also from Sep 30, and that is the library that aborted razers3. Currency and validity are
+separate questions -- §17.6.2's check answers the second.
+
 ## 18. Regression tests for the guards
 
 `catalog/tests/test_guards.py` pins down the guards added on 2026-10-08 and 2026-10-09. It needs no
 cluster and no data, takes 0.2 s, and runs either as `python3 catalog/tests/test_guards.py` or under
-pytest. **10 tests.**
+pytest. **11 tests.**
 
 Each guard is tested because its entire value is doing what it claims, and this build has three times now
 shipped or graded data behind a check that did not:
@@ -1434,19 +1448,26 @@ shipped or graded data behind a check that did not:
 | `revcomp` after normalisation | the uncomplemented-ambiguity path reopening |
 | `rescale_quality` is an integer dB shift | the per-base form creeping back, which sits on the knife edge at scale 8.9125 (§14.3) |
 | `rescale_quality` saturates | the reasoning for 10.0 over the measured 5.15 being lost |
+| `check_currency` | a stage not running, leaving a deliverable older than its inputs (§17.6.4) -- the one failure mode no per-stage guard can see |
 
 The suite is checked by mutation rather than only by running it green, because a test that cannot fail is
 worth nothing. Each line below is a real edit to the source, the suite run, and the edit reverted:
 
 ```
-baseline                              10/10
-the scan samples by default again      9/10   <- the §17.6 defect, reintroduced
-the globs stop at R1 again             9/10
-the WARN tier restored for DNA arms    7/10
-sort-buffer cap removed                9/10
-normalisation table drops V and B      9/10
-Phred shift forced to 0                8/10
+baseline                              11/11
+the scan samples by default again      9/11   <- the §17.6 defect, reintroduced
+the globs stop at R1 again             9/11
+the WARN tier restored for DNA arms    7/11
+sort-buffer cap removed                9/11
+normalisation table drops V and B      9/11
+Phred shift forced to 0                8/11
+currency comparison never fires       10/11
+currency check iterates nothing       10/11
 ```
+
+One procedural note, because it cost me the check once: **commit before mutating.** I reverted a mutation
+with `git checkout --` on a file whose new function was not yet committed, and discarded the function along
+with the mutation. Everything above was re-measured with the tree clean first.
 
 The WARN mutation breaking three tests rather than one is the useful signal: the verdict is asserted per
 arm, in aggregate, and in the wording that names razers3, so restoring the tolerant rule cannot pass by
