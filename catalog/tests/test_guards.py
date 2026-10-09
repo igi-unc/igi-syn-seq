@@ -15,6 +15,7 @@ they run either as `python3 catalog/tests/test_guards.py` or under pytest.
 """
 import glob
 import gzip
+import json
 import importlib.util
 import math
 import os
@@ -389,6 +390,52 @@ def test_tcr_direction_check_catches_a_wholesale_flip():
         qa.check_tcr_r2_direction(root, res, min_reads=10)
         assert res and res[0]["verdict"].startswith("FAIL"), res
         assert "SENSE" in res[0]["verdict"]
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+# --------------------------------------------------------------------------- alignment QC
+
+def test_alignment_check_judges_and_never_stays_quiet():
+    """Bands are enforced, an unstranded library fails, and a MISSING report is a failure not a skip."""
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_aln_")
+    try:
+        # No reports at all: the job not having run must be visible. A quiet check is how nine
+        # COMPLETED arms sat behind stale deliverables.
+        res = []
+        qa.check_alignment(root, res)
+        assert len(res) == 1 and res[0]["verdict"].startswith("FAIL"), res
+        assert "has not run" in res[0]["verdict"]
+
+        d = f"{root}/align_qc"
+        os.makedirs(d)
+        good = {"label": "ds01_wes_normal", "kind": "wes", "mapped_fraction": 1.0,
+                "properly_paired": 0.99982, "mean_identity": 0.997307,
+                "softclip_fraction": 0.00026, "plus_strand_fraction": 0.5}
+        json.dump(good, open(f"{d}/a.json", "w"))
+        res = []
+        qa.check_alignment(root, res)
+        assert all(r["verdict"] == "PASS" for r in res), [r for r in res if r["verdict"] != "PASS"]
+
+        # The real defect: R2 drawn from either strand. This is the number Cell Ranger refused.
+        json.dump({"label": "ds01_gex", "kind": "tenx_gex", "mapped_fraction": 0.93,
+                   "mean_identity": 0.9987, "softclip_fraction": 0.13,
+                   "plus_strand_fraction": 0.5},
+                  open(f"{d}/b.json", "w"))
+        res = []
+        qa.check_alignment(root, res)
+        v = [r for r in res if r["file"] == "ds01_gex" and r["check"] == "strand balance"]
+        assert v and v[0]["verdict"].startswith("FAIL"), res
+        assert "unstranded" in v[0]["verdict"]
+
+        # An arm with no band must fail rather than pass silently.
+        json.dump({"label": "mystery", "kind": "something_new", "mapped_fraction": 1.0},
+                  open(f"{d}/c.json", "w"))
+        res = []
+        qa.check_alignment(root, res)
+        v = [r for r in res if r["file"] == "mystery"]
+        assert v and v[0]["verdict"].startswith("FAIL"), res
     finally:
         shutil.rmtree(root, ignore_errors=True)
 

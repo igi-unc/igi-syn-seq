@@ -529,6 +529,86 @@ def check_tcr_r2_direction(release, results, limit=400000, min_reads=200):
                         "verdict": verdict})
 
 
+# What a real aligner should make of each arm. Bands are set from MEASURED values on delivered
+# libraries, with margin, not from expectations:
+#
+#   ds-01 exome normal (rebuilt)   mapped 1.00000  proper 0.99982  identity 0.997307
+#                                  softclip 0.00026  plus 0.50000  insert 335
+#   ds-01 10x TCR R2 (rebuilt)     mapped 1.00000  identity 0.998729  softclip 0.13485  plus 0.00000
+#
+# The 10x softclip band is wide because R2 is cDNA aligned to the GENOME: a read spanning an exon
+# junction is clipped, and that is correct behaviour rather than a defect. The strand band is the
+# valuable one there -- a 5' library is antisense, and the library Cell Ranger refused sat at ~0.5.
+ALIGN_BANDS = {
+    #                mapped    proper      identity        softclip  plus_strand
+    "wes":        (0.98, None, 0.95, None, 0.990, 0.9999, 0.03, (0.40, 0.60)),
+    "wgs":        (0.98, None, 0.95, None, 0.990, 0.9999, 0.03, (0.40, 0.60)),
+    "tenx_gex":   (0.80, None, None, None, 0.985, 0.9999, 0.30, (0.00, 0.15)),
+    "tenx_tcr":   (0.80, None, None, None, 0.985, 0.9999, 0.30, (0.00, 0.15)),
+    "ont_wgs":    (0.95, None, None, None, 0.900, 0.9900, 0.15, (0.35, 0.65)),
+    "pacbio":     (0.95, None, None, None, 0.985, 0.9999, 0.15, (0.35, 0.65)),
+    "ont_rna":    (0.80, None, None, None, 0.900, 0.9900, 0.40, None),
+    "kinnex":     (0.80, None, None, None, 0.985, 0.9999, 0.40, None),
+}
+
+
+def check_alignment(release, results):
+    """Read the align_qc reports and judge them. See jobs/93_align_qc.sbatch for why this check differs.
+
+    Every other check here asserts a property someone thought to assert, and each was written after a
+    consumer hit the defect it catches. This one hands the reads to the tool class the consumer uses and
+    asks whether they behave like sequencing reads of this genome -- so it can catch a defect nobody has
+    named yet. It would have caught the unstranded R2 outright: the rebuilt TCR measures
+    plus_strand_fraction 0.000 and the library Cell Ranger refused measured about 0.5.
+
+    A MISSING REPORT IS A FAIL, not a skip. The alignment job not having run is exactly the state that
+    let nine COMPLETED arms sit behind stale deliverables (section 17.6.4), and a check that stays quiet
+    when its input is absent is not a check.
+    """
+    d = f"{release}/align_qc"
+    found = sorted(glob.glob(f"{d}/*.json"))
+    if not found:
+        results.append({"check": "alignment QC present", "file": "align_qc/",
+                        "value": "no reports",
+                        "verdict": "FAIL (93_align_qc has not run; alignment is unverified)"})
+        return
+    for jf in found:
+        try:
+            r = json.load(open(jf))
+        except Exception as e:
+            results.append({"check": "alignment QC present", "file": os.path.basename(jf),
+                            "value": str(e)[:60], "verdict": "FAIL (unreadable report)"})
+            continue
+        band = ALIGN_BANDS.get(r.get("kind"))
+        label = r.get("label") or os.path.basename(jf)
+        if band is None:
+            results.append({"check": "alignment", "file": label,
+                            "value": f"kind {r.get('kind')!r} has no band",
+                            "verdict": "FAIL (unknown arm; add a band rather than skipping it)"})
+            continue
+        mp_lo, _mp_hi, pp_lo, _pp_hi, id_lo, id_hi, sc_hi, strand = band
+        for name, got, lo, hi in (
+                ("reads align", r.get("mapped_fraction"), mp_lo, None),
+                ("pairs are proper", r.get("properly_paired"), pp_lo, None),
+                ("identity to the reference", r.get("mean_identity"), id_lo, id_hi),
+                ("ends are not clipped away", r.get("softclip_fraction"), None, sc_hi)):
+            if got is None or (lo is None and hi is None):
+                continue
+            ok = (lo is None or got >= lo) and (hi is None or got <= hi)
+            bound = f">= {lo}" if hi is None else (f"<= {hi}" if lo is None else f"{lo}-{hi}")
+            results.append({"check": name, "file": label, "value": f"{got} (want {bound})",
+                            "verdict": "PASS" if ok else f"FAIL ({got} outside {bound})"})
+        got = r.get("plus_strand_fraction")
+        if strand and got is not None:
+            lo, hi = strand
+            ok = lo <= got <= hi
+            results.append({"check": "strand balance", "file": label,
+                            "value": f"{got} (want {lo}-{hi})",
+                            "verdict": "PASS" if ok else
+                                       f"FAIL ({got} outside {lo}-{hi}; an unstranded or wrongly "
+                                       f"oriented library)"})
+
+
 def check_currency(release, results):
     """Every assembled deliverable must be NEWER than the per-chromosome reads it was assembled from.
 
@@ -883,6 +963,7 @@ def main():
     check_mate_pairing(a.release, fmt)
     check_tenx_r2_strand(a.release, fmt)
     check_tcr_r2_direction(a.release, fmt)
+    check_alignment(a.release, fmt)
     check_currency(a.release, fmt)
     report["format"] = fmt
     report["n_fail"] += sum(1 for r in fmt if r["verdict"].startswith("FAIL"))
