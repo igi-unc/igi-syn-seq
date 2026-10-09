@@ -274,13 +274,23 @@ IUPAC_SET = set("RYSWKMBDHV")
 # and skipping it on the ~99.9999 % of reads that are clean took one exome library from 105 s to 11 s --
 # 9.5x, same counts. Over a 1.3 TB release that is the difference between a check that runs on every
 # build and one that gets skipped because it is too slow, which is how a check stops being a check.
-_TALLY = (r'{ n++; if ($0 ~ /[^ACGTNacgtn]/) { s = $0; gsub(/[ACGTNacgtn]/, "", s);'
+#
+# `ph` (placeholder) is set for BAM input only. In SAM, a SEQ field of exactly `*` means "no sequence
+# stored" -- it is not a base at all, and counting it as a symbolic allele was a false positive in this
+# scan's first version: ds-02's chr1to6 Kinnex BAM reported `* x7` with zero `*` embedded in any sequence.
+# A record with no sequence is still wrong in a deliverable, so it is counted and reported, but under its
+# own name, because it needs a different fix from a `*` written into the middle of a read.
+_TALLY = (r'{ n++; if (ph && $0 == "*") { e++; next }'
+          r'  if ($0 ~ /[^ACGTNacgtn]/) { s = $0; gsub(/[ACGTNacgtn]/, "", s);'
           r'  for (i = 1; i <= length(s); i++) c[substr(s, i, 1)]++ } }'
-          r'END { printf "RECORDS %d\n", n; for (k in c) printf "CHAR %s %d\n", k, c[k] }')
+          r'END { printf "RECORDS %d\nEMPTY %d\n", n, e; for (k in c) printf "CHAR %s %d\n", k, c[k] }')
 
 
 def _scan_alphabet(path, samtools="samtools", complete=True, limit=400000):
-    """Count non-ACGTN characters in a deliverable's sequence. Returns (n_records, {char: count}).
+    """Count non-ACGTN characters in a deliverable's sequence.
+
+    Returns (n_records, {char: count}, n_empty), where n_empty counts records carrying no sequence at
+    all -- SAM's `*` placeholder, which is not a base and must not be reported as one.
 
     COMPLETE BY DEFAULT, and that is the whole point of this function. The first version of this check
     read 400,000 lines -- 100,000 reads -- off the front of each file and declared the alphabet clean if
@@ -295,25 +305,29 @@ def _scan_alphabet(path, samtools="samtools", complete=True, limit=400000):
     """
     if path.endswith(".bam"):
         src = f"{samtools} view {shlex.quote(path)} | cut -f10"
+        ph = 1
     else:
         src = f"pigz -dc {shlex.quote(path)} | awk 'NR % 4 == 2'"
+        ph = 0
     if complete:
         # No `head` in the pipeline, so pipefail is safe and a decompression failure cannot masquerade
         # as a clean library -- the difference between "nothing offended" and "nothing was read".
-        cmd = f"set -o pipefail; {src} | awk '{_TALLY}'"
+        cmd = f"set -o pipefail; {src} | awk -v ph={ph} '{_TALLY}'"
     else:
-        cmd = f"{src} | head -{limit // 4} | awk '{_TALLY}'"
+        cmd = f"{src} | head -{limit // 4} | awk -v ph={ph} '{_TALLY}'"
     r = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True)
     if r.returncode != 0:
-        return None, {}
-    n, counts = 0, {}
+        return None, {}, 0
+    n, counts, empty = 0, {}, 0
     for line in r.stdout.splitlines():
         p = line.split()
         if p[:1] == ["RECORDS"]:
             n = int(p[1])
+        elif p[:1] == ["EMPTY"]:
+            empty = int(p[1])
         elif p[:1] == ["CHAR"]:
             counts[p[1].upper()] = counts.get(p[1].upper(), 0) + int(p[2])
-    return n, counts
+    return n, counts, empty
 
 
 def _alphabet_verdict(bad, path=""):
@@ -385,7 +399,7 @@ def check_alphabet(release, results, samtools="samtools", complete=True, limit=4
     complete pass over the bases can, which is why this one does not sample.
     """
     for f in delivered_sequence_files(release):
-        n, counts = _scan_alphabet(f, samtools, complete, limit)
+        n, counts, empty = _scan_alphabet(f, samtools, complete, limit)
         if n is None:
             results.append({"check": "bases are ACGTN", "file": os.path.basename(f),
                             "value": "UNREADABLE -- decompression or samtools failed",
@@ -399,6 +413,11 @@ def check_alphabet(release, results, samtools="samtools", complete=True, limit=4
         results.append({"check": "bases are ACGTN", "file": os.path.basename(f),
                         "value": f"{n:,} {unit} ({scope}), offending: {detail}",
                         "verdict": _alphabet_verdict(sorted(counts), f)})
+        if empty:
+            results.append({"check": "every record has a sequence", "file": os.path.basename(f),
+                            "value": f"{empty:,} of {n:,} {unit} carry no sequence",
+                            "verdict": f"FAIL ({empty:,} records with SEQ='*' -- a delivered read with "
+                                       f"no bases; not an alphabet problem, see check_alphabet)"})
 
 
 

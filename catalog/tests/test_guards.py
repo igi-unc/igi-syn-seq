@@ -19,6 +19,7 @@ import importlib.util
 import math
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -97,10 +98,10 @@ def test_alphabet_check_is_complete_not_sampled():
         qa.ont_deliverables = lambda rel: []
         f = f"{root}/wes/DS/DS_chr1_tumor_R1.fastq.gz"
 
-        n, counts = qa._scan_alphabet(f, complete=True)
+        n, counts, empty = qa._scan_alphabet(f, complete=True)
         assert (n, counts) == (150001, {"Y": 1}), (n, counts)
 
-        ns, cs = qa._scan_alphabet(f, complete=False, limit=400000)
+        ns, cs, _ = qa._scan_alphabet(f, complete=False, limit=400000)
         assert (ns, cs) == (100000, {}), "the sample is expected to miss it -- that is the point"
 
         results = []
@@ -127,6 +128,37 @@ def test_alphabet_check_reads_both_mates():
         assert got["DS-GEX_S1_L001_R1_001.fastq.gz"] == "PASS", got
     finally:
         shutil.rmtree(root, ignore_errors=True)
+
+
+def test_sam_placeholder_is_not_a_symbolic_allele():
+    """SEQ == "*" means "no sequence stored", not a base. Counting it as a `*` was a false positive.
+
+    ds-02's chr1to6 Kinnex BAM reported `* x7` with zero `*` embedded in any sequence -- ds-02's VCF is
+    SHAPEIT5-normalised and contains no `*` at all, which is what made the report suspicious. The two need
+    different fixes, so they get different verdicts: a sequence-less record is a real defect in a
+    deliverable, but it is not an alphabet defect.
+    """
+    qa = _qa()
+    lines = "ACGT\n*\nACGTY\n*\nACG*T\n"
+
+    def tally(ph):
+        r = subprocess.run(["awk", "-v", f"ph={ph}", qa._TALLY],
+                           input=lines, capture_output=True, text=True)
+        out = {}
+        for line in r.stdout.splitlines():
+            f = line.split()
+            out[f[0]] = out.get(f[0], []) + [f[1:]]
+        return out
+
+    bam = tally(1)                                   # BAM: `*` alone is the placeholder
+    assert bam["EMPTY"][0][0] == "2", bam
+    chars = {f[0]: int(f[1]) for f in bam.get("CHAR", [])}
+    assert chars == {"Y": 1, "*": 1}, f"the embedded * must still count: {chars}"
+
+    fq = tally(0)                                    # FASTQ: there is no placeholder, so all three count
+    assert fq["EMPTY"][0][0] == "0", fq
+    chars = {f[0]: int(f[1]) for f in fq.get("CHAR", [])}
+    assert chars == {"Y": 1, "*": 3}, chars
 
 
 def test_alphabet_verdict_cause_naming():
