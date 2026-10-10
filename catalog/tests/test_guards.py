@@ -310,6 +310,19 @@ def test_drop_empty_records_removes_sequenceless_segments():
         assert all(r.query_sequence for r in recs)
         assert rg and rg[0].get("PU") == "m84000_260101_000000_s0", \
             "the rewrite must preserve @RG/PU, which skera's segment naming depends on"
+
+        # A BAM with nothing to drop must be LEFT ALONE, not rewritten with identical content.
+        # kinnex_sc measured zero empties on both datasets, so the unconditional rewrite copied a
+        # 21 GB BAM and rebuilt a 105 MB .pbi to remove nothing. Byte-identity is the assertion:
+        # mtime alone would also catch it, but content equality says the file was never touched.
+        before = open(bam, "rb").read()
+        mtime_before = os.path.getmtime(bam)
+        assert drop_empty_records(bam) == 0, "a clean BAM has nothing to drop"
+        assert open(bam, "rb").read() == before, \
+            "a BAM with no empty records must not be rewritten"
+        assert os.path.getmtime(bam) == mtime_before, \
+            "leaving the mtime alone keeps check_subset_currency honest"
+        assert not os.path.exists(bam + ".tmp"), "no temporary file should be left behind"
     finally:
         shutil.rmtree(root, ignore_errors=True)
 

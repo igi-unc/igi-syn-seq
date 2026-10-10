@@ -346,8 +346,22 @@ def drop_empty_records(bam):
         segment after the first. Dropping them makes that join correct, so this is not cosmetic.
 
     At 7 in 5,460,256 the volume is immaterial; the malformedness is not.
+
+    DETECT FIRST, REWRITE ONLY IF NEEDED. The first version rewrote unconditionally, and on the arm that
+    never has an empty segment that is pure cost: `kinnex_sc` measured ZERO on both datasets, so each of
+    its runs copied a 21 GB BAM and rebuilt a 105 MB `.pbi` to remove nothing. The empties live in
+    `kinnex_bulk` (ds-01 full x106, ds-02 full x98). A counting pass reads the BAM once and writes
+    nothing, so the common case costs a read instead of a read plus a write plus a reindex -- and the
+    file is left byte-identical rather than rewritten with the same content, which also keeps its mtime
+    honest for check_subset_currency.
     """
     import pysam
+    with pysam.AlignmentFile(bam, "rb", check_sq=False) as src:
+        n_empty = sum(1 for rec in src.fetch(until_eof=True)
+                      if rec.query_sequence is None or len(rec.query_sequence) == 0)
+    if not n_empty:
+        return 0
+
     tmp = bam + ".tmp"
     dropped = 0
     with pysam.AlignmentFile(bam, "rb", check_sq=False) as src:
