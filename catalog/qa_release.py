@@ -467,6 +467,27 @@ ASSEMBLED_FROM = {
 }
 
 
+# Arms whose chr1to6 subset is FILTERED FROM the full deliverable and stored beside it, rather than
+# assembled from per-chromosome parts into a directory of its own. ASSEMBLED_FROM cannot express this:
+# there the output and input are two directories, here they are two files in one directory, so the
+# relationship went unasserted -- and every stale deliverable found on 2026-10-10 was in this list.
+# `tenx_tcr` is absent deliberately: TCR has no chr1to6 variant, since it is not chromosome-scoped.
+SUBSET_ARMS = ("rna", "ont_bulk_rna", "ont_sc_rna", "tenx_gex", "kinnex_bulk", "kinnex_sc")
+
+# Read-bearing deliverables only, named by the exact suffix a consumer opens. A `.pbi`, `.json` or
+# `_transcripts.tsv` rebuilt after the subset does not make the subset stale, so admitting one would
+# manufacture a failure on every index rebuild.
+#
+# The suffix test carries the whole rule, which is worth stating because it is not obvious: the kinnex
+# intermediates are excluded by it rather than by name. `_segmented.non_passing.bam` and
+# `_hifi_reads.bam` both fail `endswith("_segmented.bam")`. An explicit skip for them was written here
+# first and measured to be dead code -- no mutation of it changed any test -- so it is gone rather than
+# left to imply a guard that was never doing anything.
+def _subset_reads(paths):
+    return [f for f in paths
+            if os.path.basename(f).endswith((".fastq.gz", "_segmented.bam"))]
+
+
 def _ts(epoch):
     return datetime.datetime.fromtimestamp(epoch).strftime("%Y-%m-%d %H:%M")
 
@@ -730,6 +751,54 @@ def _seed_orientation(a, b, seed=25):
         if revcomp(s) in b:
             return "opposite"
     return "unknown"
+
+
+def check_subset_currency(release, results):
+    """A chr1to6 subset must be NEWER than the full deliverable it was filtered from.
+
+    check_currency asserts that an ASSEMBLED deliverable is newer than the per-chromosome reads it was
+    built from, which covers wes, wgs, ont_wgs and pacbio. It cannot see the other six arms at all: their
+    chr1to6 file is filtered from the full file and sits in the same directory, so there is no input
+    directory to compare against and ASSEMBLED_FROM has no way to name the relationship.
+
+    That blind spot shipped four defective deliverables, all found on 2026-10-10 by content checks rather
+    than by any currency check:
+
+        rna/ds-01          chr1to6 Oct 8 16:38 vs full Oct 9 08:08   `*` in all 29,234,616 records
+        ont_sc_rna/ds-01   chr1to6 Oct 8 16:29 vs full Oct 8 20:33   `*` present
+        ont_bulk_rna/ds-01 chr1to6 Oct 8 16:48 vs full Oct 8 23:40   `*` present
+        tenx_gex/ds-01+02  chr1to6 Oct 8 16:38 vs full Oct 9 18:24   R2 unstranded
+
+    In each case the full was regenerated after a generator fix and the subset was not, so the subset
+    carried a defect its own source no longer had. The mtime comparison alone would have reported every
+    one of them, instantly and without reading a single base -- which is the argument for having it.
+
+    As with check_currency, a PASS is not a validity claim: it says the subset was filtered from the full
+    currently on disk, not that either is correct.
+    """
+    for arm in SUBSET_ARMS:
+        for ds_path in sorted(glob.glob(f"{release}/{arm}/*")):
+            if not os.path.isdir(ds_path):
+                continue
+            label = f"{arm}/{os.path.basename(ds_path)}"
+            files = [f for f in glob.glob(f"{ds_path}/*") if os.path.isfile(f)]
+            reads = _subset_reads(files)
+            subs = [f for f in reads if "chr1to6" in os.path.basename(f)]
+            srcs = [f for f in reads if "chr1to6" not in os.path.basename(f)]
+            if not subs or not srcs:
+                # No subset built yet, or no source to compare against: nothing asserted either way.
+                continue
+            newest_src = max(os.path.getmtime(f) for f in srcs)
+            oldest_sub = min(os.path.getmtime(f) for f in subs)
+            lag_h = (newest_src - oldest_sub) / 3600.0
+            if lag_h > 0:
+                verdict = (f"FAIL (subset stale by {lag_h:,.1f} h -- re-run 90_subset_chr1to6 for {arm}; "
+                           f"it carries whatever the full deliverable was fixed for)")
+            else:
+                verdict = "PASS"
+            results.append({"check": "chr1to6 subset newer than source", "file": label,
+                            "value": f"subset {_ts(oldest_sub)}, source {_ts(newest_src)}",
+                            "verdict": verdict})
 
 
 def check_read_structure(release, results, samtools="samtools", complete=True):
@@ -1037,6 +1106,7 @@ def main():
     check_alignment(a.release, fmt)
     check_consumer_preflight(a.release, fmt)
     check_currency(a.release, fmt)
+    check_subset_currency(a.release, fmt)
     report["format"] = fmt
     report["n_fail"] += sum(1 for r in fmt if r["verdict"].startswith("FAIL"))
     print()
