@@ -1717,7 +1717,7 @@ still not, because that is where the next one will come from.
 | designed small variants actually present at the designed VAF | **partial** | acceptance checks allele fractions by tier, on some chromosomes. §19.4's junction defect was found through exactly this check failing, so the coverage of it is the live question |
 | insert-size distribution shape | **not checked** | the mean is measured; a bimodal or truncated distribution would pass |
 | 10x barcode whitelist membership | **not checked** | a barcode outside the whitelist is dropped by Cell Ranger, silently reducing cells |
-| GEX R2 direction on delivered data | **not checkable** | its truth map carries a record id, not sequence. TCR is verified against shipped `cdr3_nt`; GEX rests on the generator plus the consistency check |
+| GEX R2 direction on delivered data | **checkable, not yet checked** | recorded as *not checkable* on the grounds that its truth map carries a record id rather than sequence. True of the map alone, and too strong: the record names a transcript, the GTF gives that transcript's strand, so aligning R2 and asking whether it is antisense to its OWN gene settles direction. What cannot settle it is the genomic plus fraction, which is ~0.5 for a stranded GEX library because its genes sit on both strands -- that mis-banding failed two good libraries (§20.3) |
 | Kinnex primer structure | **known gap** | the synthetic Kinnex bulk reads carry no primers; real Iso-Seq reads do |
 | coverage uniformity and the CN ladder genome-wide | **partial** | per-tier allele fractions are checked at designed sites, not coverage across the genome |
 | the ~150 bp ART masking holes at the 94 IUPAC positions | **known, documented** | §17.6.6; a deliberate trade, not yet an owner decision |
@@ -1762,7 +1762,28 @@ And **only ds-01 was ever affected by `*`**, in every arm, because the defect ca
 VCF and ds-02's baseline is IPISRC044. Every ds-02 file measured clean -- chr1to6 and full, RNA and both
 ONT arms. A per-dataset defect looks like a flaky check until its source is named.
 
-### 20.3 The pattern worth acting on
+### 20.3 A band copied by analogy failed two correct libraries
+
+`check_alignment` banded `plus_strand_fraction` at 0.00-0.15 for both 10x arms, and the reasoning was
+written down: the rebuilt TCR measures 0.000, the library Cell Ranger refused measured about 0.5, so a
+figure near 0.5 means unstranded. That is sound for TCR and false for GEX, and the rebuild proved it --
+the two GEX libraries, independently verified stranded at 4004/0 and 4030/0 molecule-mate consistency,
+measured 0.50219 and 0.50826 and FAILED.
+
+The quantity is the fraction of reads on the **genomic** plus strand. TCR reads come from TRA and TRB,
+whose transcripts sit on one strand, so antisense R2 maps minus almost everywhere and 0.000 is real.
+GEX reads come from genes across the genome, roughly half on each strand, so antisense R2 maps plus for
+the minus-strand genes and minus for the plus-strand ones. A correctly stranded GEX library measures
+about 0.5 -- which is also what an unstranded one measures. The number carries no signal here, so it is
+not banded any more, rather than banded more loosely.
+
+The lesson is narrower than "measure, don't guess", because this band *was* measured. It was measured on
+one arm and carried to another whose geometry differs, and the write-up recorded the measurement while
+dropping the condition it depended on. §17.3 is the same shape -- a WARN tier justified by an
+enumeration of the consumers I happened to know -- and so is §21.5, where I predicted the exome junction
+counts would rise by carrying a 5 Mb interval's collision rate onto a 5 kb one.
+
+### 20.4 The pattern worth acting on
 
 Three of the four defects I found in my own work this release were in the CHECKS, not the data: the
 alphabet check sampled 0.3 % of a library, the release scan reported 96 COMPLETED having skipped 36

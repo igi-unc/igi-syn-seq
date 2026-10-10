@@ -584,15 +584,32 @@ def test_alignment_check_judges_and_never_stays_quiet():
         assert all(r["verdict"] == "PASS" for r in res), [r for r in res if r["verdict"] != "PASS"]
 
         # The real defect: R2 drawn from either strand. This is the number Cell Ranger refused.
-        json.dump({"label": "ds01_gex", "kind": "tenx_gex", "mapped_fraction": 0.93,
+        # Asserted on TCR, not GEX, and the distinction is the point. TCR reads come from TRA/TRB,
+        # whose transcripts sit on one genomic strand, so a stranded library measures ~0.000 and 0.5
+        # means unstranded. GEX reads come from genes on BOTH strands, so ~0.5 is what a correctly
+        # stranded library measures too -- this test previously used GEX and asserted a failure that
+        # the rebuilt, verified-stranded libraries then produced (0.50219 and 0.50826).
+        json.dump({"label": "ds01_tcr", "kind": "tenx_tcr", "mapped_fraction": 0.93,
                    "mean_identity": 0.9987, "softclip_fraction": 0.13,
                    "plus_strand_fraction": 0.5},
                   open(f"{d}/b.json", "w"))
         res = []
         qa.check_alignment(root, res)
-        v = [r for r in res if r["file"] == "ds01_gex" and r["check"] == "strand balance"]
+        v = [r for r in res if r["file"] == "ds01_tcr" and r["check"] == "strand balance"]
         assert v and v[0]["verdict"].startswith("FAIL"), res
         assert "unstranded" in v[0]["verdict"]
+
+        # And GEX must NOT be judged on that figure at all: no band, so no strand row for it.
+        json.dump({"label": "ds02_gex", "kind": "tenx_gex", "mapped_fraction": 0.99976,
+                   "mean_identity": 0.99495, "softclip_fraction": 0.0854,
+                   "plus_strand_fraction": 0.50826},
+                  open(f"{d}/d.json", "w"))
+        res = []
+        qa.check_alignment(root, res)
+        assert not [r for r in res if r["file"] == "ds02_gex" and r["check"] == "strand balance"], \
+            "a genomic plus fraction carries no strandedness signal for GEX; it must not be banded"
+        assert all(r["verdict"] == "PASS" for r in res if r["file"] == "ds02_gex"), \
+            [r for r in res if r["file"] == "ds02_gex" and r["verdict"] != "PASS"]
 
         # An arm with no band must fail rather than pass silently.
         json.dump({"label": "mystery", "kind": "something_new", "mapped_fraction": 1.0},

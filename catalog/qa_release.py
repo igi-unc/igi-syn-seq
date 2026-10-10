@@ -592,7 +592,16 @@ ALIGN_BANDS = {
     #                mapped    proper      identity        softclip  plus_strand
     "wes":        (0.98, None, 0.95, None, 0.990, 0.9999, 0.03, (0.40, 0.60)),
     "wgs":        (0.98, None, 0.95, None, 0.990, 0.9999, 0.03, (0.40, 0.60)),
-    "tenx_gex":   (0.80, None, None, None, 0.985, 0.9999, 0.30, (0.00, 0.15)),
+    # tenx_gex asserts NO strand band, and the reason is not leniency. This figure is the fraction of
+    # reads on the GENOMIC plus strand, and GEX covers genes across the whole genome with roughly half
+    # on each strand, so a correctly stranded 5' library measures about 0.5 -- exactly what an
+    # UNSTRANDED one measures. Measured on the rebuilt, verified-stranded libraries: 0.50219 and
+    # 0.50826. The band here was (0.00, 0.15), copied from tenx_tcr by analogy, and it failed both
+    # good libraries. TCR's 0.000 is real but local: its reads come from TRA/TRB, whose transcripts sit
+    # on one strand, so antisense R2 maps minus almost everywhere. The analogy does not survive leaving
+    # a single locus. GEX strandedness is established by check_tenx_r2_strand, which is reference-free
+    # and compares molecule-mates to each other instead of to a chromosome.
+    "tenx_gex":   (0.80, None, None, None, 0.985, 0.9999, 0.30, None),
     "tenx_tcr":   (0.80, None, None, None, 0.985, 0.9999, 0.30, (0.00, 0.15)),
     "ont_wgs":    (0.95, None, None, None, 0.900, 0.9900, 0.15, (0.35, 0.65)),
     "pacbio":     (0.95, None, None, None, 0.985, 0.9999, 0.15, (0.35, 0.65)),
@@ -607,8 +616,11 @@ def check_alignment(release, results):
     Every other check here asserts a property someone thought to assert, and each was written after a
     consumer hit the defect it catches. This one hands the reads to the tool class the consumer uses and
     asks whether they behave like sequencing reads of this genome -- so it can catch a defect nobody has
-    named yet. It would have caught the unstranded R2 outright: the rebuilt TCR measures
-    plus_strand_fraction 0.000 and the library Cell Ranger refused measured about 0.5.
+    named yet. It would have caught the unstranded R2 outright IN THE TCR ARM: the rebuilt TCR measures
+    plus_strand_fraction 0.000 and the library Cell Ranger refused measured about 0.5. That claim was
+    first written for both 10x arms and is false for GEX, where the genomic plus fraction is about 0.5
+    whether the library is stranded or not, because GEX reads come from genes on both strands. See the
+    tenx_gex entry in ALIGN_BANDS.
 
     A MISSING REPORT IS A FAIL, not a skip. The alignment job not having run is exactly the state that
     let nine COMPLETED arms sit behind stale deliverables (section 17.6.4), and a check that stays quiet
