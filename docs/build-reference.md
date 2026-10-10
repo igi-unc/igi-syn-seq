@@ -1708,7 +1708,7 @@ them, because nothing here asserted the property.** Every check in this document
 failure. So the useful thing to record is not the list of what is now checked but the list of what is
 still not, because that is where the next one will come from.
 
-### 20.1 Unasserted properties, as of 2026-10-09
+### 20.1 Unasserted properties, as of 2026-10-10
 
 | property | state | why it matters |
 |---|---|---|
@@ -1722,8 +1722,47 @@ still not, because that is where the next one will come from.
 | coverage uniformity and the CN ladder genome-wide | **partial** | per-tier allele fractions are checked at designed sites, not coverage across the genome |
 | the ~150 bp ART masking holes at the 94 IUPAC positions | **known, documented** | §17.6.6; a deliberate trade, not yet an owner decision |
 | chr1to6 truth consistency against the full release | **not checked** | the subsets are re-cut, and nothing asserts that a subset's truth is the full release's truth restricted |
+| chr1to6 subset newer than the full it was filtered from | **now checked** | was the widest hole in this table and not in it: `check_subset_currency`, added 2026-10-10 after it had already shipped four defective deliverables. See §20.2 |
 
-### 20.2 The pattern worth acting on
+### 20.2 The hole that was not in this table
+
+On 2026-10-10 a complete alphabet scan found `*` characters in ds-01's chr1to6 RNA -- in all
+29,234,616 records of both mates -- two days after that defect was fixed and the full RNA regenerated.
+Sampled scans then found the same in ds-01's chr1to6 ONT bulk RNA and ONT sc RNA, and the orientation
+check found both chr1to6 GEX subsets still unstranded. Four defective deliverables, one cause:
+
+**the subset was filtered from the full before the full was fixed, and nothing ever re-cut it.**
+
+`check_currency` could not see any of it. It compares an assembled deliverable against the
+per-chromosome directory it was built from, which covers wes, wgs, ont_wgs and pacbio. The other six
+arms store the chr1to6 file *beside* its source in one directory, so there is no input directory and
+`ASSEMBLED_FROM` cannot express the relationship. The check reported 14 of 16 stale that morning and
+was right about all 14 -- while being structurally blind to the four that actually mattered, because
+they were not in its model of the release at all.
+
+`check_subset_currency` closes it, and the cost comparison is the lesson. Finding these by content took
+a complete 231 M-record scan plus four sampled scans, several hours of wall clock. The mtime comparison
+reports every one of them in under a second:
+
+```
+rna/ds-01            subset Oct 8 16:38  source Oct 9 08:08   FAIL stale by 15.5 h
+ont_sc_rna/ds-01     subset Oct 8 16:29  source Oct 8 20:33   FAIL stale by  4.1 h
+ont_bulk_rna/ds-01   subset Oct 8 16:48  source Oct 8 23:40   FAIL stale by  6.9 h
+tenx_gex/ds-01       subset Oct 8 16:38  source Oct 9 18:24   FAIL stale by 25.8 h
+tenx_gex/ds-02       subset Oct 8 16:38  source Oct 9 18:28   FAIL stale by 25.8 h
+```
+
+Two things worth keeping from how this went. **Sampling was the right tool here and the wrong tool for
+IUPAC**, and the difference is frequency, not rigour: the `*` allele comes from 2.65 % of the HG002 Q100
+records, so when present it is in thousands of reads and a 1 M-read sample is conclusive; a single `Y`
+in 4.86 Gbase defeats any sample, which is why `check_alphabet` is complete. Choosing between them
+requires knowing the defect's prevalence, not a general preference.
+
+And **only ds-01 was ever affected by `*`**, in every arm, because the defect came from HG002's Q100
+VCF and ds-02's baseline is IPISRC044. Every ds-02 file measured clean -- chr1to6 and full, RNA and both
+ONT arms. A per-dataset defect looks like a flaky check until its source is named.
+
+### 20.3 The pattern worth acting on
 
 Three of the four defects I found in my own work this release were in the CHECKS, not the data: the
 alphabet check sampled 0.3 % of a library, the release scan reported 96 COMPLETED having skipped 36
