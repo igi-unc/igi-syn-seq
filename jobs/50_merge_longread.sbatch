@@ -119,8 +119,30 @@ case "$asy" in
     else
       echo "  merged library is newer than every input; keeping it"
     fi
-    nr=$(zcat "$out" | awk 'NR%4==1' | wc -l)
-    echo "  reads $nr"
+    # COUNTING IS THE ONLY EXPENSIVE PART OF THIS STAGE. Merging gzip needs no decompression: a gzip
+    # file is a sequence of members, so `cat a.gz b.gz` is a valid stream every decompressor reads, and
+    # the `cat` above is the whole merge. This count then decompresses ~91 GB to establish what the
+    # merge produced -- worth doing once, not once per driver re-entry.
+    #
+    # Two numbers, because they answer different questions. The summed per-chromosome `reads` from the
+    # builders' own JSON is free and says what SHOULD be there; counting the merged file costs the
+    # decompress and says what IS there. Comparing them is what makes a short `cat` -- a glob matching
+    # 23 of 24 shards, a truncated write -- visible rather than merely plausible.
+    exp=$(python3 -c 'import glob,json,sys; print(sum(int(json.load(open(f)).get("reads",0)) for f in glob.glob(sys.argv[1])))' \
+          "$O/$d/${d}_chr*_${l}_ont_wgs.json")
+    ncache=$M/${d}_${l}_ont_wgs.count
+    if [ -s "$ncache" ] && [ "$ncache" -nt "$out" ]; then
+      read -r nr < "$ncache"
+      echo "  reads $nr (from $(basename "$ncache"); library untouched since it was counted)"
+    else
+      nr=$(zcat "$out" | awk 'NR%4==1' | wc -l)
+      echo "  reads $nr"
+      echo "$nr" > "$ncache"
+    fi
+    if [ "${exp:-0}" -gt 0 ] && [ "$nr" -ne "$exp" ]; then
+      echo "FAIL: merged library holds $nr reads but its chromosomes report $exp"; exit 1
+    fi
+    echo "  expected $exp from per-chromosome JSON"
     # THE TRUTH MAP WAS NEVER MERGED. This branch shipped the concatenated FASTQ and left
     # `<library>_ont_wgs_read_map.tsv.gz` from whatever build wrote it last: on 2026-10-10 the delivered
     # reads were from Oct 10 and their map was from Oct 5, two days and three generator fixes apart, so
