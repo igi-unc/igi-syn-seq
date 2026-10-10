@@ -1,7 +1,13 @@
 #!/bin/bash
 #SBATCH -J igi_accept_wgs
-#SBATCH -c 16 --mem=64G -t 24:00:00
+#SBATCH -c 16 --mem=64G -t 40:00:00
 #SBATCH --array=1-2
+# WALL CLOCK: the two full runs of this stage took 21:09 and 21:42 against a 24 h limit -- an 11 %
+# margin. The junction fix restores the coverage of every junction-bearing interval (each was
+# contributing ~1/4,000th of its sequence), so the merged WGS libraries this now aligns are ~2 %
+# larger, eating a third of what was left. A TIMEOUT here is expensive in a way an over-request is
+# not: the driver retries a timeout at the SAME limit (memory escalates only on OUT_OF_MEMORY), so
+# it would burn ~21 h twice more and then give up. 40 h costs nothing if the job finishes in 22.
 # Acceptance for the short-read WGS arm. The depth and allele-fraction checks need an aligned BAM, so this
 # aligns the merged library first.
 #
