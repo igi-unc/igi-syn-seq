@@ -119,7 +119,8 @@ case "$asy" in
     else
       echo "  merged library is newer than every input; keeping it"
     fi
-    echo "  reads $(zcat "$out" | awk 'NR%4==1' | wc -l)"
+    nr=$(zcat "$out" | awk 'NR%4==1' | wc -l)
+    echo "  reads $nr"
     # THE TRUTH MAP WAS NEVER MERGED. This branch shipped the concatenated FASTQ and left
     # `<library>_ont_wgs_read_map.tsv.gz` from whatever build wrote it last: on 2026-10-10 the delivered
     # reads were from Oct 10 and their map was from Oct 5, two days and three generator fixes apart, so
@@ -135,7 +136,13 @@ case "$asy" in
     done
     [ $first -eq 0 ] || { echo "FAIL: no per-chromosome read maps to merge"; exit 1; }
     gzip -f "$mo"
-    echo "  read map $(zcat "$mo.gz" | tail -n +2 | wc -l) rows"
+    nm=$(zcat "$mo.gz" | tail -n +2 | wc -l)
+    echo "  read map $nm rows"
+    # ONE ROW PER READ, asserted rather than printed. The merge already had both numbers in hand and
+    # only reported them, so a map that covered a subset of the reads -- a missing chromosome's shard,
+    # a truncated decompress -- would have read as success. The first run of this code gave
+    # 1,910,688 reads and 1,910,688 rows on every library, so the invariant holds and is worth holding.
+    [ "$nm" -eq "$nr" ] || { echo "FAIL: read map has $nm rows for $nr reads"; exit 1; }
     ;;
 esac
 echo "DONE $asy $d $l $(date)"

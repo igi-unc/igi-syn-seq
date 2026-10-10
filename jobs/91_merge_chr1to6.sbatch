@@ -103,14 +103,17 @@ case "$asy" in
     else
       echo "  merged library is newer than every shard; keeping it"
     fi
-    echo "  reads $(zcat "$out" | awk 'NR%4==1' | wc -l)"
+    nr=$(zcat "$out" | awk 'NR%4==1' | wc -l)
+    echo "  reads $nr"
     mo=$M/${d}_chr1to6_${l}_ont_wgs_read_map.tsv; : > "$mo"; first=1
     for f in $(shards "$O/$d/${d}_%s_${l}_ont_wgs_read_map.tsv.gz"); do
       if [ $first -eq 1 ]; then zcat "$f" >> "$mo"; first=0; else zcat "$f" | tail -n +2 >> "$mo"; fi
     done
     [ $first -eq 0 ] || { echo "FAIL: no per-chromosome read maps to merge"; exit 1; }
     gzip -f "$mo"
-    echo "  read map $(zcat "$mo.gz" | tail -n +2 | wc -l) rows"
+    nm=$(zcat "$mo.gz" | tail -n +2 | wc -l)
+    echo "  read map $nm rows"
+    [ "$nm" -eq "$nr" ] || { echo "FAIL: read map has $nm rows for $nr reads"; exit 1; }
     ;;
   pacbio)
     out=$M/${d}_chr1to6_${l}_hifi.bam
