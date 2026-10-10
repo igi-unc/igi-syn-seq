@@ -1713,3 +1713,86 @@ every assumption at once, including the ones nobody has written down.
 That is a decision for the owner rather than something to adopt unilaterally, because it costs a pipeline
 run per build and it couples the release to a specific consumer version. It is recorded here as the
 highest-value change available, not as a plan already made.
+
+## 21. One junction per interval: five events lost and the interval's coverage wiped
+
+All seven pre-existing acceptance failures -- five junction-count and two chr6 allele-fraction --
+had a single cause in the interval builder, and my earlier written account of both classes was
+wrong. I had recorded the junction failures as the *check* over-counting what was placeable, and
+the chr6 failures as 1.4-1.6 sigma sampling noise. The checks were right; the builder was wrong.
+
+`junction_at` returned ONE junction per interval, and the contig then **replaced the whole
+interval**. Two consequences, which is why the failures looked like two unrelated problems:
+
+### 21.1 Events lost to collision
+
+WGS intervals are 5 Mb, so two designed breakpoints on the same clone and haplotype within 5 Mb
+collided and only the first was realised -- absent from the library while the truth table claimed
+it. All six unplaced events are explained by it:
+
+| dataset | chrom | interval | clone/hap | lost behind |
+|---|---|---|---|---|
+| ds-01 | chr13 | 57.70-62.70 Mb | T/1 | SV-0040 behind SV-0036 |
+| ds-01 | chr17 | 60.10-65.10 Mb | T/0 | SV-0044 behind SV-0016 |
+| ds-01 | chr8  | 35.00-40.00 Mb | T/1 | SV-0047 behind SV-0025 |
+| ds-02 | chr1  | 148.40-153.40 Mb | A1/1 | SV-0094 behind SV-0063 |
+| ds-02 | chr17 | 60.10-65.10 Mb | T/0 | SV-0058 *and* FUS-0018 behind SV-0016 |
+
+The ds-02 chr17 interval held **three** breakpoints and emitted one.
+
+### 21.2 Coverage wiped, which is what failed on chr6
+
+A 5 Mb interval replaced by a 1.2 kb contig (FLANK=600) left that copy contributing about
+1/4,000th of its sequence. Every one of ds-01's 10 chr6 `T_LOH` sites sits inside a
+junction-replaced T hap0 interval, and `T_LOH` was the only tier that failed (24 % deviation
+against a 12 % bound). No other tier had a site in those intervals -- which is why this presented
+as a tier-specific statistical problem rather than as missing coverage.
+
+### 21.3 The fix: splice, do not replace
+
+`junctions_in()` returns every junction in the interval (each still handed out once overall), and
+`splice_junctions(seq, start1, jns)` excises each contig's own window and emits the contig as its
+own record. Interval length is conserved.
+
+Affects **Illumina WGS and the exome only** -- both use the interval builder. ONT and PacBio go
+through `derived.py`/`build_derived` and were never subject to it.
+
+### 21.4 Verified on the rebuilt output
+
+Measured on the rebuild, not inferred. All five junction checks, run through the real
+`check_classes_present` with strict equality (so over-placing fails too):
+
+| dataset | chrom | result |
+|---|---|---|
+| ds-01 | chr13 | PASS -- 8 events of 8 designed |
+| ds-01 | chr17 | PASS -- 5 of 5 |
+| ds-01 | chr8  | PASS -- 5 of 5 (6 junctions; one event contributes two breakpoints) |
+| ds-02 | chr1  | PASS -- 11 of 11 |
+| ds-02 | chr17 | PASS -- 7 of 7 |
+
+Coverage, from read counts per record via the readmap, against the correct baseline of the **same
+clone and haplotype** on ds-01 chr6:
+
+| copy | junction intervals | plain siblings | ratio |
+|---|---|---|---|
+| T hap0  | 203,879 | 198,186 | 102.9 % |
+| A1 hap0 | 69,815  | 68,071  | 102.6 % |
+
+Each junction interval now yields two records -- the spliced interval (~204,000 reads) and the
+junction contig itself (49 reads). Under the old code the contig was all that remained, so the
+interval produced ~49 reads where it should produce ~204,000: a factor of 4,150, matching the
+5 Mb / 1.2 kb ratio the code implies. The allele fractions themselves still need the aligned BAM
+to confirm, so §21.2's two failures are evidenced by mechanism here, not yet by their own check.
+
+### 21.5 The exome barely moved, and that is correct
+
+Exome tumour junction counts came back 95 (ds-01) and 93 (ds-02), against 95 and 92 before. I had
+predicted both would rise, carrying the WGS collision count onto a builder whose intervals are
+500-5,507 bp rather than 5 Mb. Measured: ds-01 has **zero** exome intervals holding more than one
+junction, so 95 was never wrong there; ds-02 has exactly one
+(chr8:127,398,423-127,403,422, clone T, hap 0), giving the +1. Interval length conservation shows
+up instead as a small read-count rise: ds-01 +1,715, ds-02 +610.
+
+The exome was biased in both directions by the old code -- a 1.2 kb contig inflated an interval
+smaller than itself and deflated the larger ones by up to 4.6x -- so the near-identical count is
+not evidence the exome was unaffected, only that collisions were rare in it.
