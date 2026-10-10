@@ -55,9 +55,26 @@ case "$asy" in
         echo "  R${m} is newer than every input; keeping it"
       fi
     done
-    n=$(zcat $M/${d}_${l}_wgs_R1.fastq.gz | awk 'NR%4==1' | wc -l)
-    u=$(zcat $M/${d}_${l}_wgs_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 $(sort_buffer_arg) -u | wc -l)
-    echo "  reads $n, distinct names $u"
+    # The name-uniqueness proof costs a full decompress plus an external sort -- 2 h 43 on the ds-01
+    # tumour library -- and it ran unconditionally, including on an output `stale()` had just decided
+    # to KEEP. That is the expensive half of this stage repeated for nothing: a library that was not
+    # rebuilt cannot have acquired a duplicate name since it was proved. The proof is recorded in a
+    # sidecar when it is computed and reused when the output is untouched, so the count is still
+    # reported and a library built before this change (no sidecar) is still proved from scratch.
+    ncache=$M/${d}_${l}_wgs_R1.names
+    if [ -s "$ncache" ] && [ "$ncache" -nt "$M/${d}_${l}_wgs_R1.fastq.gz" ]; then
+      read -r n u < "$ncache"
+      echo "  reads $n, distinct names $u (from $(basename "$ncache"); R1 untouched since it was proved)"
+    else
+      n=$(zcat $M/${d}_${l}_wgs_R1.fastq.gz | awk 'NR%4==1' | wc -l)
+      u=$(zcat $M/${d}_${l}_wgs_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 $(sort_buffer_arg) -u | wc -l)
+      echo "  reads $n, distinct names $u"
+      # Cache only a PASS, so a library with duplicate names is never recorded as proved.
+      # (Written as an `if` for legibility. `[ ... ] && echo` behaves identically here, which I
+      # checked rather than assumed: `set -e` exempts a failing command in a && list when it is not
+      # the final one, so the explicit message below prints either way.)
+      if [ "$n" -eq "$u" ]; then echo "$n $u" > "$ncache"; fi
+    fi
     [ "$n" -eq "$u" ] || { echo "FAIL: duplicate read names"; exit 1; }
     for what in readmap records; do
       out=$M/${d}_${l}_wgs_${what}.tsv; : > "$out"; first=1
