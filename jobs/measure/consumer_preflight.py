@@ -29,8 +29,9 @@ import subprocess
 import sys
 
 
-def run(cmd, timeout=None):
-    return subprocess.run(["bash", "-c", cmd], capture_output=True, text=True, timeout=timeout)
+def run(cmd, timeout=None, cwd=None):
+    return subprocess.run(["bash", "-c", cmd], capture_output=True, text=True,
+                          timeout=timeout, cwd=cwd)
 
 
 def uncompressed_size(path, samtools=None):
@@ -47,17 +48,34 @@ def uncompressed_size(path, samtools=None):
     return os.path.getsize(path) * 4            # FASTQ gzips to about a quarter
 
 
-def sample(path, out, fraction, samtools):
-    """First `fraction` of the file, cut at a record boundary."""
-    want = max(400_000, int(uncompressed_size(path) * fraction))
+def sample(path, out, fraction, samtools, records=None):
+    """First `fraction` of the file, cut at a record boundary.
+
+    `records`, when given, takes exactly that many reads instead of a byte budget. MATES MUST BE CUT TO
+    THE SAME RECORD COUNT, and cutting them independently is what made this whole stage test itself
+    rather than the release: R1 and R2 headers differ slightly in length, so equal byte budgets gave
+    2,996,325 and 2,991,981 records, and every paired consumer then ran off the end of the shorter
+    file. STAR reported `quality string length is not equal to sequence length` (it had started reading
+    a header as a sequence) and Cell Ranger reported `Input FASTQ file ended prematurely`, both of which
+    read exactly like malformed delivered data and were neither. The reads themselves had zero
+    length mismatches, here and across all 612 files of the complete scan.
+    """
     if path.endswith(".bam"):
-        # SEQ/QUAL only; enough for any tool that reads unaligned records
+        want = max(400_000, int(uncompressed_size(path) * fraction))
+        # A BAM slice must stay a BAM: pbmm2 refuses `.sam` with "Unknown file suffix" and lima with
+        # "[pbbam] dataset I/O ERROR: unsupported extension", so both failed on the container rather
+        # than on the reads.
+        n = max(1000, int(want / 2000))
         cmd = (f"{samtools.format(args=f'view -h {path}')} | "
-               f"awk -v m={want} '/^@/{{print; next}} {{b+=length($0)+1; print; if (b>m) exit}}' "
-               f"> {out}")
+               f"awk -v n={n} '/^@/{{print; next}} {{print; if (++c >= n) exit}}' | "
+               f"{samtools.format(args=f'view -b -o {out} -')}")
     else:
-        cmd = (f"pigz -dc {path} | "
-               f"awk -v m={want} '{{b+=length($0)+1; print; if (b>m && NR%4==0) exit}}' > {out}")
+        if records is None:
+            want = max(400_000, int(uncompressed_size(path) * fraction))
+            cmd = (f"pigz -dc {path} | "
+                   f"awk -v m={want} '{{b+=length($0)+1; print; if (b>m && NR%4==0) exit}}' > {out}")
+        else:
+            cmd = (f"pigz -dc {path} | head -n {records * 4} > {out}")
     r = run(cmd)
     return r.returncode == 0 and os.path.getsize(out) > 0
 
@@ -80,15 +98,26 @@ def main():
     os.makedirs(work, exist_ok=True)
     paths = a.reads.split(",")
     cut = []
+    # Mates get the SAME record count, taken from the first one, so the streams stay in step.
+    n_rec = None
     for i, p in enumerate(paths, 1):
-        ext = "sam" if p.endswith(".bam") else "fq"
+        ext = "bam" if p.endswith(".bam") else "fq"
         q = os.path.join(work, f"pf_{a.label}_{i}.{ext}")
-        if not sample(p, q, a.fraction, a.samtools_cmd):
+        if not sample(p, q, a.fraction, a.samtools_cmd, records=n_rec if i > 1 else None):
             json.dump({"label": a.label, "tool": a.tool, "ok": False,
                        "detail": f"could not sample {os.path.basename(p)}"}, open(a.out, "w"))
             print(f"could not sample {p}", file=sys.stderr)
             return 1
+        if i == 1 and ext == "fq":
+            n_rec = sum(1 for _ in open(q)) // 4
         cut.append(q)
+    if len(cut) > 1 and n_rec is not None:
+        counts = [sum(1 for _ in open(c)) // 4 for c in cut]
+        if len(set(counts)) != 1:
+            json.dump({"label": a.label, "tool": a.tool, "ok": False,
+                       "detail": f"mate slices disagree: {counts}"}, open(a.out, "w"))
+            print(f"mate slices disagree: {counts}", file=sys.stderr)
+            return 1
 
     # Each tool is invoked the way LENS invokes it; the point is the tool's own parser, not the result.
     if a.tool == "razers3":
@@ -122,7 +151,9 @@ def main():
         return 2
 
     try:
-        r = run(a.cmd.format(args=args), timeout=a.timeout)
+        # cwd=work, because cellranger writes its pipestance tree into the CURRENT directory and the
+        # job's cwd is the repo: the first run left pf_ds01_tcr/ and pf_ds02_tcr/ inside the checkout.
+        r = run(a.cmd.format(args=args), timeout=a.timeout, cwd=work)
         # STDOUT AS WELL AS STDERR. STAR prints `EXITING because of FATAL ERROR in reads input` to
         # stdout, so reading stderr alone would classify a STAR rejection of the DATA as a setup
         # failure -- the opposite of the distinction this script exists to make.
@@ -147,7 +178,16 @@ def main():
     print(f"  {a.label:<22} {a.tool:<15} exit={rc} ok={out['ok']} parse_error={out['parse_error']}")
     if choke:
         print(f"    CHOKED: {choke[0]}")
-    return 0
+    # EXIT NON-ZERO WHEN THE TOOL DID NOT SUCCEED. This returned 0 unconditionally, so the stage
+    # reported success to the driver while ten of fourteen tools had failed -- the driver logs
+    # `94_consumer_preflight OK` purely from SLURM exit status, and the verdict lived only inside a
+    # JSON nobody had read yet. A verification stage that cannot fail is not a gate.
+    #
+    # Non-zero for a setup failure too, not just a data rejection. Distinguishing them is
+    # check_consumer_preflight's job and it does; the thing that must not happen here is a tool
+    # failing for ANY reason and the pipeline calling it OK. The driver treats this stage with
+    # `|| say WARN`, so a failure reports loudly without halting the release.
+    return 0 if rc == 0 else 1
 
 
 if __name__ == "__main__":
