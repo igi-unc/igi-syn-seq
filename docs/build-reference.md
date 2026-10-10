@@ -1664,6 +1664,33 @@ library. The fixture was wrong, not the check. A palindromic sequence is exactly
 orientation test vacuous, which is a reason to build fixtures from random sequence rather than from
 something readable.
 
+### 19.5.1 Verified on the rebuilt libraries, and a stale-derivative catch
+
+Re-run after the GEX rebuild (`11578048`, both datasets, ~6 h 55 each), the same check now separates the
+rebuilt libraries from the derivatives cleanly:
+
+```
+ds-01 GEX full      4004 same / 0 opposite    PASS        ds-01 GEX chr1to6   1993 / 2007   FAIL
+ds-02 GEX full      4030 same / 0 opposite    PASS        ds-02 GEX chr1to6   2024 / 1977   FAIL
+ds-01 TCR           6189 same / 0 opposite    PASS
+ds-02 TCR           4553 same / 0 opposite    PASS
+```
+
+This is the **first direct evidence on GEX**. Before the rebuild only TCR could be shown correct, via the
+shipped `cdr3_nt`; GEX direction is still not assertable from the truth map (§20.1), but orientation
+*consistency* is, and 4004/0 against a prior 2006/1996 is the whole distinction between a stranded and an
+unstranded library.
+
+The two FAILs are the chr1to6 GEX subsets, dated Oct 8 16:38 against a full GEX rebuilt Oct 9 18:24 --
+**stale derivatives of the unstranded build, not a defect in the fix.** `90_subset_chr1to6` carries no
+skip guard and regenerates unconditionally, and it works by filtering the source FASTQs
+(`subset_chr1to6.filter_paired`) rather than re-simulating, so the subsets inherit the orientation of
+whatever they are built from and will pass once the driver reaches that stage.
+
+Worth keeping as a pattern: a content check found a currency problem. `check_currency` exists precisely
+because a deliverable can be valid and obsolete at once, and here the orientation check reported the same
+staleness independently, from the data rather than from mtimes.
+
 ### 19.6 What this costs
 
 GEX and TCR regenerate for both datasets -- `32_tenx_gex --array=1-2`, `33_tenx_tcr --array=1-2`. The ~7 h
