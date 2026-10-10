@@ -120,6 +120,22 @@ case "$asy" in
       echo "  merged library is newer than every input; keeping it"
     fi
     echo "  reads $(zcat "$out" | awk 'NR%4==1' | wc -l)"
+    # THE TRUTH MAP WAS NEVER MERGED. This branch shipped the concatenated FASTQ and left
+    # `<library>_ont_wgs_read_map.tsv.gz` from whatever build wrote it last: on 2026-10-10 the delivered
+    # reads were from Oct 10 and their map was from Oct 5, two days and three generator fixes apart, so
+    # the map did not describe the reads it shipped beside. Nothing caught it, because
+    # check_ont_format asserts the map is PRESENT and larger than 1 kB -- which a stale file satisfies
+    # perfectly -- and never that it is current. Badread puts the source reference, strand and
+    # coordinates in the header and the merge strips them into this file, so a stale map is the whole
+    # answer key being wrong, not a missing extra.
+    mo=$M/${d}_${l}_ont_wgs_read_map.tsv; : > "$mo"; first=1
+    for f in $O/$d/${d}_chr*_${l}_ont_wgs_read_map.tsv.gz; do
+      [ -f "$f" ] || continue
+      if [ $first -eq 1 ]; then zcat "$f" >> "$mo"; first=0; else zcat "$f" | tail -n +2 >> "$mo"; fi
+    done
+    [ $first -eq 0 ] || { echo "FAIL: no per-chromosome read maps to merge"; exit 1; }
+    gzip -f "$mo"
+    echo "  read map $(zcat "$mo.gz" | tail -n +2 | wc -l) rows"
     ;;
 esac
 echo "DONE $asy $d $l $(date)"

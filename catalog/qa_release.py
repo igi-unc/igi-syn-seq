@@ -129,7 +129,11 @@ def ont_deliverables(release):
     wgs = sorted(glob.glob(f"{release}/ont_wgs_merged/*/*_ont_wgs.fastq.gz"))
     if not wgs:
         wgs = sorted(glob.glob(f"{release}/ont_wgs/*/*_ont_wgs.fastq.gz"))
+    # ont_wgs_chr1to6 IS shipped and was missing from this list, so no ONT check ever looked at it --
+    # which is how it came to hold two FASTQs and no read map at all while every other arm emitted one.
+    # Excluding the per-chromosome intermediates is right; excluding a release is not.
     return (wgs
+            + sorted(glob.glob(f"{release}/ont_wgs_chr1to6/*/*_ont_wgs.fastq.gz"))
             + sorted(glob.glob(f"{release}/ont_sc_rna/*/*_ont_sc_rna.fastq.gz"))
             + sorted(glob.glob(f"{release}/ont_bulk_rna/*/*_ont_bulk_rna.fastq.gz")))
 
@@ -151,10 +155,24 @@ def check_ont_format(release, results):
             "check": "ont_header_has_no_description", "file": os.path.basename(f),
             "value": f"{len(leaky)}/{len(heads)} headers carry a description",
             "verdict": "PASS" if not leaky else f"FAIL ({leaky[0][:70]})"})
-        results.append({
-            "check": "ont_read_map_present", "file": os.path.basename(mp),
-            "value": f"{os.path.getsize(mp) / 1e6:.0f} MB" if os.path.exists(mp) else "absent",
-            "verdict": "PASS" if os.path.exists(mp) and os.path.getsize(mp) > 1000 else "FAIL"})
+        # PRESENT AND CURRENT. Presence alone passed a map two days older than the reads it described:
+        # on 2026-10-10 ont_wgs_merged shipped Oct 10 reads beside an Oct 5 map, because the merge never
+        # rebuilt it and this check only ever asked whether a file was there and over 1 kB. A stale
+        # answer key is worse than a missing one, since a missing file stops a consumer and a stale one
+        # quietly disagrees with every read.
+        if not os.path.exists(mp):
+            verdict, value = "FAIL (absent)", "absent"
+        elif os.path.getsize(mp) <= 1000:
+            verdict, value = "FAIL (truncated)", f"{os.path.getsize(mp)} B"
+        elif os.path.getmtime(mp) < os.path.getmtime(f):
+            lag_h = (os.path.getmtime(f) - os.path.getmtime(mp)) / 3600.0
+            verdict = (f"FAIL (map is {lag_h:,.1f} h older than its reads -- it describes an earlier "
+                       f"build; re-run the merge that writes it)")
+            value = f"map {_ts(os.path.getmtime(mp))}, reads {_ts(os.path.getmtime(f))}"
+        else:
+            verdict, value = "PASS", f"{os.path.getsize(mp) / 1e6:.0f} MB"
+        results.append({"check": "ont read map present and current",
+                        "file": os.path.basename(mp), "value": value, "verdict": verdict})
 
 
 def check_pacbio_format(release, results, samtools="samtools"):

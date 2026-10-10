@@ -91,6 +91,10 @@ case "$asy" in
     echo "  junctions $(tail -n +2 "$jo" 2>/dev/null | wc -l)"
     ;;
   ont_wgs)
+    # The chr1to6 ONT library shipped with NO read map whatsoever -- only the FASTQ -- while the full
+    # library's map was merged (badly: see 50_merge_longread) and every other arm here emits one. It
+    # went unnoticed because ont_deliverables() scopes the ONT checks to ont_wgs_merged and the RNA
+    # arms, so nothing in the release QA ever looked at ont_wgs_chr1to6's truth files.
     out=$M/${d}_chr1to6_${l}_ont_wgs.fastq.gz
     mapfile -t IN < <(shards "$O/$d/${d}_%s_${l}_ont_wgs.fastq.gz")
     if stale "$out" "${IN[@]}"; then
@@ -100,6 +104,13 @@ case "$asy" in
       echo "  merged library is newer than every shard; keeping it"
     fi
     echo "  reads $(zcat "$out" | awk 'NR%4==1' | wc -l)"
+    mo=$M/${d}_chr1to6_${l}_ont_wgs_read_map.tsv; : > "$mo"; first=1
+    for f in $(shards "$O/$d/${d}_%s_${l}_ont_wgs_read_map.tsv.gz"); do
+      if [ $first -eq 1 ]; then zcat "$f" >> "$mo"; first=0; else zcat "$f" | tail -n +2 >> "$mo"; fi
+    done
+    [ $first -eq 0 ] || { echo "FAIL: no per-chromosome read maps to merge"; exit 1; }
+    gzip -f "$mo"
+    echo "  read map $(zcat "$mo.gz" | tail -n +2 | wc -l) rows"
     ;;
   pacbio)
     out=$M/${d}_chr1to6_${l}_hifi.bam
