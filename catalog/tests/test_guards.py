@@ -323,6 +323,38 @@ def test_drop_empty_records_removes_sequenceless_segments():
         assert os.path.getmtime(bam) == mtime_before, \
             "leaving the mtime alone keeps check_subset_currency honest"
         assert not os.path.exists(bam + ".tmp"), "no temporary file should be left behind"
+
+        # A rewrite INVALIDATES the .pbi: dropping a record shifts every later file offset, so the
+        # index resolves to the wrong records rather than merely looking old. skera writes that .pbi
+        # and neither kinnex builder rebuilds it, so the function must not rewrite silently.
+        sam2 = os.path.join(root, "mini2.sam")
+        with open(sam, "r") as src, open(sam2, "w") as dst:
+            dst.write(src.read())
+        bam2 = os.path.join(root, "mini2.bam")
+        with pysam.AlignmentFile(sam2, "r", check_sq=False) as src:
+            with pysam.AlignmentFile(bam2, "wb", header=src.header) as out:
+                for r in src.fetch(until_eof=True):
+                    out.write(r)
+        open(bam2 + ".pbi", "w").close()
+        untouched = open(bam2, "rb").read()
+
+        try:
+            drop_empty_records(bam2)
+        except RuntimeError as exc:
+            assert ".pbi" in str(exc) and "offset" in str(exc), str(exc)
+            assert "Nothing has been modified" in str(exc), str(exc)
+            # and it must be TRUE: the empties are still there for the next call to find
+            assert open(bam2, "rb").read() == untouched, \
+                "the refusal must come before the rewrite, not after it"
+        else:
+            raise AssertionError("rewriting next to a .pbi without a pbindex command must raise")
+
+        # Given the command, it is run so the index is rebuilt.
+        marker = os.path.join(root, "pbindex.ran")
+        n = drop_empty_records(bam2, "sh -c 'echo {args} > %s'" % marker)
+        assert n == 2, n
+        assert os.path.exists(marker), "pbindex_cmd must be invoked after a rewrite"
+        assert bam2 in open(marker).read(), "pbindex must be pointed at the rewritten BAM"
     finally:
         shutil.rmtree(root, ignore_errors=True)
 

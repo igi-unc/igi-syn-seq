@@ -199,7 +199,7 @@ def main():
     subprocess.run(sk.format(args=f"split {pre_bam} {ad} {seg_bam}"), shell=True, check=True)
     # skera can emit a zero-length segment; see pacbio_bam.drop_empty_records for the mechanism and
     # for why they are dropped rather than delivered (they also shift the arrays-map join).
-    n_empty = drop_empty_records(seg_bam)
+    n_empty = drop_empty_records(seg_bam, paths.get("pbindex_cmd"))
     sam = paths["samtools_cmd"]
     n_seg = int(subprocess.run(sam.format(args=f"view -c {seg_bam}"), shell=True,
                                capture_output=True, text=True).stdout.strip() or 0)

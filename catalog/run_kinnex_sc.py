@@ -232,7 +232,7 @@ def main():
     seg_bam = os.path.join(a.out, f"{a.dataset}_{label}_kinnex_sc_segmented.bam")
     subprocess.run(paths["skera_cmd"].format(
         args=f"split {pre_bam} {paths['kinnex_adapters_fasta']} {seg_bam}"), shell=True, check=True)
-    n_empty = drop_empty_records(seg_bam)
+    n_empty = drop_empty_records(seg_bam, paths.get("pbindex_cmd"))
     n_seg = int(subprocess.run(paths["samtools_cmd"].format(args=f"view -c {seg_bam}"), shell=True,
                                capture_output=True, text=True).stdout.strip() or 0)
     log(f"  post-skera: {n_seg:,} segments -> {os.path.basename(seg_bam)}"

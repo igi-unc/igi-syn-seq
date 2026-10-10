@@ -316,7 +316,7 @@ def pbindex(bam, cmd=None):
         os.remove(pbi)
     raise RuntimeError(f"pbindex produced an empty index for {bam}")
 
-def drop_empty_records(bam):
+def drop_empty_records(bam, pbindex_cmd=None):
     """Remove records with no sequence from a skera-split BAM, in place. Returns the number dropped.
 
     `skera split` can emit a ZERO-LENGTH segment, and it is not our arrays that cause it. The release scan
@@ -362,6 +362,17 @@ def drop_empty_records(bam):
     if not n_empty:
         return 0
 
+    # Refuse BEFORE touching anything. The first version of this guard rewrote the BAM and raised
+    # afterwards, which left the file modified and its index invalid while reporting failure -- the
+    # caller sees an error and the damage is already done. The test caught it: a second call found
+    # nothing left to drop. A precondition belongs before the side effect.
+    pbi = bam + ".pbi"
+    if os.path.exists(pbi) and not pbindex_cmd:
+        raise RuntimeError(
+            f"{bam} holds {n_empty} zero-length record(s) and has a .pbi: dropping them shifts every "
+            f"later file offset, so {pbi} would resolve to the wrong records. Pass pbindex_cmd so the "
+            f"index is rebuilt. Nothing has been modified.")
+
     tmp = bam + ".tmp"
     dropped = 0
     with pysam.AlignmentFile(bam, "rb", check_sq=False) as src:
@@ -372,4 +383,13 @@ def drop_empty_records(bam):
                     continue
                 out.write(rec)
     os.replace(tmp, bam)
+
+    # The rewrite invalidates the .pbi, which `skera split` wrote and neither kinnex builder rebuilds.
+    # Dropping a record shifts the file offset of every record after it, so the index does not merely
+    # look stale by mtime -- it resolves to the wrong records. pbmm2 and the Iso-Seq tools index by it,
+    # and check_bam_integrity fails a .pbi older than its BAM, so this is both a real corruption and a
+    # QA failure. Found by inspecting mtimes while the first run of this function was in flight:
+    # kinnex_sc delivered two libraries whose BAM was 1 h 44 and 1 h 43 newer than their index.
+    if os.path.exists(pbi):
+        subprocess.run(pbindex_cmd.format(args=bam), shell=True, check=True)
     return dropped
