@@ -62,6 +62,19 @@ python3 acceptance.py --dataset "$d" --catalog-dir output --design design.yaml \
 expect=()
 for c in "${ACCEPT_CHROMS[@]}"; do expect+=("$O/$d/${d}_${c}.json"); done
 expect+=("$O/$d/${d}_reads.json")
+# The design against what the generator WROTE, with no aligner in the path (section 23). This is the
+# check that can call a release defect a release defect: `allele fractions by tier` above compares the
+# design against a pileup of an alignment, so it also answers whether a consumer can recover what was
+# written, and on ds-02 it went red for that reason on a correct release. One invocation per dataset
+# rather than per chromosome, because the record counts are one table for the whole library. No
+# `|| true` here: set -e is wanted, and truth_af.py exits 1 when the generator and the design disagree
+# and 2 when it measured nothing. Its report is deliberately NOT in the list below -- it has no `checks`
+# key, and sweeping a document whose schema belongs to another stage is the mistake section 22 records.
+python3 truth_af.py --dataset "$d" --catalog-dir output --design design.yaml \
+  --records "$M/$d/${d}_tumor_records.tsv.gz" --readmap "$M/$d/${d}_tumor_readmap.tsv.gz" \
+  --counts "$O/$d/${d}_record_counts.tsv" --report "$O/$d/${d}_truth_af.json"
+[ -s "$O/$d/${d}_truth_af.json" ] || { echo "MISSING REPORT: truth_af wrote nothing"; exit 1; }
+
 # Three different things can be wrong with a report, and until 2026-10-11 this guard only looked at two
 # of them: the report is absent, it ran no checks, or it ran them and they FAILED. The third is the only
 # one the stage exists to find, and it was the one not asked about -- the WGS acceptance exited 0 and
