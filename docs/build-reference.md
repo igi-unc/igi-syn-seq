@@ -2276,3 +2276,27 @@ alignment and names the generator. The shape repeats -- each asked a question *a
 mattered -- and the defence is the same every time: measure the thing whose answer you already know. The
 germline hets at 0.5 and the truth map's own read counts are both that, and either one would have settled
 this in an hour.
+
+### 23.5 The re-run, and the margin that is left
+
+The WGS arm was resubmitted with the `-B` pileup, the fail-counting guard and `truth_af.py` in the path.
+Both tasks completed and both datasets reach **40 pass, 0 fail**, each ending on the line the new guard
+writes -- `10 reports, every one with checks, 0 failed` -- which is now a claim about outcomes and not
+merely about files existing. `truth_af.py` measured 873 sites for -01 and 874 for -02 with no failures,
+tier ratios spanning 0.9996 to 1.0010. The generator wrote what the design asked for, on the arm that
+failed, genome-wide rather than on two chromosomes.
+
+The two tiers that failed before land where the arithmetic said they would:
+
+| | expected | observed | deviation | bound (max of 3 sigma, 10 %) | margin |
+|---|---|---|---|---|---|
+| -02 chr5 T_het | 0.2417 | 0.2114 | 12.5 % | 14.0 % | 1.5 points |
+| -02 chr6 T_het | 0.2921 | 0.2612 | 10.6 % | 11.5 % | 0.9 points |
+
+That is a pass on a quantity whose true value is an eighth of the alt reads lost in recovery, held inside
+the bound by nine-tenths of a point in one case. Any release that shifts depth or site count slightly will
+put it back in the red while the data stay correct. The bound is sound as written -- a per-tier sampling
+error with a floor is the right shape, and it is why -01's chr8 A1 survives a 44 % deviation on 34 sites
+while -02's chr8 T_amp nearly fails on a 2 % one at 2.7 sigma -- but it is drawn around *design
+conformance* and what it measures is *consumer recovery*. The number to put in its place is the recovery
+loss itself, and that wants measuring across more than two chromosomes before anyone picks it.
