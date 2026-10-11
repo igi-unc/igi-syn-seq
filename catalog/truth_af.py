@@ -32,6 +32,7 @@ Each copy of an interval shares its coordinates with the others, so read counts 
 and any site covered by more than one interval is reported rather than silently averaged.
 """
 import argparse, csv, gzip, json, math, os, shlex, shutil, subprocess, sys
+from bisect import bisect_left
 from collections import defaultdict
 
 import yaml
@@ -45,6 +46,14 @@ def rows(path):
     op = gzip.open if path.endswith(".gz") else open
     with op(path, "rt") as fh:
         return list(csv.DictReader(fh, delimiter="\t"))
+
+
+def stream(path):
+    """Rows one at a time. The record map for one exome arm is 8.3 million rows; slurping it is GBs."""
+    op = gzip.open if path.endswith(".gz") else open
+    with op(path, "rt") as fh:
+        for r in csv.DictReader(fh, delimiter="\t"):
+            yield r
 
 
 def descendants(clones):
@@ -176,15 +185,28 @@ def main():
               + (f" on {a.chrom}" if a.chrom else ""), flush=True)
         sys.exit(2)
 
+    # Index the sites by chromosome and position so each record is matched by a binary search over the
+    # sites it could contain. The obvious nested loop is 8.3 million records times 873 sites for one
+    # exome arm -- 7.2 billion comparisons, measured at 66 minutes -- and the acceptance would pay it
+    # per dataset. Streaming the records matters as much: as a list of dicts, that file is gigabytes.
+    by_chrom = defaultdict(list)
+    for v in sites:
+        by_chrom[v["chrom"]].append((int(v["pos"]), v))
+    for c in by_chrom:
+        by_chrom[c].sort(key=lambda t: t[0])
+    at = {c: [p for p, _ in lst] for c, lst in by_chrom.items()}
+
     want, spans = defaultdict(list), defaultdict(set)
-    for rec in rows(a.records):
-        if chroms and rec["chrom"] not in chroms:
+    for rec in stream(a.records):
+        lst = by_chrom.get(rec["chrom"])
+        if not lst or (chroms and rec["chrom"] not in chroms):
             continue
         s, e = int(rec["start"]), int(rec["end"])
-        for v in sites:
-            p = int(v["pos"])
-            if rec["chrom"] != v["chrom"] or not (s <= p < e):
-                continue
+        lo = bisect_left(at[rec["chrom"]], s)
+        hi = bisect_left(at[rec["chrom"]], e)
+        if lo == hi:
+            continue
+        for _, v in lst[lo:hi]:
             key = f"{v['chrom']}:{v['pos']}"
             want[rec["record"]].append((key, carries(rec, v, desc)))
             spans[key].add((s, e))
