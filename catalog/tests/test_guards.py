@@ -1058,6 +1058,137 @@ def test_class_presence_can_say_no():
         shutil.rmtree(root, ignore_errors=True)
 
 
+def _truth_af():
+    spec = importlib.util.spec_from_file_location("truth_af", os.path.join(CATALOG, "truth_af.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_truth_af_reads_the_clone_tree_and_the_copy_kind():
+    """Which copies carry a variant is a property of the tree and of when the variant arose.
+
+    Hard-coding "the tumour populations" is right for the three truncal tiers and wrong for the three
+    subclonal ones, and treating every copy of a haplotype as carrying the variant is wrong for anything
+    that arose after the copy-number change -- which is exactly what the catalog's multiplicity column
+    records. Both rules have to come out of the data, not out of an assumption about ds-02.
+    """
+    ta = _truth_af()
+    clones = {"T": {"parent": None}, "A": {"parent": "T"}, "A1": {"parent": "A"}, "B": {"parent": "T"}}
+    desc = ta.descendants(clones)
+    assert desc["T"] == {"T", "A", "A1", "B"}, desc
+    assert desc["A"] == {"A", "A1"}, desc
+    assert desc["B"] == {"B"}, desc
+    assert desc["A1"] == {"A1"}, desc
+
+    site = {"clone": "A", "haplotype": "1", "timing": "pre_cna"}
+    def rec(source, hap, kind):
+        return {"source": source, "haplotype": hap, "copy_kind": kind}
+    assert ta.carries(rec("A", "1", "all"), site, desc)
+    assert ta.carries(rec("A1", "1", "pre_cna"), site, desc), "A1 descends from A"
+    assert not ta.carries(rec("T", "1", "all"), site, desc), "the trunk predates a subclonal variant"
+    assert not ta.carries(rec("B", "1", "all"), site, desc), "B is a sibling, not a descendant"
+    assert not ta.carries(rec("A", "0", "all"), site, desc), "wrong haplotype"
+    assert not ta.carries(rec("NORMAL", "1", "all"), site, desc)
+    post = dict(site, timing="post_cna")
+    assert ta.carries(rec("A", "1", "all"), post, desc)
+    assert not ta.carries(rec("A", "1", "pre_cna"), post, desc), \
+        "a post-CNA variant is absent from the copy that predates the CNA"
+
+
+def test_truth_af_separates_a_generator_defect_from_an_alignment_loss():
+    """The check that can tell a release defect from a consumer's recovery loss.
+
+    Two WGS checks failed on ds-02 by comparing the design against a pileup of an alignment, which is
+    three things at once. Measured from the truth map the same reads were within 0.2 % of design. This
+    test pins the arithmetic that made that statement: reads from the copies carrying the alt over reads
+    from every copy of the interval, and a failure when THAT disagrees with the design.
+    """
+    ta = _truth_af()
+    root = tempfile.mkdtemp(prefix="igi_taf_")
+    try:
+        ds = "DS"
+        os.makedirs(f"{root}/output")
+        with open(f"{root}/design.yaml", "w") as fh:
+            fh.write("datasets:\n  DS:\n    clones:\n"
+                     "      T:  {parent: null, ccf: 1.0}\n"
+                     "      A:  {parent: T, ccf: 0.4}\n"
+                     "      A1: {parent: A, ccf: 0.12}\n"
+                     "      B:  {parent: T, ccf: 0.25}\n")
+        cols = ["event_id", "chrom", "pos", "ref", "alt", "haplotype", "clone", "timing",
+                "clonality_tier", "expected_vaf_tumor", "multiplicity", "tumor_cn_at_locus"]
+        # purity 0.45 at cn 4: two mutant copies of four give 0.9/2.9, one gives 0.45/2.9
+        with open(f"{root}/output/{ds}.snv_indel.tsv", "w") as fh:
+            fh.write("\t".join(cols) + "\n")
+            fh.write("\t".join(["v1", "chr1", "500", "A", "G", "0", "T", "pre_cna",
+                                 "T_het", "0.3103", "2", "4.0"]) + "\n")
+            fh.write("\t".join(["v2", "chr1", "600", "C", "T", "1", "T", "post_cna",
+                                 "T_het", "0.1552", "1", "4.0"]) + "\n")
+        recs, reads = [], []
+        plan = {}   # record -> read count
+        rid = 0
+        for source in ("T", "A", "A1", "B"):
+            for hap in ("0", "1"):
+                for kind in ("all", "pre_cna"):
+                    rid += 1
+                    name = f"e{rid:04d}"
+                    recs.append((name, "chr1", 1, 1000, source, hap, kind))
+                    plan[name] = 450 if source == "T" else 0
+        for hap in ("0", "1"):
+            rid += 1
+            name = f"e{rid:04d}"
+            recs.append((name, "chr1", 1, 1000, "NORMAL", hap, "all"))
+            plan[name] = 550
+
+        def write(plan):
+            with open(f"{root}/records.tsv", "w") as fh:
+                fh.write("record\tchrom\tstart\tend\tsource\thaplotype\tcopy_kind\tinterval_set\n")
+                for r in recs:
+                    fh.write("\t".join(str(x) for x in r) + "\ton_target\n")
+            with open(f"{root}/readmap.tsv", "w") as fh:
+                fh.write("read_name\tsource_record\n")
+                for name, n in plan.items():
+                    for i in range(n):
+                        fh.write(f"r{name}_{i}\t{name}\n")
+
+        def run(extra=()):
+            r = subprocess.run([sys.executable, os.path.join(CATALOG, "truth_af.py"),
+                                "--dataset", ds, "--catalog-dir", f"{root}/output",
+                                "--design", f"{root}/design.yaml",
+                                "--records", f"{root}/records.tsv",
+                                "--readmap", f"{root}/readmap.tsv",
+                                "--report", f"{root}/r.json", *extra],
+                               capture_output=True, text=True)
+            return r.returncode, r.stdout + r.stderr
+
+        write(plan)
+        rc, out = run()
+        assert rc == 0, out
+        rep = json.load(open(f"{root}/r.json"))
+        got = {s["site"]: s for s in rep["sites"]}
+        # v1 sits on both copies of haplotype 0; v2 only on the copy that postdates the CNA
+        assert got["chr1:500"]["alt_reads"] == 900 and got["chr1:500"]["reads"] == 2900, rep
+        assert abs(got["chr1:500"]["truth"] - 0.3103) < 0.001, rep
+        assert got["chr1:600"]["alt_reads"] == 450, rep
+        assert abs(got["chr1:600"]["truth"] - 0.1552) < 0.001, rep
+        assert rep["tiers"]["T_het"]["sites"] == 2 and not rep["failures"], rep
+
+        # the generator writes one copy where the design says two: a release defect, and this is the
+        # check that calls it one
+        halved = dict(plan)
+        halved["e0002"] = 0
+        write(halved)
+        rc, out = run()
+        assert rc == 1 and "generator and the design disagree" in out and "T_het" in out, (rc, out)
+
+        # a readmap that names none of the records measured nothing, and must not pass
+        write({k: 0 for k in plan})
+        rc, out = run()
+        assert rc == 2 and "nothing was measured" in out, (rc, out)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 def _main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

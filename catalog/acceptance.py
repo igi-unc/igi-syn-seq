@@ -45,7 +45,16 @@ def pileup(bam, reference, sites_path, min_bq=15, min_mq=20, max_depth=8000, reg
     free, so the cost only appeared once the release existed. Every site in the list is on one chromosome
     by construction, so passing `-r` lets mpileup seek with the index instead.
     """
-    cmd = ["samtools", "mpileup", "-f", reference, "-l", sites_path,
+    # -B disables BAQ. BAQ is the right default for *calling* variants, where it suppresses false
+    # positives around indels, and the wrong one for *measuring* the allele fraction of a site already
+    # known to be there: it lowers the base qualities of mismatching bases, so -Q then discards them, and
+    # the alt allele is the mismatching base. Measured on 2,755 empirical germline hets in the ds-02
+    # normal exome, which sit at 0.5 whatever the purity, copy number or WGD: 0.4991 with -B against
+    # 0.4910 without, a 1.6 % penalty on the mean. The mean understates it, because the effect is not a
+    # smooth shift -- most sites are untouched and a few are destroyed outright, 0.500 -> 0.000 with the
+    # depth halving from 84 to 42 as every alt-carrying read is dropped. That is what produced the
+    # 11 bp pair at chr5:168,460,728/739, which the truth map puts at 0.178 and BAQ read as 0.061.
+    cmd = ["samtools", "mpileup", "-B", "-f", reference, "-l", sites_path,
            "-d", str(max_depth), "-Q", str(min_bq), "-q", str(min_mq)]
     if region:
         cmd += ["-r", region]

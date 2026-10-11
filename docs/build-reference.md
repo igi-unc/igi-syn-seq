@@ -1784,6 +1784,7 @@ still not, because that is where the next one will come from.
 | GEX R2 direction on delivered data | **checkable, not yet checked** | recorded as *not checkable* on the grounds that its truth map carries a record id rather than sequence. True of the map alone, and too strong: the record names a transcript, the GTF gives that transcript's strand, so aligning R2 and asking whether it is antisense to its OWN gene settles direction. What cannot settle it is the genomic plus fraction, which is ~0.5 for a stranded GEX library because its genes sit on both strands -- that mis-banding failed two good libraries (§20.3) |
 | Kinnex primer structure | **known gap** | the synthetic Kinnex bulk reads carry no primers; real Iso-Seq reads do |
 | coverage uniformity and the CN ladder genome-wide | **partial** | per-tier allele fractions are checked at designed sites, not coverage across the genome |
+| the delivered allele fraction against the design, with no aligner in the path | **now checked** | `truth_af.py` reads it out of the truth map's own read counts: the copies carrying a variant over every copy of the interval. Added 2026-10-11 after two failed checks on a correct release turned out to be measuring the design, the generator, bwa and samtools' BAQ default all at once (§23) |
 | the ~150 bp ART masking holes at the 94 IUPAC positions | **known, documented** | §17.6.6; a deliberate trade, not yet an owner decision |
 | chr1to6 truth consistency against the full release | **not checked** | the subsets are re-cut, and nothing asserts that a subset's truth is the full release's truth restricted |
 | bulk RNA strandedness | **measured, now stated** | salmon's `-l a` detection, over the chain LENS actually runs, calls both bulk RNA libraries unstranded (`IU`; §20.5). Nothing asserts it and nothing needs to while the consumer auto-detects -- but a manifest or config that declared a stranded protocol for this arm would be declaring something false |
@@ -2155,3 +2156,108 @@ That makes three guards in one day whose verdict was about the harness rather th
 common shape is now unmistakable: each one asked a question that was *adjacent* to the one that mattered.
 Does a file exist, rather than is it the file I own. Does the tool run, rather than does it run the way
 the consumer runs it. Did checks happen, rather than did they pass.
+
+## 23. Two failed checks, a correct release, and a measurement that was three things at once
+
+`allele fractions by tier` failed on IGI-SYN-SEQ-02's WGS arm, on chr5 and chr6, in the tumour het tier:
+
+    chr5  T_het 15% > 14% bound (3.2 sigma), 54 sites
+    chr6  T_het 13% > 12% bound (3.4 sigma), 107 sites
+
+ds-01 came back 40/40 clean. The reports read as a statement that ds-02's allele fractions are off design.
+They are not. **The release is correct, and the check is measuring the design, the generator, the aligner
+and samtools' defaults all at once, then attributing the total to the generator.**
+
+### 23.1 What the numbers said before the right measurement existed
+
+Four things were visibly true, and three of them pointed the wrong way.
+
+| observation | what it suggested | verdict |
+|---|---|---|
+| ds-02 T_het below expectation on 9 of 9 chromosomes, ds-01 scattered around 1.0 | ds-02 is the broken one, and ds-02 is the one with WGD | real, and not about WGD |
+| effective purity solves to 0.34-0.38 in every CN and multiplicity group against a designed 0.45 | a purity shortfall | the consistency was real; the cause was not purity |
+| two chr6 sites read almost exactly the catalog's multiplicity-1 value at their locus (0.152 and 0.167 against an expected 0.3103, where mult=1 is 0.1552) | a WGD mutation reached one copy instead of two | **wrong**; the truth map puts both at 0.304-0.309 |
+| chr6's T_LOH tier at 0.981 while T_het on the same chromosome is 0.870 | not purity, not depth: both tiers see the same purity | the clue that mattered |
+
+The multiplicity story should have died earlier than it did. A site carries one or two mutant copies and
+nothing between, so a copy-count error is bimodal: a quarter of sites at half their expectation, the rest
+exact. The data were a smooth 0.85 with two low outliers, which is the shape of a continuous loss, not a
+discrete miscount. I had the argument and did not apply it.
+
+### 23.2 The ruler, measured on something whose answer is known
+
+Germline hets in the normal library sit at 0.5 whatever the purity, copy number or WGD, so they test the
+measurement and nothing else. 2,755 of them on chr17, called from a BAQ-off pileup and re-read with BAQ
+on at the identical positions:
+
+    BAQ off : mean non-reference fraction 0.4991   mean depth 76.9
+    BAQ on  : mean non-reference fraction 0.4910   mean depth 75.6
+
+So the pileup with `-B` reads a true 0.5 as 0.4991, and BAQ costs 1.6 % of it on the mean. The mean
+understates the effect badly, because it is not a smooth shift: most sites are untouched and a few are
+destroyed outright --
+
+    0.500 -> 0.000   depth 84 -> 42
+    0.481 -> 0.000   depth 81 -> 42
+    0.473 -> 0.000   depth 91 -> 42
+
+-- where the depth halves because every alt-carrying read is dropped. That is what produced the strangest
+feature of the per-site table, the 11 bp pair at chr5:168,460,728 and 168,460,739 reading 0.33 and 0.45 of
+expectation while their chromosome averaged 0.85. BAQ penalises clustered mismatches hardest, and two
+designed variants 11 bp apart are a cluster. `acceptance.py` now passes `-B`, and the reasoning is in the
+comment on `pileup`.
+
+Paired at all 35 failing sites, BAQ accounts for about 2.5 points of a 13-point deficit:
+
+| tier | BAQ on (as the check ran) | BAQ off |
+|---|---|---|
+| ds-02 chr5 T_het | 0.850 | 0.875 |
+| ds-02 chr6 T_het | 0.870 | 0.894 |
+
+### 23.3 The release's own account of what it wrote
+
+The remaining ~11 points are in the reads as aligned, which is a different claim from being in the reads.
+The truth map settles it without an aligner in the path: `records.tsv.gz` lists every simulated interval
+copy as (chrom, start, end, population, haplotype, copy_kind) and `readmap.tsv.gz` maps every read to the
+copy it came from. Each 5 Mb window carries 18 copies -- four tumour populations x two haplotypes x
+{`all`, `pre_cna`}, plus two normal -- all on identical coordinates, so reads per copy are directly
+comparable. For a truncal pre-CNA variant on haplotype 1 at four copies, 8 of the 18 carry the alt and
+the fraction is 0.9/2.9 = 0.3103, which is the catalog's number to four places.
+
+Measured that way on the exome arm, over the same 35 sites:
+
+    mean designed 0.2662, mean truth 0.2657, ratio 0.998
+
+No site off by more than 3 %, and the two that looked like single-copy sites at 0.49 and 0.54 of
+expectation in the pileup come back at 0.995 and 0.981. **The generator wrote what the design asked for.**
+The deficit appears between the FASTQ and the pileup: roughly an eighth of the alt-carrying reads at these
+sites are not recovered by bwa plus samtools at `-q 20 -Q 15`, and that loss is a property of the path
+every consumer will use, not of the release.
+
+### 23.4 Two checks, two different questions
+
+`catalog/truth_af.py` is the measurement above, as a check that can fail. It reads the clone tree out of
+`design.yaml` rather than assuming one -- a variant in subclone A is carried by A and by A1 beneath it,
+and by neither T nor B, which is right for three of the six tiers and wrong for the other three -- and it
+honours `copy_kind`, since a variant that arose after the copy-number change is absent from the copy that
+predates it. That is the same statement as the catalog's multiplicity column, arrived at independently.
+
+The division of labour is now explicit:
+
+| check | fails when | is that a defect? |
+|---|---|---|
+| `truth_af.py` | the generator and the design disagree | **yes** |
+| `allele fractions by tier` | a consumer cannot recover what the generator wrote | no, but worth knowing |
+
+The second check's bound was never drawn with that distinction in mind, which is why it is the one that
+goes red on a correct release. With `-B` its two failing tiers land at 12.5 % against a 14.1 % bound and
+10.6 % against 11.6 %, so both now pass -- and passing for a better reason than before is still not the
+same as the bound meaning what it appears to mean. The recovery loss is real and stays documented here.
+
+This is the fourth verdict in one day that was about the harness rather than the release, and the first
+that cost real time: a glob that swept a neighbour's file, a preflight that ran a mode the consumer never
+runs, a guard that never asked whether checks passed, and now a bound that compares a design against an
+alignment and names the generator. The shape repeats -- each asked a question *adjacent* to the one that
+mattered -- and the defence is the same every time: measure the thing whose answer you already know. The
+germline hets at 0.5 and the truth map's own read counts are both that, and either one would have settled
+this in an hour.
