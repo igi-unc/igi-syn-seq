@@ -2118,3 +2118,40 @@ The report is still written when the verdict is no, because the numbers are the 
 
 The stage also now names the two reports it owns, as §22 does, for the one failure neither exit code can
 cover: a report the job believed it wrote that is not on disk.
+
+### 22.3 Two checks failed and the job reported COMPLETED
+
+The WGS acceptance finished after 21 hours: ds-01 clean at 40/40, ds-02 at **38/40**, with two failed
+allele-fraction checks. Both tasks ended `COMPLETED`, both printed `DONE`, and the driver would have
+treated the stage as clean and moved on.
+
+Three things can be wrong with a report: it is absent, it ran no checks, or it ran them and they failed.
+§22 fixed the first and kept the second. The third -- the only one the stage exists to find -- was never
+asked about. The guard counted `len(checks)` and stopped there, so a report full of failures counted as
+a good report. The `|| true` on the per-chromosome loop swallows `acceptance.py`'s exit 1 for exactly the
+reason it swallows exit 2, which is the argument the §22 comment already made about zero-check runs; it
+applies verbatim to failed ones and I did not apply it.
+
+Both guards now read `n_fail` back out of each report they own and separate the two outcomes:
+
+| what happened | message | exit |
+|---|---|---|
+| a report is missing or unparseable | `MISSING REPORT` / `EMPTY REPORT` | 1 |
+| a report ran checks and some failed | `FAILED CHECKS: n check(s) failed across m report(s)` | 1 |
+| every owned report ran checks, none failed | `DONE <ds>: n reports, every one with checks, 0 failed` | 0 |
+
+The two exits read differently on purpose. A missing report means the stage did not do its work and a
+retry is sensible; failed checks mean the stage did all of its work and *the release* did not pass, which
+is a result, not a transient -- the driver's retry will re-run the checks in minutes (the BAM is cached)
+and reach the same answer, then give up loudly, which is the correct outcome for a content failure.
+
+Run verbatim out of the script against the real reports: ds-01 exits 0, ds-02 exits 1 naming
+`IGI-SYN-SEQ-02_chr5.json x1 IGI-SYN-SEQ-02_chr6.json x1`. Mutation-tested on a copy of the real ds-01
+set across all four paths -- report deleted, `checks: []`, one check flipped to `pass: false`, and a
+report replaced with unparseable text (which reads as `EMPTY REPORT`, since a report that cannot be
+parsed has not been shown to contain anything).
+
+That makes three guards in one day whose verdict was about the harness rather than the release, and the
+common shape is now unmistakable: each one asked a question that was *adjacent* to the one that mattered.
+Does a file exist, rather than is it the file I own. Does the tool run, rather than does it run the way
+the consumer runs it. Did checks happen, rather than did they pass.

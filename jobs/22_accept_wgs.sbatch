@@ -77,11 +77,25 @@ done
 # `|| true` above makes invisible.
 expect=()
 for c in "${ACCEPT_CHROMS[@]}"; do expect+=("$R/$d/${d}_${c}.json"); done
-bad=0
+# Three different things can be wrong with a report, and until 2026-10-11 this guard only looked at two
+# of them: the report is absent, it ran no checks, or it ran them and they FAILED. The third is the only
+# one the stage exists to find, and it was the one not asked about -- the WGS acceptance exited 0 and
+# SLURM said COMPLETED with two failed allele-fraction checks on ds-02 sitting in the reports. The
+# `|| true` above swallows acceptance.py's exit 1 for the same reason it swallows exit 2, so a failed
+# check has to be read back out of the report, exactly like a zero-check run.
+bad=0; nfail=0; flagged=()
 for r in "${expect[@]}"; do
   if [ ! -s "$r" ]; then echo "MISSING REPORT: $r was never written"; bad=$((bad+1)); continue; fi
-  n=$(python3 -c "import json;print(len(json.load(open('$r'))['checks']))" 2>/dev/null || echo 0)
-  [ "$n" -eq 0 ] && { echo "EMPTY REPORT: $r ran no checks"; bad=$((bad+1)); }
+  read -r n f < <(python3 -c \
+    "import json;d=json.load(open('$r'));print(len(d['checks']),d.get('n_fail',0))" 2>/dev/null \
+    || echo "0 0")
+  if [ "${n:-0}" -eq 0 ]; then echo "EMPTY REPORT: $r ran no checks"; bad=$((bad+1)); continue; fi
+  if [ "${f:-0}" -gt 0 ]; then nfail=$((nfail+f)); flagged+=("$(basename "$r") x$f"); fi
 done
 [ "$bad" -eq 0 ] || { echo "$bad of ${#expect[@]} report(s) missing or ran no checks; that is a failure, not a pass"; exit 1; }
-echo "DONE $d: ${#expect[@]} reports, every one with checks $(date)"
+if [ "$nfail" -gt 0 ]; then
+  echo "FAILED CHECKS: $nfail check(s) failed across ${#flagged[@]} report(s): ${flagged[*]}"
+  echo "this stage did everything it owns and the release did not pass it; that is not a COMPLETED job"
+  exit 1
+fi
+echo "DONE $d: ${#expect[@]} reports, every one with checks, 0 failed $(date)"
