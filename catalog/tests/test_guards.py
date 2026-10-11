@@ -311,11 +311,29 @@ def test_ont_read_map_must_be_current_not_merely_present():
         _pin(fq, 0)
         v = verdicts()
         assert v["ont read map present and current"].startswith("FAIL"), v
-        assert "older than its reads" in v["ont read map present and current"], v
+        assert "not from the same run" in v["ont read map present and current"], v
 
         # Re-merging the map clears it.
         _pin(mp, 60)
         assert verdicts()["ont read map present and current"] == "PASS", verdicts()
+
+        # A map that precedes its reads WITHIN THE BUILD'S OWN RUNTIME is write order, not staleness:
+        # an arm generated directly writes the map first and the reads last in one process. Strict
+        # ordering produced three false positives on the ONT RNA arms (lags of 0 s, 173 s and 660 s
+        # inside builds of 25,249 s, 8,367 s and 19,585 s).
+        json.dump({"runtime_s": 8367}, open(fq.replace(".fastq.gz", ".json"), "w"))
+        _pin(mp, -173)
+        _pin(fq, 0)
+        assert verdicts()["ont read map present and current"] == "PASS", \
+            f"a lag inside the build duration is write order: {verdicts()}"
+
+        # Beyond the recorded runtime they cannot be from the same run, which is the real defect --
+        # ds-02's ONT bulk RNA map preceded its reads by 31,760 s against a 2,601 s build.
+        json.dump({"runtime_s": 2601}, open(fq.replace(".fastq.gz", ".json"), "w"))
+        _pin(mp, -31760)
+        _pin(fq, 0)
+        v = verdicts()["ont read map present and current"]
+        assert v.startswith("FAIL") and "same run" in v, v
 
         # Absent is still a failure, and distinguishable from stale.
         os.remove(mp)

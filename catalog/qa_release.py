@@ -138,6 +138,22 @@ def ont_deliverables(release):
             + sorted(glob.glob(f"{release}/ont_bulk_rna/*/*_ont_bulk_rna.fastq.gz")))
 
 
+def _build_seconds(fastq):
+    """How long the build that wrote `fastq` took, from its sibling JSON; 0 if unknown.
+
+    Used to bound how far a truth map may precede the reads it describes. A merged library has no
+    such JSON and gets 0, which is correct: the merge writes the map last, so strict ordering applies.
+    """
+    for cand in (fastq.replace(".fastq.gz", ".json"),
+                 re.sub(r"\.fastq\.gz$", ".json", fastq)):
+        if os.path.exists(cand):
+            try:
+                return max(0, int(json.load(open(cand)).get("runtime_s") or 0))
+            except (ValueError, TypeError, json.JSONDecodeError):
+                return 0
+    return 0
+
+
 def check_ont_format(release, results):
     """No ONT read may carry the simulator's description, and the map that replaced it must be there.
 
@@ -164,10 +180,22 @@ def check_ont_format(release, results):
             verdict, value = "FAIL (absent)", "absent"
         elif os.path.getsize(mp) <= 1000:
             verdict, value = "FAIL (truncated)", f"{os.path.getsize(mp)} B"
-        elif os.path.getmtime(mp) < os.path.getmtime(f):
+        elif os.path.getmtime(mp) < os.path.getmtime(f) - _build_seconds(f):
+            # BOUNDED BY THE BUILD'S OWN RUNTIME, not by strict ordering. A merged library writes the
+            # map after the reads, so "map newer" is right there. But an arm generated directly writes
+            # both in ONE process, map first, and the gap is then just write order: ds-01's ONT sc RNA
+            # map precedes its reads by 173 s inside an 8,367 s build. Flagging that is a false
+            # positive, and the first version of this check produced three of them.
+            #
+            # The honest bound is the build duration recorded in the sibling JSON: within one run the
+            # map cannot precede the reads by more than the run took. It still catches the real thing --
+            # ont_wgs_merged's map was two days older than reads -- and it caught one I had not seen:
+            # ds-02's ONT bulk RNA map precedes its reads by 31,760 s against a recorded runtime of
+            # 2,601 s, so those two files cannot come from the same run.
             lag_h = (os.path.getmtime(f) - os.path.getmtime(mp)) / 3600.0
-            verdict = (f"FAIL (map is {lag_h:,.1f} h older than its reads -- it describes an earlier "
-                       f"build; re-run the merge that writes it)")
+            budget = _build_seconds(f)
+            verdict = (f"FAIL (map precedes its reads by {lag_h:,.1f} h, beyond the "
+                       f"{budget / 3600.0:,.1f} h this build took -- they are not from the same run)")
             value = f"map {_ts(os.path.getmtime(mp))}, reads {_ts(os.path.getmtime(f))}"
         else:
             verdict, value = "PASS", f"{os.path.getsize(mp) / 1e6:.0f} MB"
