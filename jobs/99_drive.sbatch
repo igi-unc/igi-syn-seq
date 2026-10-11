@@ -71,6 +71,22 @@ run_stage() {
   local script=$1 array=$2; shift 2
   local attempt=0 id spec bad mem_args=("$@")
   spec=$array
+  # The driver's --mem is a FLOOR, not a ceiling. An sbatch command-line option BEATS an in-script
+  # #SBATCH directive, so the flat --mem=32G below was silently LOWERING every stage that asks for
+  # more: 14_accept requests 64G, 15_accept_rna 96G, 22_accept_wgs 64G. Nothing had failed from it,
+  # which is exactly why it went unnoticed -- the exome acceptance peaks at 2.4 GB measured
+  # (11559137_2, MaxRSS 2,379,535K) so 32G was never close to tight. 15_accept_rna has never run, so
+  # its 96G is the one figure here that is still a guess rather than a measurement, and guessing LOW
+  # on it costs an OOM, a retry and up to twelve hours of wall clock to learn nothing.
+  local script_mem given_mem i
+  script_mem=$(sed -n 's/^#SBATCH.*--mem=\([0-9][0-9]*\)G.*/\1/p' "$J/$script" | head -1)
+  given_mem=${mem_args[*]}; given_mem=${given_mem##*--mem=}; given_mem=${given_mem%%[!0-9]*}
+  if [ -n "$script_mem" ] && [ -n "$given_mem" ] && [ "$script_mem" -gt "$given_mem" ]; then
+    say "$script asks ${script_mem}G and the driver offered ${given_mem}G; honouring the script"
+    for i in "${!mem_args[@]}"; do
+      case ${mem_args[$i]} in --mem=*) mem_args[$i]="--mem=${script_mem}G" ;; esac
+    done
+  fi
   while :; do
     attempt=$((attempt + 1))
     local args=()

@@ -1070,6 +1070,40 @@ free to take the library, so several are now larger than they need to be -- Illu
 should be re-measured once the current rebuild drains, and this table revised against that, not against
 the figures here.
 
+### 16.6 The driver silently lowered three stages' memory requests
+
+Same family as §16.1, one layer up, found while reading the driver's remaining stages rather than by a
+failure. An sbatch **command-line** option beats an in-script `#SBATCH` directive. `99_drive.sbatch`
+passes a flat `--mem` per stage, so for three stages the number written in the script had no effect at
+all and the driver's smaller number won:
+
+| stage | script asks | driver gave | measured peak |
+|---|---|---|---|
+| `22_accept_wgs.sbatch` | 64G | 32G | no OOM in 14 h of a running job |
+| `14_accept.sbatch` | 64G | 32G | **2.4 GB** (`11559137_2`, MaxRSS 2,379,535K) |
+| `15_accept_rna.sbatch` | 96G | 32G | **never run** |
+
+Nothing had failed from this, which is why it went unnoticed for the whole release: the exome acceptance
+needs 2.4 GB and would pass at 4G, so 32G was never close to tight, and both numbers were comfortable
+for entirely different reasons than the ones written down. The stage that matters is `15_accept_rna`,
+which has no `sacct` history at all -- its 96G is the only figure in that table that is still a guess, and
+guessing low on it costs an OOM, a retry and up to twelve hours of wall clock to learn nothing.
+
+`run_stage` now treats its `--mem` as a **floor** rather than a value: it reads the script's own
+`#SBATCH --mem=` and honours the larger, replacing only the `--mem` element so other sbatch arguments
+survive. Tested against all six stages the driver submits -- the three above are raised, the three whose
+two numbers already agree are untouched, and a case with `--mem` neither first nor last keeps its
+neighbours.
+
+This does not reach the driver already in flight. SLURM copies a batch script at submit time, so
+`11579857` will still offer 32G when it reaches the exome and RNA acceptances. The exome is safe by
+measurement; the RNA stage will either fit or OOM once and be retried at 48G by the escalation path,
+which is the behaviour that makes leaving it alone preferable to restarting a driver 24 hours into a
+chain.
+
+The lesson repeats §16.1's exactly: a number that is written down, reviewed and plausible can still have
+no effect. Both cases were found by asking what *bounds* the resource, not by reading what requests it.
+
 ## 17. IUPAC ambiguity codes in delivered reads
 
 Found while verifying that §15's alphabet check passes on the rebuilt ds-01 arms. It does -- rebuilt WES
