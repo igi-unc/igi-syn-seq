@@ -686,6 +686,52 @@ def test_consumer_preflight_separates_a_parse_error_from_a_setup_failure():
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_consumer_preflight_names_the_failing_stage_of_a_chain():
+    """Bulk RNA is preflighted as a chain, so the verdict has to say WHICH tool spoke.
+
+    LENS quantifies bulk RNA with STAR followed by `salmon quant -t <fa> -l a -a <bam>`, so the
+    preflight row runs both. "star_salmon exited 1" sends you to the wrong tool half the time, and in
+    the case that prompted this it sent me nowhere at all: the row that was failing was failing
+    because the old check ran salmon in a mode LENS never calls, against a path that was not a salmon
+    index. The verdict named the data; the fault was in the harness.
+    """
+    qa = _qa()
+    root = tempfile.mkdtemp(prefix="igi_pfc_")
+    try:
+        d = f"{root}/preflight"
+        os.makedirs(d)
+        # STAR fine, salmon not -- the shape the old wording could not express
+        json.dump({"label": "ds01_rna", "tool": "star_salmon", "fraction": 0.05,
+                   "exit_code": 1, "ok": False, "parse_error": False, "stage": "salmon_aln",
+                   "stages": [{"stage": "star", "exit_code": 0, "ok": True},
+                              {"stage": "salmon_aln", "exit_code": 1, "ok": False}]},
+                  open(f"{d}/rna1.json", "w"))
+        json.dump({"label": "ds02_rna", "tool": "star_salmon", "fraction": 0.05,
+                   "exit_code": 0, "ok": True, "parse_error": False, "stage": "salmon_aln",
+                   "stages": [{"stage": "star", "exit_code": 0, "ok": True},
+                              {"stage": "salmon_aln", "exit_code": 0, "ok": True}]},
+                  open(f"{d}/rna2.json", "w"))
+        # a one-stage row must not pick up the chain wording
+        json.dump({"label": "ds01_hifi", "tool": "pbmm2", "fraction": 0.05,
+                   "exit_code": 1, "ok": False, "parse_error": False, "stage": "pbmm2",
+                   "stages": [{"stage": "pbmm2", "exit_code": 1, "ok": False}]},
+                  open(f"{d}/hifi.json", "w"))
+        res = []
+        qa.check_consumer_preflight(root, res)
+        by = {r["file"]: r for r in res}
+
+        assert by["ds01_rna"]["verdict"].startswith("FAIL"), by["ds01_rna"]
+        assert "stage salmon_aln" in by["ds01_rna"]["verdict"], by["ds01_rna"]
+        assert "1/2 stages" in by["ds01_rna"]["value"], by["ds01_rna"]
+        assert by["ds02_rna"]["verdict"] == "PASS", by["ds02_rna"]
+        assert "2/2 stages" in by["ds02_rna"]["value"], by["ds02_rna"]
+        # the single-stage row names the tool and says nothing about stages
+        assert by["ds01_hifi"]["verdict"].startswith("FAIL (pbmm2 exited 1"), by["ds01_hifi"]
+        assert "stage" not in by["ds01_hifi"]["value"], by["ds01_hifi"]
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------- record structure
 
 def _fq_records(path, recs):

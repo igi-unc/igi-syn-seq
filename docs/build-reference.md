@@ -1708,7 +1708,7 @@ them, because nothing here asserted the property.** Every check in this document
 failure. So the useful thing to record is not the list of what is now checked but the list of what is
 still not, because that is where the next one will come from.
 
-### 20.1 Unasserted properties, as of 2026-10-10
+### 20.1 Unasserted properties, as of 2026-10-11
 
 | property | state | why it matters |
 |---|---|---|
@@ -1722,6 +1722,8 @@ still not, because that is where the next one will come from.
 | coverage uniformity and the CN ladder genome-wide | **partial** | per-tier allele fractions are checked at designed sites, not coverage across the genome |
 | the ~150 bp ART masking holes at the 94 IUPAC positions | **known, documented** | §17.6.6; a deliberate trade, not yet an owner decision |
 | chr1to6 truth consistency against the full release | **not checked** | the subsets are re-cut, and nothing asserts that a subset's truth is the full release's truth restricted |
+| bulk RNA strandedness | **measured, now stated** | salmon's `-l a` detection, over the chain LENS actually runs, calls both bulk RNA libraries unstranded (`IU`; §20.5). Nothing asserts it and nothing needs to while the consumer auto-detects -- but a manifest or config that declared a stranded protocol for this arm would be declaring something false |
+| the preflight invokes each tool the way LENS does | **partial** | bulk RNA was running a salmon mode LENS never calls, against a path that could not satisfy it, so the row could not have passed on any release (§20.5, fixed). The other eleven rows were written against their module scripts; nothing re-reads those scripts when a module changes, so this can rot again silently |
 | chr1to6 subset newer than the full it was filtered from | **now checked** | was the widest hole in this table and not in it: `check_subset_currency`, added 2026-10-10 after it had already shipped four defective deliverables. See §20.2 |
 
 ### 20.2 The hole that was not in this table
@@ -1800,6 +1802,75 @@ every assumption at once, including the ones nobody has written down.
 That is a decision for the owner rather than something to adopt unilaterally, because it costs a pipeline
 run per build and it couples the release to a specific consumer version. It is recorded here as the
 highest-value change available, not as a plan already made.
+
+### 20.5 The consumer preflight ran a mode the consumer never runs
+
+§20.4 argues that running the real consumer is worth more than any further check written here. It is,
+and this is the condition it depends on: a preflight is only as faithful as its invocation.
+
+Two of the fourteen preflight rows were red, and had been since the stage was written. Both were salmon
+on bulk RNA, both exited 1 with no parse-error signature, and the report said what it was designed to
+say -- *check its reference and resources before blaming the reads*. The reference was the problem, but
+not in a way that pointed anywhere useful:
+
+    salmon quant -i <path> -l A -1 R1 -2 R2 --validateMappings
+    Error: .../references/GRCh38.GENCODEv37/versionInfo.json doesn't seem to exist.
+           Please try re-building the salmon index.
+
+The path is a reference bundle, not a salmon index, so the row could never have passed. More to the
+point, **LENS does not run salmon that way.** `rna_quant.nf` calls `gffread_make_tx_fa` and then
+`salmon_aln_quant`, whose script line is
+
+    salmon quant --threads N -t <transcript fasta> -l a -a <alignment>
+
+alignment-based quantification over a transcriptome BAM -- and the BAM comes from STAR
+`--quantMode TranscriptomeSAM`, which the preflight was already producing one row earlier. The check
+tested selective-alignment mode, a different algorithm reading different inputs, against a path that
+could not satisfy it. It would have reported FAIL on a perfect release and PASS on nothing.
+
+The fix makes the row the chain it is in LENS. `consumer_preflight.py` now takes a LIST of stages rather
+than one command, and bulk RNA is one row running two tools in order, stopping at the first failure:
+
+| stage | invocation |
+|---|---|
+| `star` | `--genomeDir <ctat star idx> --readFilesIn R1 R2 --quantMode TranscriptomeSAM` |
+| `salmon_aln` | `quant -t <transcript fasta> -l a -a <that transcriptome BAM>` |
+
+Both stages in one task rather than two array rows, for two reasons that are not stylistic. Sibling
+array tasks have no ordering, so a separate salmon row could start before the BAM it reads exists; and
+STAR is what sets this stage's 48G request, so running it once per dataset keeps that to one task.
+
+The transcript FASTA needs names matching the BAM's `@SQ` set. The CTAT bundle that supplies the STAR
+index ships `ref_annot.cdna.fa` built from the same GENCODE v37 annotation -- 232,170 transcripts, bare
+`ENST` ids as the first whitespace token, exactly the 232,170 references STAR emits -- so the preflight
+needs no gffread step of its own. It is in `jobs/env.sh` as `IGI_TX_FASTA`, untracked, because it is a
+site path.
+
+Verified on delivered data before the change was wired in, which is the order that matters here: the
+chain was run by hand over the existing ds-01 transcriptome BAM. salmon reported *Checking that provided
+alignment files have consistent headers . . . done*, auto-detected the library type as `IU`, counted
+2,816,738 fragments in its equivalence classes out of ~2.99 M pairs in the 5 % slice, exited 0, and
+wrote a `quant.sf` with 60,691 transcripts carrying reads.
+
+Two things that fell out of it, neither a defect:
+
+* salmon called the bulk RNA **unstranded** (`IU`, *strandedness:unstranded*). That is a property to
+  state rather than discover downstream -- `-l a` detects it correctly either way, but a manifest or
+  config that asserts a stranded protocol for this arm would be asserting something false.
+* `replaced 9352 non-ACGT nucleotides with random nucleotides` is salmon speaking about the **reference**,
+  not the release: GRCh38's IUPAC positions (§17), reaching a consumer through the transcript FASTA.
+  The delivered reads are ACGTN by complete scan over all 612 files.
+
+`check_consumer_preflight` now names the stage that spoke. "star_salmon failed" sends you to the wrong
+tool half the time; the verdict reads *FAIL (star_salmon at stage salmon_aln exited 1 ...)* and the value
+column carries `1/2 stages`. Both halves are pinned by
+`test_consumer_preflight_names_the_failing_stage_of_a_chain`, and both mutations -- dropping the stage
+name, dropping the stage count -- were confirmed to fail the test.
+
+The lesson is the same shape as §20.3 and §21.5, one layer up. There the measurement was real and its
+precondition was dropped; here the consumer was real and its *invocation* was assumed. A check that runs
+the right tool the wrong way does not merely fail to catch defects -- it occupies the column where the
+verdict should be, and reports a fault in the data for something that was never about the data.
 
 ## 21. One junction per interval: five events lost and the interval's coverage wiped
 

@@ -89,6 +89,10 @@ def main():
     ap.add_argument("--cmd", required=True, help="container prefix with {args}")
     ap.add_argument("--samtools-cmd", default="samtools {args}")
     ap.add_argument("--ref", default="")
+    ap.add_argument("--ref2", default="",
+                    help="second-stage reference (star_salmon: the transcript FASTA)")
+    ap.add_argument("--cmd2", default="",
+                    help="second-stage container prefix with {args}; defaults to --cmd")
     ap.add_argument("--fraction", type=float, default=0.05)
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--timeout", type=int, default=7200)
@@ -120,46 +124,80 @@ def main():
             return 1
 
     # Each tool is invoked the way LENS invokes it; the point is the tool's own parser, not the result.
+    #
+    # `stages` is a LIST because some of those invocations are chains. The stages run in order and stop
+    # at the first failure, since a later stage's input is an earlier stage's output.
+    pfx = f"{work}/pf_{a.label}_"
     if a.tool == "razers3":
-        args = (f"-i 95 -m 1 -dr 0 -tc {a.threads} -o {work}/pf_{a.label}.bam "
-                f"/usr/local/bin/data/hla_reference_dna.fasta {cut[0]}")
-    elif a.tool == "star":
-        # The tool LENS actually points at the raw bulk-RNA FASTQs: it runs
-        # `salmon quant -a` over a transcriptome BAM, and STAR is what produces that BAM.
-        # STAR is also far stricter than salmon about FASTQ structure -- it aborts outright on a
-        # quality string whose length differs from its sequence, where a selective aligner may not.
-        args = (f"--genomeDir {a.ref} --readFilesIn {' '.join(cut)} --runThreadN {a.threads} "
-                f"--outFileNamePrefix {work}/pf_{a.label}_ --outSAMtype BAM Unsorted "
-                f"--quantMode TranscriptomeSAM")
-    elif a.tool == "salmon":
-        args = (f"quant -i {a.ref} -l A -1 {cut[0]} -2 {cut[1]} -p {a.threads} "
-                f"--validateMappings -o {work}/pf_{a.label}_salmon")
+        stages = [("razers3", a.cmd,
+                   f"-i 95 -m 1 -dr 0 -tc {a.threads} -o {work}/pf_{a.label}.bam "
+                   f"/usr/local/bin/data/hla_reference_dna.fasta {cut[0]}")]
+    elif a.tool == "star_salmon":
+        # THE CHAIN LENS ACTUALLY RUNS ON BULK RNA, and the reason this row has this shape.
+        # rna_quant.nf calls gffread_make_tx_fa and then salmon_aln_quant, whose script line is
+        # `salmon quant --threads N -t <tx fasta> -l a -a <aln>`. The alignment is a transcriptome
+        # BAM, and STAR --quantMode TranscriptomeSAM is what produces it.
+        #
+        # What was here before ran `salmon quant -i <index> -1 -2`, selective-alignment mode, which
+        # LENS never calls -- against a path that is not a salmon index at all. It failed with
+        # `versionInfo.json doesn't seem to exist`: a verdict about this harness, sitting in the
+        # column where a verdict about the release belongs. Two of fourteen rows were red for that.
+        #
+        # Both stages in ONE task rather than two array rows, for two reasons: sibling array tasks
+        # have no ordering, so a separate salmon row could start before the BAM it reads exists; and
+        # STAR is what sets this stage's 48G, so running it once per dataset keeps that to one task.
+        stages = [
+            ("star", a.cmd,
+             f"--genomeDir {a.ref} --readFilesIn {' '.join(cut)} --runThreadN {a.threads} "
+             f"--outFileNamePrefix {pfx} --outSAMtype BAM Unsorted --quantMode TranscriptomeSAM"),
+            ("salmon_aln", a.cmd2 or a.cmd,
+             f"quant --threads {a.threads} -t {a.ref2} -l a "
+             f"-a {pfx}Aligned.toTranscriptome.out.bam -o {work}/pf_{a.label}_salmon"),
+        ]
     elif a.tool == "pbmm2":
-        args = f"align --preset HIFI -j {a.threads} {a.ref} {cut[0]} {work}/pf_{a.label}.bam"
+        stages = [("pbmm2",  a.cmd,
+                   f"align --preset HIFI -j {a.threads} {a.ref} {cut[0]} {work}/pf_{a.label}.bam")]
     elif a.tool == "lima":
-        args = (f"{cut[0]} {a.ref} {work}/pf_{a.label}_lima.bam --per-read --num-threads {a.threads}")
+        stages = [("lima", a.cmd,
+                   f"{cut[0]} {a.ref} {work}/pf_{a.label}_lima.bam --per-read "
+                   f"--num-threads {a.threads}")]
     elif a.tool == "cellranger_vdj":
         # cellranger insists on its own directory layout and sample naming
         fqdir = os.path.join(work, f"pf_{a.label}_fq")
         os.makedirs(fqdir, exist_ok=True)
         for i, q in enumerate(cut, 1):
             os.replace(q, os.path.join(fqdir, f"{a.label}_S1_L001_R{i}_001.fastq"))
-        args = (f"vdj --id=pf_{a.label} --reference={a.ref} --fastqs={fqdir} --sample={a.label} "
-                f"--localcores={a.threads} --localmem=16")
+        stages = [("cellranger_vdj", a.cmd,
+                   f"vdj --id=pf_{a.label} --reference={a.ref} --fastqs={fqdir} "
+                   f"--sample={a.label} --localcores={a.threads} --localmem=16")]
     else:
         print(f"unknown tool {a.tool}", file=sys.stderr)
         return 2
 
-    try:
-        # cwd=work, because cellranger writes its pipestance tree into the CURRENT directory and the
-        # job's cwd is the repo: the first run left pf_ds01_tcr/ and pf_ds02_tcr/ inside the checkout.
-        r = run(a.cmd.format(args=args), timeout=a.timeout, cwd=work)
-        # STDOUT AS WELL AS STDERR. STAR prints `EXITING because of FATAL ERROR in reads input` to
-        # stdout, so reading stderr alone would classify a STAR rejection of the DATA as a setup
-        # failure -- the opposite of the distinction this script exists to make.
-        rc, err = r.returncode, ((r.stdout or "") + (r.stderr or ""))[-2000:]
-    except subprocess.TimeoutExpired:
-        rc, err = -1, f"timed out after {a.timeout}s"
+    ran, rc, err, stage = [], 0, "", ""
+    for name, tmpl, args in stages:
+        if not tmpl:
+            rc, err, stage = 2, f"no command was given for stage {name}", name
+            ran.append({"stage": name, "exit_code": rc, "ok": False, "stderr_tail": err})
+            break
+        try:
+            # cwd=work, because cellranger writes its pipestance tree into the CURRENT directory and
+            # the job's cwd is the repo: the first run left pf_ds01_tcr/ and pf_ds02_tcr/ in the
+            # checkout.
+            r = run(tmpl.format(args=args), timeout=a.timeout, cwd=work)
+            # STDOUT AS WELL AS STDERR. STAR prints `EXITING because of FATAL ERROR in reads input`
+            # to stdout, so reading stderr alone would classify a STAR rejection of the DATA as a
+            # setup failure -- the opposite of the distinction this script exists to make.
+            srv, serr = r.returncode, ((r.stdout or "") + (r.stderr or ""))[-2000:]
+        except subprocess.TimeoutExpired:
+            srv, serr = -1, f"timed out after {a.timeout}s"
+        ran.append({"stage": name, "exit_code": srv, "ok": srv == 0,
+                    "stderr_tail": serr.strip()[-300:]})
+        rc, err, stage = srv, serr, name
+        # Stop at the first failure: stage two reads stage one's output, so running it anyway would
+        # report a second failure that only restates the first.
+        if srv != 0:
+            break
 
     # A parse error is the signature that matters: it means the tool rejected the DATA, not the setup.
     # One signature per tool family, taken from the message each actually emits:
@@ -173,9 +211,14 @@ def main():
              if k.lower() in err.lower()]
     out = {"label": a.label, "tool": a.tool, "reads": paths, "fraction": a.fraction,
            "exit_code": rc, "ok": rc == 0, "parse_error": bool(choke),
-           "signature": choke[0] if choke else "", "stderr_tail": err.strip()[-300:]}
+           "signature": choke[0] if choke else "", "stderr_tail": err.strip()[-300:],
+           # Which stage the verdict came from, and what every stage did. For a one-stage tool these
+           # restate `tool` and the fields above; for a chain they are the difference between "bulk
+           # RNA failed" and "STAR was fine and salmon could not read its own reference".
+           "stage": stage, "stages": ran}
     json.dump(out, open(a.out, "w"), indent=2)
-    print(f"  {a.label:<22} {a.tool:<15} exit={rc} ok={out['ok']} parse_error={out['parse_error']}")
+    shown = a.tool if len(stages) == 1 else f"{a.tool}/{stage}"
+    print(f"  {a.label:<22} {shown:<20} exit={rc} ok={out['ok']} parse_error={out['parse_error']}")
     if choke:
         print(f"    CHOKED: {choke[0]}")
     # EXIT NON-ZERO WHEN THE TOOL DID NOT SUCCEED. This returned 0 unconditionally, so the stage

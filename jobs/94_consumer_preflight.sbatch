@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -J igi_preflight
 #SBATCH -c 8 --mem=48G -t 8:00:00
-#SBATCH --array=1-14
+#SBATCH --array=1-12
 # Push the first ~5 % of each delivered library through a tool LENS will actually use, and fail if the
 # tool chokes on it.
 #
@@ -43,34 +43,42 @@ STAR="singularity exec -B $IGI_BIND $I/quay.io-biocontainers-star-2.7.10a--h9ee0
 # The STAR index that matches the GENCODE v37 annotation LENS uses, inside the CTAT bundle.
 # versionGenome 2.7.4a, which STAR 2.7.10a accepts.
 STARIDX=${IGI_STAR_INDEX:?set IGI_STAR_INDEX in jobs/env.sh to a STAR genome directory}
+# The transcript FASTA salmon quantifies against. LENS builds its own with gffread; this one must
+# simply carry the same names STAR's transcriptome BAM references, which the CTAT bundle's does.
+TXFA=${IGI_TX_FASTA:?set IGI_TX_FASTA in jobs/env.sh to a transcript FASTA}
 
-# label : tool : reads : reference
+# label : tool : reads : reference : second reference
 SPECS=(
-  "ds01_wes_normal:razers3:$R/merged/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_normal_R1.fastq.gz:"
-  "ds01_wes_tumor:razers3:$R/merged/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_tumor_R1.fastq.gz:"
-  "ds02_wes_normal:razers3:$R/merged/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_normal_R1.fastq.gz:"
-  "ds02_wes_tumor:razers3:$R/merged/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_tumor_R1.fastq.gz:"
-  "ds01_rna_star:star:$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R2.fastq.gz:$STARIDX"
-  "ds02_rna_star:star:$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R2.fastq.gz:$STARIDX"
-  "ds01_rna:salmon:$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R2.fastq.gz:$P/GRCh38.GENCODEv37"
-  "ds02_rna:salmon:$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R2.fastq.gz:$P/GRCh38.GENCODEv37"
-  "ds01_tcr:cellranger_vdj:$R/tenx_tcr/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01-TCR_S1_L001_R1_001.fastq.gz,$R/tenx_tcr/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01-TCR_S1_L001_R2_001.fastq.gz:$P/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0"
-  "ds02_tcr:cellranger_vdj:$R/tenx_tcr/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02-TCR_S1_L001_R1_001.fastq.gz,$R/tenx_tcr/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02-TCR_S1_L001_R2_001.fastq.gz:$P/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0"
-  "ds01_hifi:pbmm2:$R/pacbio/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_chr10_tumor_hifi.bam:$IGI_FASTA_NOALT"
-  "ds02_hifi:pbmm2:$R/pacbio/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_chr10_tumor_hifi.bam:$IGI_FASTA_NOALT"
-  "ds01_kinnex:lima:$R/kinnex_bulk/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_kinnex_bulk_segmented.bam:$P/10x_5kit_primers.fasta"
-  "ds02_kinnex:lima:$R/kinnex_bulk/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_kinnex_bulk_segmented.bam:$P/10x_5kit_primers.fasta"
+  "ds01_wes_normal:razers3:$R/merged/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_normal_R1.fastq.gz::"
+  "ds01_wes_tumor:razers3:$R/merged/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_tumor_R1.fastq.gz::"
+  "ds02_wes_normal:razers3:$R/merged/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_normal_R1.fastq.gz::"
+  "ds02_wes_tumor:razers3:$R/merged/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_tumor_R1.fastq.gz::"
+  # Bulk RNA is ONE row running TWO tools, because that is how LENS quantifies it: STAR makes a
+  # transcriptome BAM and `salmon quant -t <fa> -l a -a <bam>` quantifies from the alignments
+  # (rna_quant.nf -> salmon_aln_quant). The previous two rows tested STAR, correctly, and then
+  # salmon in selective-alignment mode against a path that is not a salmon index -- a mode LENS
+  # never calls, failing for a reason that was mine and not the release's.
+  "ds01_rna:star_salmon:$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_rna_R2.fastq.gz:$STARIDX:$TXFA"
+  "ds02_rna:star_salmon:$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R1.fastq.gz,$R/rna/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_rna_R2.fastq.gz:$STARIDX:$TXFA"
+  "ds01_tcr:cellranger_vdj:$R/tenx_tcr/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01-TCR_S1_L001_R1_001.fastq.gz,$R/tenx_tcr/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01-TCR_S1_L001_R2_001.fastq.gz:$P/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0:"
+  "ds02_tcr:cellranger_vdj:$R/tenx_tcr/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02-TCR_S1_L001_R1_001.fastq.gz,$R/tenx_tcr/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02-TCR_S1_L001_R2_001.fastq.gz:$P/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0:"
+  "ds01_hifi:pbmm2:$R/pacbio/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_chr10_tumor_hifi.bam:$IGI_FASTA_NOALT:"
+  "ds02_hifi:pbmm2:$R/pacbio/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_chr10_tumor_hifi.bam:$IGI_FASTA_NOALT:"
+  "ds01_kinnex:lima:$R/kinnex_bulk/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_kinnex_bulk_segmented.bam:$P/10x_5kit_primers.fasta:"
+  "ds02_kinnex:lima:$R/kinnex_bulk/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_kinnex_bulk_segmented.bam:$P/10x_5kit_primers.fasta:"
 )
 
 i=$((SLURM_ARRAY_TASK_ID - 1))
 [ "$i" -lt "${#SPECS[@]}" ] || { echo "no spec for task $SLURM_ARRAY_TASK_ID"; exit 0; }
 spec=${SPECS[$i]}
-label=${spec%%:*}; r1=${spec#*:}; tool=${r1%%:*}; r2=${r1#*:}; reads=${r2%%:*}; ref=${r2#*:}
+label=${spec%%:*}; r1=${spec#*:}; tool=${r1%%:*}; r2=${r1#*:}; reads=${r2%%:*}
+# FIVE fields now, so every row carries a trailing colon even when its second reference is empty.
+r3=${r2#*:}; ref=${r3%%:*}; ref2=${r3#*:}
 
+CMD2=""
 case $tool in
   razers3)        CMD=$RAZERS ;;
-  star)           CMD=$STAR ;;
-  salmon)         CMD=$SALMON ;;
+  star_salmon)    CMD=$STAR; CMD2=$SALMON ;;
   pbmm2)          CMD=$PBMM2 ;;
   lima)           CMD=$LIMA ;;
   cellranger_vdj) CMD=$CRVDJ ;;
@@ -79,7 +87,7 @@ esac
 
 echo "=== $label via $tool (first 5 %) ==="
 python3 "$(dirname "$IGI_ENV")/measure/consumer_preflight.py" \
-  --tool "$tool" --label "$label" --reads "$reads" --ref "$ref" \
-  --cmd "$CMD" --samtools-cmd "$SM" --fraction 0.05 --threads 8 \
+  --tool "$tool" --label "$label" --reads "$reads" --ref "$ref" --ref2 "$ref2" \
+  --cmd "$CMD" --cmd2 "$CMD2" --samtools-cmd "$SM" --fraction 0.05 --threads 8 \
   --out "$OUT/$label.$tool.json"
 echo "PREFLIGHT $label DONE"

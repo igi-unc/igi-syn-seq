@@ -774,16 +774,27 @@ def check_consumer_preflight(release, results):
             continue
         label, tool = r.get("label", "?"), r.get("tool", "?")
         pct = f"{r.get('fraction', 0) * 100:.0f}%"
+        # A row may run a CHAIN -- bulk RNA is STAR then `salmon quant -a`, which is how LENS
+        # quantifies it -- and then "star_salmon failed" is not a usable verdict. `stage` names the
+        # tool that actually spoke, so the report says which of the two to go and look at.
+        stages = r.get("stages") or []
+        who = r.get("stage") or tool
+        if len(stages) > 1:
+            who = f"{tool} at stage {who}"
         if r.get("parse_error"):
-            verdict = (f"FAIL ({tool} rejected the data: {r.get('signature')} -- this is a defect in "
+            verdict = (f"FAIL ({who} rejected the data: {r.get('signature')} -- this is a defect in "
                        f"the release, not in the tool's setup)")
         elif not r.get("ok"):
-            verdict = (f"FAIL ({tool} exited {r.get('exit_code')} with no parse-error signature; "
+            verdict = (f"FAIL ({who} exited {r.get('exit_code')} with no parse-error signature; "
                        f"check its reference and resources before blaming the reads)")
         else:
             verdict = "PASS"
+        passed = sum(1 for st in stages if st.get("ok"))
+        value = f"first {pct}, exit {r.get('exit_code')}"
+        if len(stages) > 1:
+            value += f", {passed}/{len(stages)} stages"
         results.append({"check": f"{tool} accepts the input", "file": label,
-                        "value": f"first {pct}, exit {r.get('exit_code')}", "verdict": verdict})
+                        "value": value, "verdict": verdict})
 
 
 def check_currency(release, results):
