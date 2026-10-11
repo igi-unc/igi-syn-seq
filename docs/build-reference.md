@@ -2018,3 +2018,63 @@ up instead as a small read-count rise: ds-01 +1,715, ds-02 +610.
 The exome was biased in both directions by the old code -- a 1.2 kb contig inflated an interval
 smaller than itself and deflated the larger ones by up to 4.6x -- so the near-identical count is
 not evidence the exome was unaffected, only that collisions were rare in it.
+
+## 22. A glob is not a coverage assertion, and the exome passed 44/44
+
+The exome acceptance ran on 2026-10-11, passed every check it makes -- **44 of 44 on each dataset, zero
+failures, including the five junction-count checks that were failing before §21's fix** -- and then
+exited 1:
+
+    [IGI-SYN-SEQ-01 reads] all 4 checks passed
+    EMPTY REPORT: .../IGI-SYN-SEQ-01_class_presence.json ran no checks
+    1 report(s) ran no checks; that is a failure, not a pass
+
+The guard was right about the file and wrong about whose file it was. `14_accept.sbatch` ends by sweeping
+`$O/$d/*.json` and failing if any report has no `checks` key, which is a good guard: the per-chromosome
+loop uses `|| true` so one bad chromosome does not abandon the rest, and that swallows the exit code
+`acceptance.py` uses to say it ran nothing. But `15_accept_rna.sbatch` writes **into the same directory**,
+and its `${d}_class_presence.json` is a summary document -- designed counts, reachable counts, observed
+counts per class -- with no `checks` key at all and no reason to have one. The glob found a correct file,
+applied another stage's schema to it, and failed a stage that had just passed everything.
+
+It surfaced because I submitted the two stages in parallel after the driver died (§16.7), so the RNA
+stage wrote `class_presence.json` at 09:46:54 while the exome stage was still running and swept the
+directory at 09:53. Under the driver's sequential order it would have been hidden on a first build and
+appeared on every rebuild thereafter, which is worse.
+
+### 22.1 The third time, and what the fix is
+
+`22_accept_wgs.sbatch` carries a comment recording the same mistake already:
+
+> This scans `$R`, the acceptance reports -- not `$O`, which holds the builder's 48 per-chromosome meta
+> files. Pointed at `$O` it found no "checks" key in any of them and would have failed every single run.
+
+Same shape: a glob over a directory, a schema assumed for whatever it returns. Both instances were fixed
+by *re-aiming the glob*, which is why there was a third.
+
+Both guards now name the reports the stage owns, built from the same chromosome list the loop runs:
+
+    ACCEPT_CHROMS=(chr1 chr2 chr5 chr6 chr8 chr10 chr13 chr17 chr21 chrX)
+    for c in "${ACCEPT_CHROMS[@]}"; do expect+=("$O/$d/${d}_${c}.json"); done
+    expect+=("$O/$d/${d}_reads.json")
+
+One list drives both the work and the expectation, so they cannot drift. Naming the set is also strictly
+**stronger** than any glob, which is the part worth keeping: a glob over what exists cannot notice a
+report that was never written, and a chromosome whose acceptance died before writing anything is exactly
+the case the `|| true` is there to tolerate. The new guard reports `MISSING REPORT: ... was never
+written` for that, where the old one reported nothing at all.
+
+Verified on four cases, run verbatim out of the script:
+
+| case | old guard | new guard |
+|---|---|---|
+| the real 11 reports | PASS | PASS (`11 reports, every one with checks`) |
+| one report deleted | **PASS -- silently** | FAIL, `MISSING REPORT` |
+| one report with `checks: []` | FAIL | FAIL, `EMPTY REPORT` |
+| a foreign no-checks file beside them | **FAIL -- the false positive** | PASS, not swept |
+
+This is the same lesson as §20.5 from the other direction. There a check ran the right tool the wrong
+way; here a check read the right directory with the wrong ownership. In both cases the verdict column
+held a statement about my harness while reading as a statement about the release -- and in both the data
+was fine.
+

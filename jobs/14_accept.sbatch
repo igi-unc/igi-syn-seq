@@ -22,7 +22,10 @@ cd "$IGI_REPO/catalog"
 #
 # --build-meta is preferred where the builder recorded its own seed; it removes this arithmetic entirely.
 k=0; [ "$d" = "${DATASETS[1]}" ] && k=1
-for c in chr1 chr2 chr5 chr6 chr8 chr10 chr13 chr17 chr21 chrX; do
+# One list, used BOTH to run the loop and to name the reports the guard expects, so the two can
+# never drift apart.
+ACCEPT_CHROMS=(chr1 chr2 chr5 chr6 chr8 chr10 chr13 chr17 chr21 chrX)
+for c in "${ACCEPT_CHROMS[@]}"; do
   ci=-1
   for n in "${!CHROMS_ALL[@]}"; do [ "${CHROMS_ALL[$n]}" = "$c" ] && ci=$n; done
   [ $ci -ge 0 ] || { echo "$c is not in CHROMS_ALL"; exit 1; }
@@ -46,11 +49,24 @@ python3 acceptance.py --dataset "$d" --catalog-dir output --design design.yaml \
 # A zero-check run exits 2 and prints "no checks ran". The per-chromosome loop uses `|| true` so one bad
 # chromosome does not abandon the rest, which means that exit code is swallowed -- so look for it in the
 # reports instead, where it is a report with no checks at all.
-empty=0
-for r in "$O/$d"/*.json; do
-  [ -s "$r" ] || continue
+# Check the reports THIS STAGE OWNS, named from the same list the loop ran, rather than globbing the
+# directory. A glob swept every .json in it, and 15_accept_rna.sbatch writes two of its own into the exome acceptance directory:
+# its ${d}_class_presence.json is a summary document with no `checks` key at all, so the glob called a
+# correct file an empty report and failed a stage whose own 44 checks had every one passed. The comment
+# above records the SAME mistake once already -- the glob pointed at the builder's meta files -- which
+# is the argument for naming the expected set rather than trusting what is in the directory.
+#
+# Naming it is also strictly stronger: a glob over what EXISTS cannot notice a report that was never
+# written, and a chromosome whose acceptance died before writing anything is exactly the case the
+# `|| true` above makes invisible.
+expect=()
+for c in "${ACCEPT_CHROMS[@]}"; do expect+=("$O/$d/${d}_${c}.json"); done
+expect+=("$O/$d/${d}_reads.json")
+bad=0
+for r in "${expect[@]}"; do
+  if [ ! -s "$r" ]; then echo "MISSING REPORT: $r was never written"; bad=$((bad+1)); continue; fi
   n=$(python3 -c "import json;print(len(json.load(open('$r'))['checks']))" 2>/dev/null || echo 0)
-  [ "$n" -eq 0 ] && { echo "EMPTY REPORT: $r ran no checks"; empty=$((empty+1)); }
+  [ "$n" -eq 0 ] && { echo "EMPTY REPORT: $r ran no checks"; bad=$((bad+1)); }
 done
-[ "$empty" -eq 0 ] || { echo "$empty report(s) ran no checks; that is a failure, not a pass"; exit 1; }
-echo "DONE $d $(date)"
+[ "$bad" -eq 0 ] || { echo "$bad of ${#expect[@]} report(s) missing or ran no checks; that is a failure, not a pass"; exit 1; }
+echo "DONE $d: ${#expect[@]} reports, every one with checks $(date)"
