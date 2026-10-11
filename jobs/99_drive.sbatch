@@ -1,6 +1,14 @@
 #!/bin/bash
 #SBATCH -J igi_drive
-#SBATCH -c 1 --mem=2G -t 24:00:00
+#SBATCH -c 1 --mem=2G -t 7-00:00:00
+# A DRIVER MUST OUTLIVE ITS OWN CHAIN. This was 24:00:00, and 11579857 hit it at 2026-10-11
+# 09:45:36 -- exactly 24 h -- four minutes after submitting 22_accept_wgs, which has a 40 h
+# limit of its own and was 14 h into a ~21 h run. The driver died with the job it had just
+# launched still going, so 14_accept and 15_accept_rna were never submitted at all and the
+# chain simply stopped with nothing reporting that it had. Both stages had to be submitted by
+# hand. The driver costs 1 CPU and 2 G to sit and wait, the partition's MaxTime is infinite,
+# and the chain's own stages now total well over 24 h, so the limit was the cheapest thing
+# here and the only one that bounded the whole build.
 # Drive the rest of the release to completion, retrying failures instead of stalling on them.
 #
 # WHY THIS EXISTS. The chain was wired with sbatch `--dependency=afterok`, which is correct but brittle

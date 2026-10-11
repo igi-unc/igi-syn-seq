@@ -1104,6 +1104,36 @@ chain.
 The lesson repeats §16.1's exactly: a number that is written down, reviewed and plausible can still have
 no effect. Both cases were found by asking what *bounds* the resource, not by reading what requests it.
 
+### 16.7 The driver outlived by its own chain, and nothing said so
+
+Found in the same reading pass, and worse than §16.6 because it had already cost the build two stages.
+`99_drive.sbatch` ran with `-t 24:00:00`. It hit that limit at 2026-10-11 09:45:36 -- exactly
+`1-00:00:04` elapsed -- **four minutes after submitting `22_accept_wgs`**, which carries a 40 h limit of
+its own (§20.2's sibling: raised from 24 h earlier in this release) and was 14 h into a ~21 h run.
+
+So the driver died with the job it had just launched still going. `14_accept` and `15_accept_rna` were
+never submitted, and the chain stopped with nothing reporting that it had stopped. The driver's log ends
+mid-sentence on a submission line:
+
+    [10-10 19:33:00] 22_accept_wgs.sbatch attempt 1 submitted as 11580376 --mem=32G
+    (nothing further; TIMEOUT at 09:45:36)
+
+This is the self-healing driver's one blind spot, and it is structural rather than a bug in any check: a
+watchdog that dies cannot report its own death, and every guard written for this release checks the
+BUILD. Nothing checks the thing that runs the guards. The specific failure was silent in the ordinary
+way -- `sacct` says `TIMEOUT` and the log simply ends -- and the two missing stages would have shown up
+only as acceptance reports that never appeared, which is the same shape as §17.6.4: the absence of
+evidence, and no one reading for it.
+
+The limit is now `7-00:00:00`. The arithmetic was never close: the chain's own stages total well over
+24 h with `22_accept_wgs` alone allowed 40, the driver costs 1 CPU and 2 G to sit and wait, and this
+partition's `MaxTime` is infinite. The cheapest resource in the build was the only one bounding it.
+
+The two orphaned stages were submitted by hand, each at its OWN memory request rather than the driver's
+flat 32G -- 64G for the exome, 96G for the RNA -- which is the §16.6 fix applied by hand to the run that
+was already in flight. Neither depends on the WGS acceptance; the driver only sequenced them, so both
+run alongside it.
+
 ## 17. IUPAC ambiguity codes in delivered reads
 
 Found while verifying that §15's alphabet check passes on the rebuilt ds-01 arms. It does -- rebuilt WES
