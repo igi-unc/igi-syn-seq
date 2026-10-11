@@ -31,7 +31,7 @@ What each of the two checks is good for:
 Each copy of an interval shares its coordinates with the others, so read counts are directly comparable
 and any site covered by more than one interval is reported rather than silently averaged.
 """
-import argparse, csv, gzip, json, math, os, sys
+import argparse, csv, gzip, json, math, os, shlex, shutil, subprocess, sys
 from collections import defaultdict
 
 import yaml
@@ -85,6 +85,65 @@ def carries(rec, site, desc):
     return rec["copy_kind"] == "pre_cna" and site.get("timing") == "pre_cna"
 
 
+def record_counts(readmap, wanted=None, prefer_awk=True):
+    """Reads per record; every record when `wanted` is None.
+
+    The exome readmap is 68 million lines and the WGS one is about a billion: a Python loop over the
+    latter takes longer than the alignment the check exists to avoid, and the work per line is one split
+    and one dict bump. awk does it an order of magnitude faster, so it gets first refusal and Python is
+    the fallback when awk or zcat is missing. Both paths are asserted to agree in the tests.
+    """
+    gz = readmap.endswith(".gz")
+    if prefer_awk and shutil.which("awk") and (shutil.which("zcat") if gz else True):
+        reader = "zcat" if gz else "cat"
+        cmd = (f"{reader} -- {shlex.quote(readmap)} | "
+               "awk -F'\\t' 'NR>1{c[$2]++} END{for (k in c) print k\"\\t\"c[k]}'")
+        p = subprocess.run(["bash", "-c", cmd], capture_output=True, text=True)
+        if p.returncode == 0 and p.stdout:
+            out = defaultdict(int)
+            for line in p.stdout.splitlines():
+                rec, n = line.rsplit("\t", 1)
+                if wanted is None or rec in wanted:
+                    out[rec] = int(n)
+            return out
+    counts = defaultdict(int)
+    op = gzip.open if gz else open
+    with op(readmap, "rt") as fh:
+        next(fh, None)
+        for line in fh:
+            rec = line.rstrip("\n").split("\t")[1]
+            if wanted is None or rec in wanted:
+                counts[rec] += 1
+    return counts
+
+
+def cached_record_counts(readmap, wanted, cache):
+    """The same counts, computed once per library rather than once per invocation.
+
+    14_accept runs the acceptance per chromosome, so a check that streams the readmap itself streams it
+    ten times over for one library -- twenty minutes each on the WGS arm, for a table that does not
+    depend on which chromosome is being asked about. The cache is keyed only by being newer than the
+    readmap it came from, the same currency rule the release uses everywhere else (section 20.2): a
+    cache older than its input is a stale answer wearing a current one's clothes, so it is rebuilt.
+    """
+    if cache and os.path.exists(cache) and os.path.getmtime(cache) >= os.path.getmtime(readmap):
+        out = defaultdict(int)
+        with open(cache) as fh:
+            for line in fh:
+                rec, n = line.rstrip("\n").rsplit("\t", 1)
+                if rec in wanted:
+                    out[rec] = int(n)
+        return out
+    every = record_counts(readmap, None)
+    if cache:
+        tmp = f"{cache}.{os.getpid()}"
+        with open(tmp, "w") as fh:
+            for rec, n in sorted(every.items()):
+                fh.write(f"{rec}\t{n}\n")
+        os.replace(tmp, cache)
+    return defaultdict(int, {k: v for k, v in every.items() if k in wanted})
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dataset", required=True)
@@ -93,6 +152,9 @@ def main():
     ap.add_argument("--records", required=True, help="merged record map for this library")
     ap.add_argument("--readmap", required=True, help="merged read -> record map for this library")
     ap.add_argument("--chrom", default="", help="comma separated; default every chromosome in the catalog")
+    ap.add_argument("--counts", default="",
+                    help="cache of reads per record, built if missing or older than the readmap and "
+                         "reused by every later invocation against the same library")
     ap.add_argument("--report", required=True)
     ap.add_argument("--bound", type=float, default=0.05,
                     help="largest tolerated relative deviation of a tier's pooled fraction (default 0.05)")
@@ -127,14 +189,7 @@ def main():
             want[rec["record"]].append((key, carries(rec, v, desc)))
             spans[key].add((s, e))
 
-    counts = defaultdict(int)
-    op = gzip.open if a.readmap.endswith(".gz") else open
-    with op(a.readmap, "rt") as fh:
-        next(fh, None)
-        for line in fh:
-            rec = line.rstrip("\n").split("\t")[1]
-            if rec in want:
-                counts[rec] += 1
+    counts = cached_record_counts(a.readmap, want, a.counts)
 
     per = defaultdict(lambda: [0, 0])
     for rec, lst in want.items():

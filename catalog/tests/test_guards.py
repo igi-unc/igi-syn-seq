@@ -1162,6 +1162,14 @@ def test_truth_af_separates_a_generator_defect_from_an_alignment_loss():
             return r.returncode, r.stdout + r.stderr
 
         write(plan)
+        # the awk fast path and the Python fallback must agree; the WGS readmap is a billion lines and
+        # only one of these two is fast enough to be worth running on it
+        want = {name: [("chr1:500", True)] for name in plan}
+        fast = ta.record_counts(f"{root}/readmap.tsv", want, prefer_awk=True)
+        slow = ta.record_counts(f"{root}/readmap.tsv", want, prefer_awk=False)
+        assert dict(fast) == {k: v for k, v in slow.items() if v}, (fast, slow)
+        assert sum(fast.values()) == sum(plan.values()) > 0, fast
+
         rc, out = run()
         assert rc == 0, out
         rep = json.load(open(f"{root}/r.json"))
@@ -1185,6 +1193,30 @@ def test_truth_af_separates_a_generator_defect_from_an_alignment_loss():
         write({k: 0 for k in plan})
         rc, out = run()
         assert rc == 2 and "nothing was measured" in out, (rc, out)
+
+        # the counts cache must be rebuilt when it is older than the readmap it came from. A stale cache
+        # is the §20.2 defect in miniature: an answer that is current-looking and wrong, and here it
+        # would report the previous build's allele fractions against this build's design.
+        write(plan)
+        cache = f"{root}/counts.tsv"
+        rc, out = run(("--counts", cache))
+        assert rc == 0 and os.path.exists(cache), (rc, out)
+        first = open(cache).read()
+        rc, out = run(("--counts", cache))      # reused, not rebuilt
+        assert rc == 0 and open(cache).read() == first, (rc, out)
+        assert json.load(open(f"{root}/r.json"))["tiers"]["T_het"]["ratio"] == 1.0
+
+        os.utime(cache, (1, 1))                 # older than the readmap
+        halved = dict(plan); halved["e0002"] = 0
+        write(halved)
+        rc, out = run(("--counts", cache))
+        assert rc == 1, "a stale cache was reused and hid a generator defect\n" + out
+        assert os.path.getmtime(cache) > 1, "the stale cache was not rebuilt"
+
+        os.utime(cache, (1, 1))                 # and a stale cache must not hide a correct build either
+        write(plan)
+        rc, out = run(("--counts", cache))
+        assert rc == 0, out
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
