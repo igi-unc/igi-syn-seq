@@ -1788,6 +1788,7 @@ still not, because that is where the next one will come from.
 | chr1to6 truth consistency against the full release | **not checked** | the subsets are re-cut, and nothing asserts that a subset's truth is the full release's truth restricted |
 | bulk RNA strandedness | **measured, now stated** | salmon's `-l a` detection, over the chain LENS actually runs, calls both bulk RNA libraries unstranded (`IU`; §20.5). Nothing asserts it and nothing needs to while the consumer auto-detects -- but a manifest or config that declared a stranded protocol for this arm would be declaring something false |
 | the preflight invokes each tool the way LENS does | **partial** | bulk RNA was running a salmon mode LENS never calls, against a path that could not satisfy it, so the row could not have passed on any release (§20.5, fixed). The other eleven rows were written against their module scripts; nothing re-reads those scripts when a module changes, so this can rot again silently |
+| every designed expression class reaches the RNA library | **now assertable** | this is the only statement in the release that ERVs, splice isoforms and CTAs reached the reads at all -- no chr1-to-6 slice carries them and the exome acceptance cannot test an expression class -- and `class_presence.py` reported it without being able to fail: an empty manifest gave an empty verdict and a job that printed DONE. It now exits 2 when nothing was measured, when a designed class has no record, or when a designed class's records are wholly silent; a class that is merely thin stays a number, because the expression floor is supposed to leave records silent (§22.2) |
 | chr1to6 subset newer than the full it was filtered from | **now checked** | was the widest hole in this table and not in it: `check_subset_currency`, added 2026-10-10 after it had already shipped four defective deliverables. See §20.2 |
 
 ### 20.2 The hole that was not in this table
@@ -2078,3 +2079,42 @@ way; here a check read the right directory with the wrong ownership. In both cas
 held a statement about my harness while reading as a statement about the release -- and in both the data
 was fine.
 
+
+### 22.2 The file the glob tripped over could not fail either
+
+Chasing the false positive put the RNA stage's own guard under the same question, and it answered worse.
+
+`15_accept_rna.sbatch` runs two commands. The first, `acceptance.py`, already asserts its own coverage:
+it exits 1 on a failed check and **2 on zero checks**, with a comment saying why -- `all 0 checks passed`
+in a log a human skims is indistinguishable from a real pass. This stage calls it without `|| true`, so
+`set -e` carries that verdict out of the job. That half was sound.
+
+The second, `class_presence.py`, wrote its numbers and exited 0 whatever they were. That is the document
+behind the release's strongest RNA claim: no chr1-to-6 slice can exercise ERVs, splice isoforms or CTAs,
+and the exome acceptance cannot test an expression class at all, so this file is the **only** statement
+that every designed class reached the library. Hand it an empty manifest and `rna` is `{}`, the verdict's
+three fields are all empty, nothing says so, and the job prints `DONE`. The release that just passed
+would have passed identically with no RNA in it.
+
+What it now refuses, measured against the real manifests first (the reports came back byte-identical,
+exit 0, so the guard costs the passing case nothing):
+
+| condition | what it means | verdict |
+|---|---|---|
+| manifest given, no records parsed | nothing was measured about any class | exit 2 |
+| a designed class with no record in the manifest | the class never reached the library | exit 2 |
+| a designed class whose records all drew zero pairs | the class is in the manifest and silent | exit 2 |
+| some records of a class drew zero pairs | thin, and legitimate under the floor | reported, exit 0 |
+
+The last row is the line worth drawing. `reference` sits there on both datasets by design -- 968,499 of
+1,226,144 transcripts produced reads on ds-01, 931,151 of 1,259,570 on ds-02 -- because the 0.01
+expression floor is supposed to leave transcripts silent. A guard that failed on that would fail every
+correct release, which is how the band in §20.3 came to fail two correct libraries. So the count stays a
+number and only a *wholly* silent designed class is an error.
+
+All three refusals were mutation-tested by doctoring a copy of the real ds-01 manifest, and the test that
+pins them was itself mutation-tested against the pre-guard file -- it reports `exit 0` where it wants 2.
+The report is still written when the verdict is no, because the numbers are the diagnosis.
+
+The stage also now names the two reports it owns, as §22 does, for the one failure neither exit code can
+cover: a report the job believed it wrote that is not on disk.

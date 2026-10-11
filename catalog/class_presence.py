@@ -11,7 +11,7 @@ class is reported as designed / reachable / observed, where reachable means the 
 it at all -- a deep intronic variant is not reachable in an exome, and an off-capture viral integration is
 not reachable in either, per D8.
 """
-import argparse, csv, gzip, json, os
+import argparse, csv, gzip, json, os, sys
 from collections import Counter, defaultdict
 
 
@@ -95,6 +95,31 @@ def main():
     with open(a.out, "w") as fh:
         json.dump(out, fh, indent=2)
     print(json.dumps(out, indent=2))
+
+    # This document is the only statement that every designed expression class reached the RNA library,
+    # and until 2026-10-11 it could not say no: it wrote the numbers and exited 0 whatever they were. An
+    # empty manifest produced an empty "rna" block, an empty verdict, and a job that printed DONE -- the
+    # same defect as acceptance.py's zero-check exit (docs/build-reference.md section 22, and section 14
+    # of catalog-design-notes.md: a check that cannot fail counted as evidence). The conditions below are
+    # the ones that mean the path is broken rather than merely thin; how many of a class's records cleared
+    # the expression floor is reported, not enforced, because a low-abundance record drawing zero pairs is
+    # a legitimate outcome of that floor and not a defect to fail a release over.
+    problems = []
+    if a.rna_manifest and not rna:
+        problems.append(f"the RNA manifest {a.rna_manifest} yielded no records, so nothing was measured "
+                        "about any expression class")
+    for cls, v in rna.items():
+        if cls == "reference" or not v["designed_events"]:
+            continue
+        if v["records"] == 0:
+            problems.append(f"{cls}: {v['designed_events']} designed event(s), no record in the manifest")
+        elif v["records_with_reads"] == 0:
+            problems.append(f"{cls}: {v['records']} record(s) in the manifest, none produced a read")
+    if problems:
+        print("\nclass presence failed:", flush=True)
+        for prob in problems:
+            print(f"  {prob}", flush=True)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

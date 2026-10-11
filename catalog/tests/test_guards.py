@@ -990,6 +990,74 @@ def test_rescale_quality_saturates_on_the_low_quality_tail():
     assert after / before < 5.15, "a multiplicative rescale saturates; 5.15 delivered ~3.7x in practice"
 
 
+def test_class_presence_can_say_no():
+    """The class-presence summary wrote numbers and exited 0 whatever they were.
+
+    It is the only statement in the release that every designed expression class reached the RNA
+    library -- the exome acceptance cannot test ERVs, splice isoforms or CTAs at all -- and for its
+    whole life it could not fail. An empty manifest gave an empty "rna" block, an empty verdict and a
+    job that printed DONE. The three conditions below are the ones that mean the path is broken; how
+    many records cleared the expression floor stays a number, because a thin record is not a defect.
+    """
+    cp = os.path.join(CATALOG, "class_presence.py")
+    root = tempfile.mkdtemp(prefix="igi_cp_")
+    try:
+        ds = "DS"
+        cd = os.path.join(root, "output")
+        os.makedirs(cd)
+        def tsv(name, header, rows):
+            with open(os.path.join(cd, name), "w") as fh:
+                fh.write("\t".join(header) + "\n")
+                for r in rows:
+                    fh.write("\t".join(str(x) for x in r) + "\n")
+        tsv(f"{ds}.expressed.tsv", ["event_id", "class", "chrom"],
+            [(f"e{i}", "erv", "chr1") for i in range(3)] + [(f"c{i}", "cta", "chr1") for i in range(2)])
+        tsv(f"{ds}.fusions.tsv", ["event_id", "chrom_5p"], [("f0", "chr1")])
+
+        man = os.path.join(root, "manifest.tsv")
+        def manifest(records):
+            with open(man, "w") as fh:
+                fh.write("transcript_id\tsource\tobserved_pairs\n")
+                for i, (src, pairs) in enumerate(records):
+                    fh.write(f"t{i}\t{src}\t{pairs}\n")
+
+        def run():
+            r = subprocess.run([sys.executable, cp, "--dataset", ds, "--catalog-dir", cd,
+                                "--rna-manifest", man, "--out", os.path.join(root, "out.json")],
+                               capture_output=True, text=True)
+            return r.returncode, (r.stdout + r.stderr)
+
+        full = [("reference", 10), ("erv", 4), ("cta", 7), ("fusion", 2)]
+        manifest(full)
+        rc, out = run()
+        assert rc == 0, out
+        assert json.load(open(os.path.join(root, "out.json")))["verdict"][
+            "rna_classes_with_every_record_read"] == ["cta", "erv", "fusion", "reference"], out
+
+        # a reference transcript below the expression floor is a number, not a failure
+        manifest([("reference", 0)] + full[1:])
+        rc, out = run()
+        assert rc == 0, out
+        assert "failed" not in out, out
+
+        manifest([])
+        rc, out = run()
+        assert rc == 2 and "yielded no records" in out, (rc, out)
+
+        manifest([r for r in full if r[0] != "erv"])
+        rc, out = run()
+        assert rc == 2 and "erv: 3 designed event(s), no record in the manifest" in out, (rc, out)
+
+        manifest([(src, 0 if src == "erv" else pairs) for src, pairs in full])
+        rc, out = run()
+        assert rc == 2 and "erv: 1 record(s) in the manifest, none produced a read" in out, (rc, out)
+
+        # the report is still written when the verdict is no, because the numbers are the diagnosis
+        assert json.load(open(os.path.join(root, "out.json")))["rna"]["erv"]["records_with_reads"] == 0
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 def _main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0
