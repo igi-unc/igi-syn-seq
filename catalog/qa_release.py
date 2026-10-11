@@ -138,6 +138,39 @@ def ont_deliverables(release):
             + sorted(glob.glob(f"{release}/ont_bulk_rna/*/*_ont_bulk_rna.fastq.gz")))
 
 
+def _map_rows_disagree(map_path, fastq):
+    """(reads, rows) when a truth map's row count differs from the library's, else None.
+
+    THE CONTENT TEST, PREFERRED OVER MTIMES, because mtimes cannot tell a rewritten envelope from a
+    stale map. ds-02's ONT bulk RNA map is 8.8 h older than its reads, which the mtime rule called a
+    failure; counting says 20,070,655 rows for 20,070,655 reads with every sampled name present, so the
+    map is correct and the gap is just a later rewrite of the FASTQ. Three earlier false positives on
+    the ONT RNA arms came from the same place.
+
+    The read count is free -- the builder records it in the sibling JSON -- so this costs one decompress
+    of the map (hundreds of MB), not of the library (tens of GB). Returns None when the JSON has no
+    count, leaving the mtime rule as the only available signal.
+    """
+    want = None
+    cand = fastq.replace(".fastq.gz", ".json")
+    if os.path.exists(cand):
+        try:
+            want = int(json.load(open(cand)).get("reads") or 0) or None
+        except (ValueError, TypeError, json.JSONDecodeError):
+            want = None
+    if not want or not os.path.exists(map_path):
+        return None
+    r = subprocess.run(["bash", "-c", f"pigz -dc {shlex.quote(map_path)} | tail -n +2 | wc -l"],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return None
+    try:
+        got = int(r.stdout.split()[0])
+    except (ValueError, IndexError):
+        return None
+    return None if got == want else (want, got)
+
+
 def _build_seconds(fastq):
     """How long the build that wrote `fastq` took, from its sibling JSON; 0 if unknown.
 
@@ -180,7 +213,12 @@ def check_ont_format(release, results):
             verdict, value = "FAIL (absent)", "absent"
         elif os.path.getsize(mp) <= 1000:
             verdict, value = "FAIL (truncated)", f"{os.path.getsize(mp)} B"
-        elif os.path.getmtime(mp) < os.path.getmtime(f) - _build_seconds(f):
+        elif _map_rows_disagree(mp, f) is not None:
+            want, got = _map_rows_disagree(mp, f)
+            verdict = (f"FAIL (map holds {got:,} rows for a library of {want:,} reads -- it does not "
+                       f"describe these reads; re-run the stage that writes it)")
+            value = f"{got:,} rows vs {want:,} reads"
+        elif _build_seconds(f) == 0 and os.path.getmtime(mp) < os.path.getmtime(f):
             # BOUNDED BY THE BUILD'S OWN RUNTIME, not by strict ordering. A merged library writes the
             # map after the reads, so "map newer" is right there. But an arm generated directly writes
             # both in ONE process, map first, and the gap is then just write order: ds-01's ONT sc RNA

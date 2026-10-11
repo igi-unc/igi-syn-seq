@@ -317,23 +317,39 @@ def test_ont_read_map_must_be_current_not_merely_present():
         _pin(mp, 60)
         assert verdicts()["ont read map present and current"] == "PASS", verdicts()
 
-        # A map that precedes its reads WITHIN THE BUILD'S OWN RUNTIME is write order, not staleness:
-        # an arm generated directly writes the map first and the reads last in one process. Strict
-        # ordering produced three false positives on the ONT RNA arms (lags of 0 s, 173 s and 660 s
-        # inside builds of 25,249 s, 8,367 s and 19,585 s).
-        json.dump({"runtime_s": 8367}, open(fq.replace(".fastq.gz", ".json"), "w"))
-        _pin(mp, -173)
+        # CONTENT BEATS MTIME. The build records its read count, so comparing it to the map's row
+        # count says directly whether the map describes these reads -- which mtimes cannot, because
+        # they cannot tell a rewritten envelope from a stale map. ds-02's ONT bulk RNA map is 8.8 h
+        # older than its reads and is CORRECT: 20,070,655 rows for 20,070,655 reads, every sampled
+        # name present. The mtime rule called that a failure; three ONT RNA arms failed the same way.
+        # Enough rows that the file clears the 1 kB truncation guard, which fires before this test.
+        import uuid as _uuid
+        names = [_uuid.uuid4().hex for _ in range(2000)]
+        with _gz.open(mp, "wt") as fh:
+            fh.write("read_name\tsource\n")
+            for nm in names:
+                fh.write(f"{nm}\tchr1_T_hap0_all_s000_chunk0,+strand,1-2000\n")
+        json.dump({"reads": len(names), "runtime_s": 10},
+                  open(fq.replace(".fastq.gz", ".json"), "w"))
+        _pin(mp, -48 * 3600)          # far older than the reads, and still correct
         _pin(fq, 0)
         assert verdicts()["ont read map present and current"] == "PASS", \
-            f"a lag inside the build duration is write order: {verdicts()}"
+            f"a map whose rows match the read count describes those reads: {verdicts()}"
 
-        # Beyond the recorded runtime they cannot be from the same run, which is the real defect --
-        # ds-02's ONT bulk RNA map preceded its reads by 31,760 s against a 2,601 s build.
-        json.dump({"runtime_s": 2601}, open(fq.replace(".fastq.gz", ".json"), "w"))
-        _pin(mp, -31760)
+        # A row count that disagrees is the real defect, whatever the mtimes say.
+        json.dump({"reads": len(names) + 7, "runtime_s": 10},
+                  open(fq.replace(".fastq.gz", ".json"), "w"))
+        _pin(mp, 60)                  # NEWER than the reads, so mtime alone would pass it
+        v = verdicts()["ont read map present and current"]
+        assert v.startswith("FAIL") and "does not describe these reads" in v, v
+
+        # With no recorded count there is nothing to compare, so mtime ordering is the only signal
+        # left and still applies.
+        os.remove(fq.replace(".fastq.gz", ".json"))
+        _pin(mp, -48 * 3600)
         _pin(fq, 0)
         v = verdicts()["ont read map present and current"]
-        assert v.startswith("FAIL") and "same run" in v, v
+        assert v.startswith("FAIL"), v
 
         # Absent is still a failure, and distinguishable from stale.
         os.remove(mp)
