@@ -132,7 +132,8 @@ def run_chunks(jobs, n_parallel, timeout_s, attempts=5, log=print):
     return done
 
 
-def combine_fastq(parts, out_path, log=print, map_path=None, keep_description=False):
+def combine_fastq(parts, out_path, log=print, map_path=None, keep_description=False,
+                  run_meta=None):
     """Concatenate FASTQ chunks with record framing enforced, then assert it. Returns the read count.
 
     By default the simulator's description is STRIPPED from every header and, if `map_path` is given,
@@ -150,6 +151,16 @@ def combine_fastq(parts, out_path, log=print, map_path=None, keep_description=Fa
     fixed for exactly this (see `readnames.shuffle_and_rename`) while the long-read path was not.
 
     The map keeps the link for whoever needs it, in the one place a tool under test will not read.
+
+    `run_meta` puts REAL ONT run metadata back in the stripped header. Stripping the description left a
+    bare UUID, which no basecaller produces: a real header carries runid, read, ch, start_time,
+    flow_cell_id, protocol_group_id and sample_id, and tools and users alike expect them. Supply a dict
+    of fixed fields and `read=` and `ch=` are filled in per record.
+
+    `sample_id` must be the SYNTHETIC dataset name. The ds-02 germline baseline is called from a real
+    donor and the baseline VCF still carries that donor's cohort accession as its sample name; putting
+    the same string in 390 million read headers would propagate an upstream identifier into every
+    delivered file, which is the opposite of what a synthetic release is for.
     """
     n_fixed = 0
     n_reads = 0
@@ -165,9 +176,16 @@ def combine_fastq(parts, out_path, log=print, map_path=None, keep_description=Fa
                         if i % 4 == 0 and not keep_description:
                             raw = line.rstrip(b"\n")
                             sp = raw.split(b" ", 1)
-                            line = sp[0] + b"\n"
                             if gm and len(sp) > 1:
                                 gm.write(f"{sp[0][1:].decode()}\t{sp[1].decode()}\n")
+                            if run_meta:
+                                fields = dict(run_meta)
+                                fields["read"] = n_reads + 1
+                                fields["ch"] = (n_reads % 2624) + 1   # a Revio-class channel count
+                                extra = " ".join(f"{k}={v}" for k, v in fields.items())
+                                line = sp[0] + b" " + extra.encode() + b"\n"
+                            else:
+                                line = sp[0] + b"\n"
                         if i % 4 == 0:
                             n_reads += 1
                         tail_nl = line.endswith(b"\n")

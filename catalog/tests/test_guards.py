@@ -1413,6 +1413,35 @@ def test_interleave_mixes_chromosomes_and_keeps_mates():
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_simulator_streams_differ_per_library():
+    """The four single-cell assays share a cell roster and must NOT share a read-error stream.
+
+    `--seed 9100` is mandatory and documented in three job headers: the roster and molecule pool are
+    shared, and that is what makes a cell the same cell in 10x GEX, 10x TCR, Kinnex sc and ONT sc. The
+    same integer was then passed to the read simulator, so the i-th GEX R2 quality string came out
+    byte-identical to the i-th TCR R2 string and to IGI-SYN-SEQ-02's -- across all four libraries and
+    both datasets. Nothing downstream breaks; it is a tell, and it defeats treating the assays as
+    independent measurements.
+
+    So the roster seed stays shared and only the simulator stream is scoped.
+    """
+    from igi_catalog.readnames import stream_seed
+
+    assays = ("tenx_gex", "tenx_tcr", "kinnex_sc", "ont")
+    datasets = ("IGI-SYN-SEQ-01", "IGI-SYN-SEQ-02")
+    seen = {}
+    for ds in datasets:
+        for assay in assays:
+            v = stream_seed(9100, ds, assay)
+            assert v not in seen, (
+                f"{ds}/{assay} and {seen[v]} draw the same simulator stream ({v})")
+            seen[v] = f"{ds}/{assay}"
+            assert 0 <= v < 2_000_000_000, v
+    # stable across processes: hash() is salted per process and would make a build unreproducible
+    assert stream_seed(9100, "IGI-SYN-SEQ-01", "tenx_gex") == 754194991, \
+        "stream_seed changed value; every single-cell library's error stream moves with it"
+
+
 def _main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

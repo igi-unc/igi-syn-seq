@@ -34,6 +34,7 @@ from igi_catalog.cells import CellRoster, load_whitelist
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.kinnex import MasArrays, SizeSelection, tenx_segment
+from igi_catalog.readnames import stream_seed
 from igi_catalog.longread import chunk_fasta, combine_fastq, run_chunks
 from igi_catalog.molecules import MoleculePool
 from igi_catalog.pacbio_bam import source_of, write_hifi_bam, drop_empty_records
@@ -195,7 +196,10 @@ def main():
                             got.add(s)
         return got
 
-    parts = simulate(fa_all, "br0", a.seed + 1000)
+    # Scoped per dataset and assay: --seed stays 9100 so the cell roster is shared, but the read
+    # simulator must not produce the same error stream in every single-cell library. See stream_seed.
+    sseed = stream_seed(a.seed, a.dataset, "kinnex_sc")
+    parts = simulate(fa_all, "br0", sseed + 1000)
     covered = covered_from(parts)
     for p_i in range(a.fill_passes):
         missing = [n for n in members if n not in covered]
@@ -211,7 +215,7 @@ def main():
                     w = line[1:].split()[0] in keep
                 if w:
                     dst.write(line)
-        more = simulate(sub_fa, f"br{p_i + 1}", a.seed + 2000 + p_i * 500)
+        more = simulate(sub_fa, f"br{p_i + 1}", sseed + 2000 + p_i * 500)
         parts += more
         covered |= covered_from(more)
     lost = [n for n in members if n not in covered]

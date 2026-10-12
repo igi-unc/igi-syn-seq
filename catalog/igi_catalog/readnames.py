@@ -72,6 +72,25 @@ def sort_buffer_arg(env=None):
 # ambiguous -- destroying exactly the truth artefact owner decision D2 asks for. Each run is given a slice
 # of the name space instead. The space is 4 lanes x 78 tiles x 20000 x 20000 = 1.25e11 names, so a stride
 # of 4e9 holds 31 runs without overlap.
+def stream_seed(base, *scope):
+    """A simulator seed derived from `base` plus a scope, as a stable 32-bit integer.
+
+    The four single-cell assays MUST share `--seed 9100`, because they share one cell roster and one
+    molecule pool and that is what makes a cell the same cell in all of them. Passing that same integer
+    on to the READ SIMULATOR as well made every library's error stream identical: the i-th 10x GEX R2
+    quality string was byte-identical to the i-th TCR R2 string and to IGI-SYN-SEQ-02's, across all four
+    libraries and both datasets. Nothing downstream breaks, but identical quality strings in libraries
+    that are supposed to be independent sequencing runs is a tell, and it defeats any analysis that
+    treats the assays as independent measurements of the same cells.
+
+    So the roster seed stays shared and only the simulator stream is scoped. zlib.crc32 rather than
+    hash(): hash() is salted per process, which would make a build unreproducible.
+    """
+    import zlib
+    key = ":".join([str(base)] + [str(s) for s in scope])
+    return zlib.crc32(key.encode()) % 2_000_000_000
+
+
 NAME_SPACE_STRIDE = 4_000_000_000
 
 

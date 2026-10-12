@@ -40,6 +40,7 @@ from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.derived import build_derived
 from igi_catalog.kinnex import SizeSelection, ont_cdna
+from igi_catalog.readnames import stream_seed
 from igi_catalog.longread import (_framed, chunk_fasta, combine_fastq, run_chunks,
                                   split_fasta_bp)
 from igi_catalog.molecules import MoleculePool
@@ -189,7 +190,8 @@ def main():
                 out = os.path.join(work, f"ont_{k:05d}.fq")
                 args = (f"simulate --reference {sub} --quantity {cov:.4f}x "
                         f"--length {lmean},{lsd} --identity {ident} "
-                        f"--error_model {emodel} --qscore_model {qmodel} --seed {a.seed + k} "
+                        f"--error_model {emodel} --qscore_model {qmodel} "
+                        f"--seed {stream_seed(a.seed, a.dataset, 'ont', a.assay) + k} "
                         f"--start_adapter_seq '' --end_adapter_seq '' --junk_reads 0 "
                         f"--random_reads 0 --chimeras 0")
                 jobs.append((f"ont/{tag}", out, br.format(args=args)))
@@ -199,7 +201,8 @@ def main():
             out = os.path.join(work, f"ont_{j:05d}.fq")
             args = (f"simulate --reference {sub} --quantity 1x "
                     f"--length {want},{want//10} --identity {ident} "
-                    f"--error_model {emodel} --qscore_model {qmodel} --seed {a.seed + j} "
+                    f"--error_model {emodel} --qscore_model {qmodel} "
+                    f"--seed {stream_seed(a.seed, a.dataset, 'ont', a.assay) + j} "
                     f"--start_adapter_seq '' --end_adapter_seq '' --junk_reads 0 --random_reads 0 "
                     f"--chimeras 0")
             jobs.append((f"ont/{j}", out, br.format(args=args)))
@@ -221,7 +224,17 @@ def main():
             f"{n_reads:,} reads); skipping simulation and combine")
     else:
         parts = run_chunks(jobs, n_par, timeout_s, log=log)
-        n_reads = combine_fastq(parts, cat, log=log, map_path=map_path)
+        # Real ONT run metadata, derived from the dataset and assay so it is stable across reruns and
+        # distinct per library. Stripping badread's description left a bare UUID, which no basecaller
+        # emits. sample_id is the SYNTHETIC dataset name, never an upstream donor accession.
+        run_meta = {
+            "runid": f"{stream_seed(a.seed, a.dataset, 'ont_runid', a.assay):08x}" * 2,
+            "flow_cell_id": f"PAW{stream_seed(a.seed, a.dataset, 'ont_fc', a.assay) % 100000:05d}",
+            "protocol_group_id": f"{a.dataset}_ont_{a.assay}",
+            "sample_id": a.dataset,
+            "basecall_model_version_id": "dna_r10.4.1_e8.2_400bps_sup@v4.2.0",
+        }
+        n_reads = combine_fastq(parts, cat, log=log, map_path=map_path, run_meta=run_meta)
 
     out_fq = os.path.join(a.out, f"{a.dataset}_{label}_ont_{a.assay}.fastq.gz")
     # pigz, not Python's gzip. Compressing 85 GB single-threaded is what ran out of wall clock.

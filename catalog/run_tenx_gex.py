@@ -29,6 +29,7 @@ from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.molecules import MoleculePool
 from igi_catalog.pipeline import quality_model
+from igi_catalog.readnames import stream_seed
 from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
 from igi_catalog.tenx import (R1_LEN, R2_LEN, art_chunk_index, art_read_strands,
@@ -136,7 +137,7 @@ def main():
             # No `-na`: it suppresses the ALN, which is the only exact record of which strand ART drew.
             # Reads are bit-identical with and without it at the same -rs.
             cmd = art.format(args=(f"{qual} -i {fa} -l {R2_LEN} -f {cov:.4f} -ss HS25 "
-                                   f"-rs {a.seed + chunk_i} -o {pre}"))
+                                   f"-rs {stream_seed(a.seed, a.dataset, 'tenx_gex') + chunk_i} -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
             fq = f"{pre}.fq" if os.path.exists(f"{pre}.fq") else f"{pre}1.fq"
             aln = f"{pre}.aln" if os.path.exists(f"{pre}.aln") else f"{pre}1.aln"

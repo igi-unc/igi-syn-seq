@@ -39,7 +39,7 @@ from igi_catalog.pipeline import quality_model
 from igi_catalog.tenx import (R1_LEN, R2_LEN, art_chunk_index, art_read_strands,
                               cellranger_names, orient_antisense,
                               r1_quality, r1_sequence, reads_for_molecule)
-from igi_catalog.readnames import NAME_SPACE_STRIDE, illumina_name
+from igi_catalog.readnames import NAME_SPACE_STRIDE, illumina_name, stream_seed
 from igi_catalog.vdj import assemble, genes, vdj_amplicon
 
 
@@ -207,7 +207,7 @@ def main():
             mean_len = (sum(wins) / len(wins)) if wins else float(R2_LEN)
             pre = os.path.join(work, f"c{ci:05d}_")
             cmd = art.format(args=(f"{qual} -i {fa} -l {R2_LEN} -f {R2_LEN/mean_len*1.02:.4f} "
-                                   f"-ss HS25 -rs {a.seed + ci} -o {pre}"))
+                                   f"-ss HS25 -rs {stream_seed(a.seed, a.dataset, 'tenx_tcr') + ci} -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
             fq = f"{pre}.fq" if os.path.exists(f"{pre}.fq") else f"{pre}1.fq"
             aln = f"{pre}.aln" if os.path.exists(f"{pre}.aln") else f"{pre}1.aln"
