@@ -1221,6 +1221,61 @@ def test_truth_af_separates_a_generator_defect_from_an_alignment_loss():
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_normal_library_depth_ignores_tumour_ploidy():
+    """A normal library is diploid, so its depth denominator is 2.0 whatever the tumour's ploidy.
+
+    The normal plan is flat -- `source_plan(..., tumor=False)` returns two haplotypes at weight 1.0 each,
+    and its own comment says "the normal library is diploid everywhere". Dividing that by the TUMOUR
+    mixture denominator made every IGI-SYN-SEQ-02 normal library 69 % of its designed depth: with WGD and
+    purity 0.45 the denominator is 0.45*1*4 + 0.55*2 = 2.9, so 2/2.9 = 0.690. Normal WES came out at 69x
+    against a designed 100x, and normal WGS, HiFi and ONT at 20.7x against 30x.
+
+    IGI-SYN-SEQ-01 cannot show this: no WGD and purity 0.70 give 0.70*1*2 + 0.30*2 = 2.0 exactly, the
+    right answer by coincidence. A test covering only ds-01 would pass on the defect, so both datasets
+    are asserted and the WGD one carries the point.
+    """
+    import yaml
+    from igi_catalog.clones import CloneModel
+    from igi_catalog.pipeline import depth_denominator, source_plan
+
+    root = tempfile.mkdtemp(prefix="igi_normdepth_")
+    try:
+        # Every arm the design's CNA list names, so CloneModel can resolve "chr17:p" and friends. The
+        # coordinates are stand-ins: this test is arithmetic on the clone tree and never reads a base.
+        arms = os.path.join(root, "arms.bed")
+        with open(arms, "w") as fh:
+            for i in list(range(1, 23)) + ["X", "Y"]:
+                c = f"chr{i}"
+                fh.write(f"{c}\t0\t100000000\tp\n{c}\t100000000\t250000000\tq\n")
+        design = yaml.safe_load(open(os.path.join(CATALOG, "design.yaml")))
+
+        seen_wgd = False
+        for ds, cfg in design["datasets"].items():
+            cm = CloneModel(cfg, arms)
+            seen_wgd = seen_wgd or cm.wgd
+            den_n = depth_denominator(cm, cm.purity, tumor=False)
+            assert abs(den_n - 2.0) < 1e-9, (
+                f"{ds}: normal depth denominator is {den_n:.4f}, not 2.0; every normal library it "
+                f"builds lands at {2.0 / den_n:.3f} of its designed depth")
+
+            plan = source_plan(cm, cm.purity, "chr1", 50_000_000, tumor=False)
+            assert sum(w for *_, w in plan) == 2.0, plan
+            for _src, _hap, _kind, w in plan:
+                cov = 100.0 * w / den_n
+                assert abs(cov - 50.0) < 1e-9, (
+                    f"{ds}: a normal haplotype plans {cov:.2f}x of a requested 100x, not 50x")
+
+            # and the tumour denominator must NOT have been flattened by the fix
+            den_t = depth_denominator(cm, cm.purity, tumor=True)
+            want = cm.purity * sum(cm.excl.values()) * sum(cm.base) + (1.0 - cm.purity) * 2.0
+            assert abs(den_t - want) < 1e-9, (
+                f"{ds}: tumour denominator {den_t:.4f} != {want:.4f}; the normal fix reached the tumour")
+
+        assert seen_wgd, "no WGD dataset in the design, so this test cannot see the defect it exists for"
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 def _main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

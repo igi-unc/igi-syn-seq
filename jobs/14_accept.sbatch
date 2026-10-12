@@ -37,6 +37,8 @@ for c in "${ACCEPT_CHROMS[@]}"; do
     --bam "$A/$d/${d}_tumor.bam" --reference "$IGI_FASTA_NOALT" \
     --arms-bed "$IGI_ARMS_BED" --capture-bed "$IGI_EXOME_BED" \
     --junctions "$M/$d/${d}_tumor_junctions.tsv" --paths "$IGI_PATHS" \
+    --normal-bam "$A/$d/${d}_normal.bam" \
+    --designed-normal-depth 100 --designed-tumor-depth 150 \
     --seed "$seed" $mopt \
     --work "$O/$d/$c" --report "$O/$d/${d}_${c}.json" 2>&1 | sed "s/^/[$d $c seed=$seed] /" || true
 done

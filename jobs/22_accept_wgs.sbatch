@@ -57,6 +57,11 @@ for c in "${ACCEPT_CHROMS[@]}"; do
   jopt=""; [ -s "$j" ] && jopt="--junctions $j"
   python3 acceptance.py --dataset "$d" --chrom $c --catalog-dir output --design design.yaml \
     --assay wgs --bam "$B" --reference "$IGI_FASTA_NOALT" \
+    --normal-bam "$A/$d/${d}_normal.bam" \
+    --designed-normal-depth 30 --designed-tumor-depth 100 \
+    `# The normal WGS library has never been aligned: wgs_merged holds its FASTQs, wgs_bams holds only` \
+    `# the tumour. So this check fails until 13_align is run for the normal arm, and that failure is` \
+    `# correct -- an unaligned normal is a normal whose 20.7x-against-30x defect nothing could see.` \
     --arms-bed "$IGI_ARMS_BED" --paths "$IGI_PATHS" $jopt \
     --work "$R/$d/$c" --report "$R/$d/${d}_${c}.json" 2>&1 | sed "s/^/[$d $c] /" || true
 done

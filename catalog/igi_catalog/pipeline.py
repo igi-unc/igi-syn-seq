@@ -147,13 +147,30 @@ def off_target_bands(capture, chrom, chrom_length, rng, bands=OFF_TARGET_BANDS,
     return out
 
 
-def depth_denominator(clones, purity):
+def depth_denominator(clones, purity, tumor=True):
     """Copy-weighted material at a baseline-ploidy locus, used to normalise depth.
 
     Depth is proportional to the number of DNA copies in the sequenced material. Dividing every locus by
     this baseline makes an unaltered region come out at the requested depth, a loss come out lower and an
     amplification higher, in the same proportion the clone model's expected VAF assumes.
+
+    `tumor=False` returns 2.0, because a normal library is diploid and its depth has nothing to do with
+    the tumour's ploidy. The flag exists because omitting it was a real defect: `source_plan(tumor=False)`
+    returns two haplotypes at weight 1.0 each, and dividing that flat plan by the TUMOUR mixture
+    denominator put every IGI-SYN-SEQ-02 normal library at 69 % of its designed depth -- with WGD and
+    purity 0.45 the denominator is 0.45*1*4 + 0.55*2 = 2.9, and 2/2.9 = 0.690, so 100x normal WES was
+    delivered at 69x and 30x normal WGS, HiFi and ONT at 20.7x.
+
+    It went unnoticed for two reasons worth recording. IGI-SYN-SEQ-01 cannot show it: no WGD and purity
+    0.70 give 0.70*1*2 + 0.30*2 = 2.0 exactly, the right answer by coincidence. And every depth and
+    allele-fraction check in the acceptance suite measures a RATIO -- allele fractions, depth between
+    copy-number regions, truth-map fractions -- and a ratio is blind to a constant factor on one library
+    by construction. Nothing asked the normal library its absolute depth; nothing looked at the normal
+    library at all. This flag and `tumor=False` must therefore stay the SAME argument that selects the
+    flat plan, so the plan and its normaliser cannot disagree again.
     """
+    if not tumor:
+        return 2.0
     base_total = sum(clones.base)
     return purity * sum(clones.excl.values()) * base_total + (1.0 - purity) * 2.0
 
@@ -277,6 +294,9 @@ class WesBuilder:
         self.record_map = []       # (record id, chrom, start, end, source, hap, copy kind, interval set)
         self.rejected = []         # designed somatic edits that could not be applied
         self.germline_rejected = 0
+        # Set here for a tumour library and recomputed in write_source_fastas once the library is known;
+        # `tumor` is not an argument to __init__, so this cannot be final. See depth_denominator.
+        self.tumor = None
         self.denom = depth_denominator(env.clones, purity) if purity is not None else 2.0
         self.junctions = []
         self.jn_by_site = {}
@@ -290,6 +310,11 @@ class WesBuilder:
 
         Returns {(source, hap): (path, weight)} with weights averaged over intervals.
         """
+        # The denominator belongs to the library, not to the dataset: a normal library is diploid and is
+        # normalised by 2.0 whatever the tumour's ploidy. Derived from the same `tumor` flag that selects
+        # the plan, so the two cannot drift.
+        self.tumor = tumor
+        self.denom = depth_denominator(self.env.clones, self.purity, tumor=tumor)
         handles = {}
         weights = {}
         n = 0

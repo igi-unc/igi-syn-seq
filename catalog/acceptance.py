@@ -376,6 +376,98 @@ def check_depth_by_cn(rep, bam, design, dataset, chrom, arms_bed, capture_bed, w
             f"largest deviation {worst:.0%} over {len(regions)} segment(s), on {unit} bases", nums)
 
 
+def check_normal_depth(rep, normal_bam, tumor_bam, design, dataset, chrom, arms_bed, capture_bed,
+                       work, designed_normal, designed_tumor, gc_curve=None):
+    """The normal library's absolute depth, calibrated against the tumour's through the same aligner.
+
+    This check exists because nothing in this suite had ever looked at the normal BAM, and every depth and
+    allele-fraction check here measures a RATIO -- allele fractions, depth between copy-number regions,
+    truth-map fractions -- which is blind to a constant factor on one library by construction. Under that
+    blind spot every IGI-SYN-SEQ-02 normal library shipped at 69 % of its designed depth, because the flat
+    diploid normal plan was divided by the tumour mixture denominator (see `depth_denominator`). Normal
+    WES was 69x against a designed 100x; ds-01 was exactly right by coincidence of its purity and ploidy.
+
+    Absolute depth cannot be compared against the design directly: capture efficiency, duplicates and
+    mapping loss put the delivered figure some way below the requested one, and a tolerance wide enough to
+    absorb that is too wide to notice 0.69. So the TUMOUR is the ruler. Over the same copy-number-neutral
+    captured bases, both libraries lose the same fraction to the same aligner, so
+
+        observed_normal / observed_tumor  ==  designed_normal / designed_tumor
+
+    and the recovery loss cancels. That makes the test sensitive to exactly the defect it exists for --
+    a constant factor on one library -- and insensitive to the one thing a design-versus-pileup
+    comparison cannot separate from it.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import yaml
+    from igi_catalog.clones import CloneModel
+    from igi_catalog.genome import Genome
+    cfg = yaml.safe_load(open(design))["datasets"][dataset]
+    cm = CloneModel(cfg, arms_bed)
+    paths = yaml.safe_load(open(gc_curve)) if gc_curve and gc_curve.endswith((".yml", ".yaml")) else None
+    genome = Genome(paths["reference_fasta"]) if paths else None
+    if capture_bed is None and genome is None:
+        rep.add("normal library depth", False,
+                "WGS normal depth needs a reference genome (pass --paths) to find non-N runs")
+        return
+    for label, b in (("normal", normal_bam), ("tumour", tumor_bam)):
+        if not (b and os.path.exists(b)):
+            # Not a skip. An unaligned normal library is a normal library whose depth has never been
+            # measured, and that is the condition this check exists to make visible.
+            rep.add("normal library depth", False,
+                    f"the {label} BAM {b} does not exist, so the normal library's depth is unverified")
+            return
+    if not (designed_normal and designed_tumor):
+        rep.add("normal library depth", False,
+                "no designed depths given, so nothing could be compared; pass "
+                "--designed-normal-depth and --designed-tumor-depth")
+        return
+
+    # A window that is copy-number neutral in the tumour, so the tumour side of the ratio carries no
+    # copy-number signal. Probed densely rather than at the midpoint: a window whose centre is neutral but
+    # whose flank is inside an LOH segment would compare the normal against a half-depth tumour.
+    def neutral_window(ch):
+        limit = min(genome.lengths[ch] if genome else 150_000_000, 250_000_000)
+        pos = 5_000_000
+        while pos + 10_000_000 < limit:
+            lo, hi = pos, pos + 10_000_000
+            if all(cm.cn("T", ch, q)[:2] == cm.base for q in range(lo, hi + 1, 500_000)):
+                return lo, hi
+            pos += 5_000_000
+        return None, None
+
+    order = [chrom] + [c for c in (f"chr{i}" for i in range(1, 23)) if c != chrom]
+    for ch in order:
+        if genome and ch not in genome.lengths:
+            continue
+        lo, hi = neutral_window(ch)
+        if lo is None:
+            continue
+        dn, n_n = captured_depth(normal_bam, ch, lo, hi, capture_bed, work, genome=genome)
+        dt, n_t = captured_depth(tumor_bam, ch, lo, hi, capture_bed, work, genome=genome)
+        if dn and dt:
+            break
+    else:
+        rep.add("normal library depth", False,
+                "no copy-number-neutral window with measurable bases in both libraries")
+        return
+
+    want = designed_normal / designed_tumor
+    got = dn / dt
+    dev = abs(got / want - 1)
+    # 12 % absorbs the difference in duplicate rate and insert-size distribution between two independently
+    # simulated libraries; it does not absorb 0.690, which is the whole point of the number.
+    rep.add("normal library depth", dev <= 0.12,
+            f"normal/tumour depth {got:.3f} against a designed {want:.3f} ({dev:.0%} off) "
+            f"on {('captured' if capture_bed else 'callable')} bases of {ch}:{lo}-{hi}",
+            {"normal_depth": round(dn, 2), "tumor_depth": round(dt, 2),
+             "observed_ratio": round(got, 4), "designed_ratio": round(want, 4),
+             "deviation": round(dev, 4), "designed_normal_depth": designed_normal,
+             "designed_tumor_depth": designed_tumor, "chrom": ch, "start": lo, "end": hi,
+             "normal_intervals": n_n, "tumor_intervals": n_t,
+             "implied_normal_depth_factor": round(got / want, 4)})
+
+
 def check_read_names(rep, r1):
     """Names must be unique, Illumina-shaped, and free of anything identifying the source."""
     names, dup, leaky = set(), 0, 0
@@ -612,6 +704,12 @@ def main():
                          "built with. Overrides --seed and warns if the two disagree")
     ap.add_argument("--paths", default=None,
                     help="site paths yaml; supplies the GC bias curve and reference for the depth check")
+    ap.add_argument("--normal-bam",
+                    help="the normal library. Given with --bam, the normal's absolute depth is checked "
+                         "against the tumour's over copy-number-neutral bases, which is the only check "
+                         "here that is not a ratio within one library")
+    ap.add_argument("--designed-normal-depth", type=float, default=None)
+    ap.add_argument("--designed-tumor-depth", type=float, default=None)
     ap.add_argument("--report", required=True)
     a = ap.parse_args()
     os.makedirs(a.work, exist_ok=True)
@@ -650,6 +748,10 @@ def main():
             cmodel = CloneModel(yaml.safe_load(open(a.design))["datasets"][a.dataset], a.arms_bed)
         check_classes_present(rep, a.catalog_dir, a.dataset, a.junctions, a.chrom,
                               cap, lengths, a.seed, cmodel)
+    if a.normal_bam and a.bam and a.dataset and a.chrom and a.arms_bed:
+        check_normal_depth(rep, a.normal_bam, a.bam, a.design, a.dataset, a.chrom, a.arms_bed,
+                           None if a.assay == "wgs" else a.capture_bed, a.work,
+                           a.designed_normal_depth, a.designed_tumor_depth, gc_curve=a.paths)
     if a.r1:
         check_read_names(rep, a.r1)
     if a.read_map and a.record_map:

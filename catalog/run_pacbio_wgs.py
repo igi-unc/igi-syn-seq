@@ -124,8 +124,8 @@ def main():
     os.makedirs(work, exist_ok=True)
     os.makedirs(a.out, exist_ok=True)
     chrom_len = env.genome.lengths[a.chrom]
-    denom = depth_denominator(env.clones, purity)
     tumor = a.library == "tumor"
+    denom = depth_denominator(env.clones, purity, tumor=tumor)
     svs = sv_rows(a.catalog_dir, a.dataset, a.chrom) if tumor else []
 
     t0 = time.time()

@@ -128,8 +128,10 @@ def build_derived(env, dcfg, dataset, chrom, library, catalog_dir, events, depth
     """Write one FASTA per derived chromosome copy. Returns [(tag, fasta_path, coverage)] and plan rows."""
     purity = dcfg["purity"]
     chrom_len = env.genome.lengths[chrom]
-    denom = depth_denominator(env.clones, purity)
     tumor = library == "tumor"
+    # tumor first: the denominator depends on it. A normal library is diploid and is normalised by 2.0
+    # whatever the tumour's ploidy -- see depth_denominator. This is the ONT WGS and HiFi path.
+    denom = depth_denominator(env.clones, purity, tumor=tumor)
     svs = sv_rows(catalog_dir, dataset, chrom) if tumor else []
     pieces, plan_rows = [], []
     boundaries = [c for c in env.clones.cn_boundaries(chrom) if 1 < c <= chrom_len] if tumor else []
