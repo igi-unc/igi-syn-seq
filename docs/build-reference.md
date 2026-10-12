@@ -2725,3 +2725,61 @@ shipping one row per read.
 Bulk RNA keeps fold coverage, deliberately. It is a shotgun of full-length cDNA, so reads *should* scale
 with length times abundance, and a 0.01 TPM transcript drawing none is correct sampling rather than a
 bug. Its bound is 15 % for that reason; a single global tolerance would either fail it or stop seeing GEX.
+
+## 30. The ONT header was invented while a real one sat on disk
+
+§27 stripped badread's description -- which carries the read's true coordinates, clone and identity --
+and put run metadata back in its place, because a header consisting of a bare UUID is not something a
+basecaller emits. The metadata it put back was *plausible*. It was not measured.
+
+`$RAFT/inputs/fastqs/IPISRC044/assays/ONT/` holds a real PromethION R10.4.1 library, dorado
+sup@v4.3.0, listed in `docs/data-sources.md` as a source this release already uses. 511,401 of its reads
+settle the whole question:
+
+| field | measured | the invented version |
+|---|---|---|
+| order | fixed, nine fields, on 511,400 of 511,401 | `ch` last instead of second |
+| `read=` | **does not exist** | emitted |
+| `runid` | one UUID for the run | 16 hex characters |
+| `ch` | 15-2997, 2,664 distinct | `(n % 2624) + 1`, commented "Revio-class" -- a PacBio instrument |
+| `start_time` | present; 1-second resolution, constant sub-second part, 835.6 reads/s | absent |
+| `basecall_gpu` | `NVIDIA_A100_80GB_PCIe` | absent |
+| `parent_read_id` | present; equals the read id on 96.5 % | absent |
+
+The sub-second part is the detail worth keeping: `.369691` on every one of the 511,401 reads. It is the
+run's start phase, not a per-read time, so emitting a varying fraction would be a signature no basecaller
+produces. 2,664 distinct channels over a ~3,000-position flow cell is the other: the inactive pores are
+real, so the builder draws from a fixed active subset rather than the full range.
+
+This is §26's lesson arriving twice in one release. The Kinnex primers were recovered by measurement
+rather than taken from a kit document, and then two sections later a header was invented with the real
+one readable from the same filesystem.
+
+### 30.1 Channels are drawn, not indexed
+
+`channels[n_reads % len(channels)]` repeats channel order exactly every 2,664 reads. Uniform, correct in
+distribution, and a periodicity no flow cell has. An LCG stepped once per read costs a multiply-add and
+removes it; measured on 40,000 reads, 99 reads repeat their channel at the cycle length against 37,336
+for the indexed version.
+
+### 30.2 `check_ont_format` tested for a space
+
+```python
+leaky = [h for h in heads if " " in h]          # "the header carries a description"
+```
+
+The §22 pattern, and wrong in **both** directions at once:
+
+* every real ONT header contains spaces -- nine fields separated by them -- so this would have failed all
+  twenty ONT deliverables of a release whose headers had just been made correct;
+* a header of nothing but a UUID, carrying no run metadata at all, passed it perfectly.
+
+It now tests for the fields badread actually writes (`length=`, `error-free_length=`, `read_identity=`,
+`strand,`) and, separately, that the layout matches `ONT_HEADER_FIELDS`. Both constants live in
+`longread.py` where they were measured, so the builder and the check cannot drift apart.
+
+### 30.3 An assertion that was wrong before it was right
+
+The first version of the guard demanded all 2,664 channels appear in 12,000 reads. Coupon collector gives
+2,635 expected; it got 2,634 and failed correct code. Equality on a sampled quantity is not an invariant,
+and the fix is a ceiling plus a floor rather than a tighter sample.
