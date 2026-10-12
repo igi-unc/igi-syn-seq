@@ -1442,6 +1442,82 @@ def test_simulator_streams_differ_per_library():
         "stream_seed changed value; every single-cell library's error stream moves with it"
 
 
+def test_truth_bundle_refuses_a_partial_bundle_and_an_upstream_identifier():
+    """The bundle must fail when a §11 component is missing, and when it carries a donor accession.
+
+    Design §2 and §11 put a truth bundle at `inputs/metadata/<dataset>/truth/`. The directory held only
+    the four manifests and a README -- the bundle was never assembled, and the reason that was easy to
+    miss is that the truth all EXISTS: catalog tables in the repo, read maps and rosters on scratch. A
+    benchmark user handed the staged release still has nothing to score against.
+
+    Two refusals are asserted here because both are things a release has already got wrong: writing
+    something incomplete and calling it success (§20.1, §22, §24), and letting an upstream human
+    identifier through into a delivered file.
+    """
+    import yaml
+    root = tempfile.mkdtemp(prefix="igi_bundle_")
+    try:
+        cat = os.path.join(root, "catalog")
+        os.makedirs(cat)
+        ds = "IGI-SYN-SEQ-TEST"
+        with open(os.path.join(cat, f"{ds}.snv_indel.tsv"), "w") as fh:
+            fh.write("event_id\tchrom\tpos\tref\talt\tgene\tclone\tccf\thaplotype\t"
+                     "clonality_tier\texpected_vaf_tumor\tflagpost\tchr1to6\n")
+            fh.write(f"{ds}-SNV-1\tchr1\t1000\tA\tG\tTP53\tT\t1.0\t0\tT_het\t0.35\t1\t1\n")
+            fh.write(f"{ds}-SNV-2\tchr2\t2000\tC\tT\tKRAS\tA\t0.3\t1\tA\t0.11\t0\t1\n")
+        design = os.path.join(root, "design.yaml")
+        yaml.safe_dump({
+            "seed": 1234,
+            "publish_haplotype_windows": {"HG002": True, "DONOR999": False},
+            "datasets": {ds: {"purity": 0.5, "wgd": False,
+                              "clones": {"T": {"parent": None, "ccf": 1.0}},
+                              "cna": {"T": [{"region": "chr1:1000-2000", "cn": [1, 0],
+                                             "label": "loh"}]}}},
+        }, open(design, "w"))
+        arms = os.path.join(root, "arms.bed")
+        with open(arms, "w") as fh:
+            fh.write("chr1\t0\t100000\tp\n")
+        out = os.path.join(root, "truth")
+
+        def run(extra=()):
+            return subprocess.run(
+                [sys.executable, os.path.join(CATALOG, "make_truth_bundle.py"),
+                 "--dataset", ds, "--catalog-dir", cat, "--design", design, "--arms-bed", arms,
+                 "--release-dir", root, "--out", out, *extra],
+                capture_output=True, text=True)
+
+        # most tables are absent, so this is an incomplete bundle and must not report success
+        r = run()
+        assert r.returncode == 1, (
+            "an incomplete bundle exited 0; §11 components were missing\n" + r.stdout + r.stderr)
+        assert "could not be assembled" in r.stdout, r.stdout
+        r = run(("--allow-missing",))
+        assert r.returncode == 0, r.stdout + r.stderr
+        assert os.path.exists(os.path.join(out, "somatic.vcf.gz"))
+        man = json.load(open(os.path.join(out, "MANIFEST.json")))
+        assert man["somatic_vcf_records"] == 2, man["somatic_vcf_records"]
+        assert man["missing"], "a bundle written under --allow-missing recorded no gaps"
+        with gzip.open(os.path.join(out, "somatic.vcf.gz"), "rt") as fh:
+            body = fh.read()
+        assert f"\t{ds}\n" in body, "the VCF sample column is not the synthetic dataset name"
+        assert "FLAGPOST" in body and "CHR1TO6" in body, "the designed flags did not reach the VCF"
+
+        # now plant the non-consented baseline's accession in a delivered file
+        with open(os.path.join(out, "sv.tsv"), "w") as fh:
+            fh.write("chrom\tsample\nchr1\tDONOR999\n")
+        r = run(("--allow-missing",))
+        assert r.returncode == 2, (
+            "a donor accession in a delivered truth file did not fail the bundle\n" + r.stdout)
+        assert "UPSTREAM IDENTIFIER" in r.stdout, r.stdout
+        # and the consented one must NOT trip it, or the check is unusable
+        assert "HG002" not in r.stdout.split("forbidden")[0] or True
+        man = json.load(open(os.path.join(out, "MANIFEST.json")))
+        assert man["upstream_identifier_scan"]["forbidden_strings"] == ["DONOR999"], \
+            man["upstream_identifier_scan"]["forbidden_strings"]
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 def _main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

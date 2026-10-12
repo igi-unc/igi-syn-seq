@@ -2469,3 +2469,90 @@ One thing fell out well: the 10x FASTA's two entries are `CTACACGACGCTCTTCCGATCT
 `GTACTCTGCGTTGATACCACTGCTT`, which are exactly the outer primers the measurement above found on the real
 bulk segments. So the preflight's existing reference is the right one for this library -- now that the
 library has primers.
+
+## 27. The truth bundle, the shared error stream, and the block-ordered libraries
+
+Three more findings from the same 2026-10-11 review, all fixed in the generator, none needing a rebuild
+of anything except what §24 already requires.
+
+### 27.1 The truth bundle was never assembled
+
+Design §2 and §11 put a truth bundle at `inputs/metadata/<dataset>/truth/`: a somatic VCF with clone,
+CCF, expected VAF and tier labels in INFO, CNA segments per clone and haplotype, SV and fusion and viral
+tables, expression tables, cells and clonotypes, the manifests, the design and the seed. The staged
+metadata directory held the four manifests and a README.
+
+What made this easy to miss is that **the truth all exists.** The catalog tables are in the repo under
+`catalog/output/`; the read maps, molecule tables and cell rosters are on scratch beside the libraries
+that used them. Nothing was lost. But scattered across two trees under three naming conventions is not a
+deliverable, and a benchmark user handed the staged release has nothing to score against.
+
+`catalog/make_truth_bundle.py` assembles it, and the design decision worth recording is what it refuses
+to do. It does not write a partial bundle quietly: every §11 component is either written or named as
+missing, and missing means a non-zero exit. `--allow-missing` exists for mid-build assembly and records
+the gaps in `MANIFEST.json` as well as on stdout. This release has learned that particular lesson four
+times (§20.1, §22, §23, §24) and the pattern is always the same -- a stage that produces something,
+reports success, and does not say what it left out is worse than one that fails, because the gap then has
+to be rediscovered from outside.
+
+Assembled against ds-02 for a dry run: 874 somatic records, 10 CNA segments, eight designed-event
+tables, 4,000 cells, 300 clonotypes, every file checksummed.
+
+**Identifiers.** The VCF sample column is the synthetic dataset name, and `check_no_upstream_identifiers`
+asserts afterwards that no delivered file in the bundle carries a non-consented baseline's accession --
+ds-02's germline is called from a real donor and the baseline VCF still carries that donor's cohort
+accession as its sample name. The forbidden set is derived from the design's own
+`publish_haplotype_windows`, which is owner decision D12 and already records which baselines are
+consented reference material: HG002 true, IPISRC044 false, "public dataset, but not consented for
+redistribution". Deriving the policy from that flag rather than from a list in the script means a new
+baseline cannot quietly opt out, and keeps one decision in one place. `design.yaml` and `MANIFEST.json`
+are exempt, because recording provenance is what they are for; the distinction is between "this release
+was built from IPISRC044", which belongs in the record, and an upstream accession appearing as a sample
+name in data a tool will read.
+
+Separately: design §2 calls IPISRC044 "public" with no citation, and `data-sources.md` gives it internal
+paths only where every other source has a URL. That is an **owner decision**, not a code fix, and it
+gates distribution rather than correctness.
+
+### 27.2 Four single-cell libraries shared one read-error stream
+
+`--seed 9100` is mandatory and three job headers say so: the cell roster and molecule pool are shared,
+and that is what makes a cell the same cell in 10x GEX, 10x TCR, Kinnex sc and ONT sc. The same integer
+was then handed to the read simulator, so the i-th GEX R2 quality string came out byte-identical to the
+i-th TCR R2 string -- and to IGI-SYN-SEQ-02's, across all four libraries and both datasets.
+
+Nothing downstream breaks. It is a tell, and it defeats any analysis that treats the assays as
+independent measurements of the same cells. `readnames.stream_seed` scopes the simulator stream by
+dataset and assay while leaving the roster seed shared, using `zlib.crc32` rather than `hash()` --
+`hash()` is salted per process, which would make a build unreproducible.
+
+While there: stripping badread's description left ONT headers as a bare UUID, which no basecaller emits.
+`combine_fastq` now takes `run_meta` and writes `runid`, `flow_cell_id`, `protocol_group_id`,
+`sample_id`, the basecall model and per-read `read=`/`ch=`. The truth still goes only to the separate
+map, which is the point of stripping the description in the first place (§10.4).
+
+### 27.3 Read order was a fingerprint, and it made one check test nothing
+
+The merge stages concatenated the per-chromosome pieces with `cat`, so every delivered library is
+chromosome-block ordered: ds-01's tumour WES begins with chr10 and its first 3.4 M pairs are chr10 and
+chr11 only. The 10x FASTQs are cell-ordered -- the first 20,000 GEX reads come from two barcodes.
+
+Reads *within* a chromosome are shuffled, so aligners are unaffected and no acceptance result in §23
+depends on this. What does depend on it is anything taking a head-based slice, and two things do:
+
+- `consumer_preflight.py` pushes "the first 5 %" of a library through each consumer. On the exome that
+  slice contained **no chr6 reads at all**, so the razers3 and OptiType preflight -- whose entire purpose
+  is the MHC region on chr6 -- tested a sample with none of it in. That is the §22 pattern again: the
+  check ran, and it could not have answered the question it was asked.
+- anyone running `zcat | head`, which is the first thing a new user does.
+
+`catalog/interleave_fastq.py` replaces `cat` in all four merge paths. Weighted round robin by
+largest-remaining-fraction: records counted once per input, then drawn so the chromosomes exhaust
+together. On deliberately lopsided inputs every decile carries the library's exact composition. Both
+mates advance from the same chosen input in one pass, so R1 record n stays mated to R2 record n --
+cutting the mates independently is the §20.5 failure, and repeating it here would break every paired
+consumer rather than one check.
+
+**The cost is real and is stated in the job.** Concatenating gzip members needs no decompression and this
+does; on the ~180 GB ONT WGS arm that is the difference between minutes and hours. It buys a library
+whose head is representative, which is what the preflight assumed all along.
