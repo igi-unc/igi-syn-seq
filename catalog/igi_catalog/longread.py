@@ -17,6 +17,7 @@ them. Each line of it was paid for:
 import concurrent.futures as cf
 import gzip
 import os
+import random
 import subprocess
 import time
 import zlib
@@ -132,6 +133,58 @@ def run_chunks(jobs, n_parallel, timeout_s, attempts=5, log=print):
     return done
 
 
+# ONT header structure, MEASURED from 511,401 real PromethION R10.4.1 reads -- the IPISRC044 T1 library
+# in the site's own data-sources, basecalled with dorado sup@v4.3.0. Written out because the first
+# version of this invented a plausible header instead of reading one that was already on disk, which is
+# the mistake §26 exists to record. A real header:
+#
+#   @f870f5e6-... runid=aa773787-6b3e-4ae6-b0e4-99917e0808ff ch=1462
+#   start_time=2025-07-17T16:35:15.369691-07:00 flow_cell_id=PBE81376
+#   basecall_gpu=NVIDIA_A100_80GB_PCIe protocol_group_id=PM0349_20250717
+#   sample_id=PROM0236_... parent_read_id=f870f5e6-... basecall_model_version_id=dna_r10.4.1_...
+#
+# What the measurement settled, and what the invented version had wrong:
+#
+#   field order   fixed, and this is it: 511,400 of 511,401 reads. ONT_HEADER_FIELDS records it.
+#   read=         DOES NOT EXIST. Older guppy emitted it; this basecaller does not. It was invented.
+#   runid         ONE UUID for the whole run, not 16 hex characters.
+#   ch            15 to 2997, 2,664 distinct over 511k reads -- a ~3,000-position flow cell with some
+#                 channels inactive, not a counter and not 2,675. ONT_CHANNELS/ONT_ACTIVE_CHANNELS.
+#   start_time    1-SECOND resolution with a CONSTANT sub-second part (.369691 on every one of the
+#                 511,401 reads: the run's start phase), and 835.6 reads/s over 612 distinct seconds.
+#   parent_read_id  equals the read id for 493,479 of 511,401 reads (96.5 %); the other 3.5 % are reads
+#                 split from a longer one and keep the parent's id. Not modelled: always equal here, and
+#                 this comment is the record of what that leaves out.
+ONT_HEADER_FIELDS = ("runid", "ch", "start_time", "flow_cell_id", "basecall_gpu",
+                     "protocol_group_id", "sample_id", "parent_read_id",
+                     "basecall_model_version_id")
+ONT_CHANNELS = 3000          # flow cell positions; measured max channel 2997
+ONT_ACTIVE_CHANNELS = 2664   # distinct channels seen in the real run; the rest were inactive pores
+ONT_READS_PER_S = 836        # measured 835.6 reads/s
+ONT_SUBSECOND = 369691       # the constant microsecond part of every real start_time
+ONT_BASECALL_GPU = "NVIDIA_A100_80GB_PCIe"
+# The offset is arbitrary and says nothing about anyone: the real run's -07:00 is its sequencing site's,
+# and a synthetic dataset should not carry it.
+ONT_UTC_OFFSET = "-04:00"
+
+# Simulator truth that must never appear in a delivered header. Badread writes all of it; the strings are
+# listed rather than tested as "the header contains a space", which is what the first check did -- and
+# every real ONT header contains spaces, so that test would have failed this release on all 20 files
+# while passing a header that leaked coordinates and no run metadata at all.
+ONT_SIMULATOR_FIELDS = ("length=", "error-free_length=", "read_identity=", "strand,")
+
+
+def _ont_start_time(t0_epoch, second_index):
+    """One real ONT `start_time`: 1-second resolution, constant sub-second part, fixed offset.
+
+    Both properties are measured, not stylistic: every one of 511,401 real reads carried `.369691`, so
+    the fractional part is the run's start phase rather than a per-read time, and emitting a varying one
+    would be a detail no basecaller produces.
+    """
+    t = time.gmtime(t0_epoch + second_index)
+    return (f"{time.strftime('%Y-%m-%dT%H:%M:%S', t)}.{ONT_SUBSECOND:06d}{ONT_UTC_OFFSET}").encode()
+
+
 def combine_fastq(parts, out_path, log=print, map_path=None, keep_description=False,
                   run_meta=None):
     """Concatenate FASTQ chunks with record framing enforced, then assert it. Returns the read count.
@@ -164,6 +217,32 @@ def combine_fastq(parts, out_path, log=print, map_path=None, keep_description=Fa
     """
     n_fixed = 0
     n_reads = 0
+    if run_meta:
+        missing = [k for k in ONT_HEADER_FIELDS
+                   if k not in ("ch", "start_time", "parent_read_id") and k not in run_meta]
+        if missing:
+            raise ValueError(f"run_meta is missing {missing}; the delivered header would differ from "
+                             f"the measured ONT layout in ONT_HEADER_FIELDS")
+        runid = str(run_meta["runid"]).encode()
+        # The active channel subset, so the library shows ~2,664 distinct channels over a 3,000-position
+        # flow cell rather than all 3,000 -- the real run's inactive pores. Derived from the runid so it
+        # is stable across reruns and differs between libraries.
+        r = random.Random(f"ch:{run_meta['runid']}")
+        channels = r.sample(range(1, ONT_CHANNELS + 1), ONT_ACTIVE_CHANNELS)
+        t0 = run_meta.get("start_epoch") or 0
+        ts_bucket = -1
+        ts = b""
+        # A cheap LCG rather than channels[n % len(channels)]. Indexing by the read number cycles, so
+        # channel order repeats exactly every 2,664 reads and the library would carry a periodicity no
+        # real run has. One multiply-add per read is free at this scale, and seeding from the runid keeps
+        # a rebuild reproducible.
+        lcg = (int(run_meta["runid"].replace("-", "")[:8], 16) or 1) & 0x7FFFFFFF
+        mid = (f" flow_cell_id={run_meta['flow_cell_id']}"
+               f" basecall_gpu={run_meta['basecall_gpu']}"
+               f" protocol_group_id={run_meta['protocol_group_id']}"
+               f" sample_id={run_meta['sample_id']}"
+               f" parent_read_id=").encode()
+        tail = f" basecall_model_version_id={run_meta['basecall_model_version_id']}".encode()
     gm = gzip.open(map_path, "wt") if map_path else None
     try:
         if gm:
@@ -179,11 +258,17 @@ def combine_fastq(parts, out_path, log=print, map_path=None, keep_description=Fa
                             if gm and len(sp) > 1:
                                 gm.write(f"{sp[0][1:].decode()}\t{sp[1].decode()}\n")
                             if run_meta:
-                                fields = dict(run_meta)
-                                fields["read"] = n_reads + 1
-                                fields["ch"] = (n_reads % 2624) + 1   # a Revio-class channel count
-                                extra = " ".join(f"{k}={v}" for k, v in fields.items())
-                                line = sp[0] + b" " + extra.encode() + b"\n"
+                                rid = sp[0][1:]
+                                lcg = (lcg * 1103515245 + 12345) & 0x7FFFFFFF
+                                ch = channels[lcg % len(channels)]
+                                if n_reads // ONT_READS_PER_S != ts_bucket:
+                                    ts_bucket = n_reads // ONT_READS_PER_S
+                                    ts = _ont_start_time(t0, ts_bucket)
+                                # Assembled from precomputed halves in ONT_HEADER_FIELDS order rather
+                                # than by joining a dict: the order is a measured property of the real
+                                # header, and this runs once per read over hundreds of millions.
+                                line = (sp[0] + b" runid=" + runid + b" ch=" + str(ch).encode()
+                                        + b" start_time=" + ts + mid + rid + tail + b"\n")
                             else:
                                 line = sp[0] + b"\n"
                         if i % 4 == 0:

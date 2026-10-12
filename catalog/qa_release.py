@@ -29,6 +29,10 @@ import re
 import shlex
 import subprocess
 
+# The ONT header layout and the simulator fields that must never reach a delivered read are
+# MEASURED constants and live where they were measured, so a check and a builder cannot drift.
+from igi_catalog.longread import ONT_HEADER_FIELDS, ONT_SIMULATOR_FIELDS
+
 # (name, target, tolerance) where tolerance is a fraction of the target; None means "report, do not judge"
 TARGETS = {
     # Accuracy targets for the three PacBio arms are the SIMULATOR'S measured true accuracy, 0.99695,
@@ -188,22 +192,52 @@ def _build_seconds(fastq):
 
 
 def check_ont_format(release, results):
-    """No ONT read may carry the simulator's description, and the map that replaced it must be there.
+    """No ONT read may carry the simulator's TRUTH, it must carry real run metadata, and the map that
+    replaced the truth must be present and current.
 
     Badread writes the source reference, strand and coordinates into a genomic read's header and the
     source molecule id into an RNA read's. A benchmark whose reads carry their own answer is not a
-    benchmark, so the description is stripped into `*_read_map.tsv.gz` and this is the check that it was.
+    benchmark, so the description is stripped into `*_read_map.tsv.gz`.
+
+    THIS CHECK USED TO TEST FOR A SPACE. `leaky = [h for h in heads if " " in h]` is the §22 pattern
+    again, and wrong in both directions at once. Every real ONT header contains spaces -- nine metadata
+    fields separated by them -- so it would have failed all twenty ONT deliverables of a release that
+    had just been given correct headers, while a header consisting of a bare UUID and nothing else
+    passed it perfectly. What matters is whether the simulator's truth is in there, so that is what is
+    asked now, against the fields badread actually writes.
+
+    The second half is new, and is why the first was worth revisiting: a bare UUID is not something a
+    basecaller emits, and nothing checked that what was put back is what a real run carries.
+    ONT_HEADER_FIELDS is measured from 511,401 real PromethION R10.4.1 reads, and the field ORDER is
+    part of that measurement rather than a preference.
     """
     for f in ont_deliverables(release):
         heads = [l for i, l in enumerate(_fq_head(f, 40000)) if i % 4 == 0]
         if not heads:
             continue
-        leaky = [h for h in heads if " " in h]
+        leaky = [h for h in heads if any(k in h for k in ONT_SIMULATOR_FIELDS)]
         mp = f.replace(".fastq.gz", "_read_map.tsv.gz")
         results.append({
-            "check": "ont_header_has_no_description", "file": os.path.basename(f),
-            "value": f"{len(leaky)}/{len(heads)} headers carry a description",
-            "verdict": "PASS" if not leaky else f"FAIL ({leaky[0][:70]})"})
+            "check": "ont header carries no simulator truth", "file": os.path.basename(f),
+            "value": f"{len(leaky)}/{len(heads)} headers carry {'/'.join(ONT_SIMULATOR_FIELDS)}",
+            "verdict": "PASS" if not leaky else f"FAIL ({leaky[0][:90]})"})
+
+        bad = []
+        for h in heads[:200]:
+            keys = tuple(t.split("=", 1)[0] for t in h.split()[1:] if "=" in t)
+            if keys != ONT_HEADER_FIELDS:
+                bad.append(h)
+        if not heads[0].split()[1:]:
+            verdict = "FAIL (header is a bare read id; no run metadata at all)"
+            value = heads[0][:60]
+        elif bad:
+            got = tuple(t.split("=", 1)[0] for t in bad[0].split()[1:] if "=" in t)
+            verdict = f"FAIL ({len(bad)}/{len(heads[:200])} headers differ from the measured layout)"
+            value = ",".join(got) or "(no fields)"
+        else:
+            verdict, value = "PASS", f"{len(ONT_HEADER_FIELDS)} fields in the measured order"
+        results.append({"check": "ont header matches the measured ONT layout",
+                        "file": os.path.basename(f), "value": value, "verdict": verdict})
         # PRESENT AND CURRENT. Presence alone passed a map two days older than the reads it described:
         # on 2026-10-10 ont_wgs_merged shipped Oct 10 reads beside an Oct 5 map, because the merge never
         # rebuilt it and this check only ever asked whether a file was there and over 1 kB. A stale

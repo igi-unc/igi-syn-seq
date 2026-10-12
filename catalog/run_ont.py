@@ -41,8 +41,8 @@ from igi_catalog.genome_build import read_events
 from igi_catalog.derived import build_derived
 from igi_catalog.kinnex import SizeSelection, ont_cdna
 from igi_catalog.readnames import stream_seed
-from igi_catalog.longread import (_framed, chunk_fasta, combine_fastq, run_chunks,
-                                  split_fasta_bp)
+from igi_catalog.longread import (ONT_BASECALL_GPU, _framed, chunk_fasta, combine_fastq,
+                                  run_chunks, split_fasta_bp)
 from igi_catalog.molecules import MoleculePool
 from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
@@ -224,15 +224,29 @@ def main():
             f"{n_reads:,} reads); skipping simulation and combine")
     else:
         parts = run_chunks(jobs, n_par, timeout_s, log=log)
-        # Real ONT run metadata, derived from the dataset and assay so it is stable across reruns and
-        # distinct per library. Stripping badread's description left a bare UUID, which no basecaller
-        # emits. sample_id is the SYNTHETIC dataset name, never an upstream donor accession.
+        # Real ONT run metadata, in the layout MEASURED from 511,401 real PromethION R10.4.1 reads --
+        # see ONT_HEADER_FIELDS in longread.py for the measurement and for what the first version of
+        # this got wrong by inventing the shape instead of reading one off disk.
+        #
+        # Every value is derived from the dataset and assay, so it is stable across reruns and distinct
+        # per library. `runid` is a UUID because that is what the real field holds; it is built from the
+        # scoped seed rather than uuid4() so a rebuild reproduces it.
+        #
+        # sample_id is the SYNTHETIC dataset name, never an upstream donor accession. The ds-02 germline
+        # baseline carries its real donor's cohort accession as its VCF sample name, and this field ends
+        # up in every read of every delivered file.
+        rs = stream_seed(a.seed, a.dataset, "ont_runid", a.assay)
+        h = f"{rs:08x}{stream_seed(a.seed, a.dataset, 'ont_runid2', a.assay):08x}"
         run_meta = {
-            "runid": f"{stream_seed(a.seed, a.dataset, 'ont_runid', a.assay):08x}" * 2,
+            "runid": f"{h[:8]}-{h[8:12]}-{h[12:16]}-{h[:4]}-{h[8:]}{h[:4]}",
             "flow_cell_id": f"PAW{stream_seed(a.seed, a.dataset, 'ont_fc', a.assay) % 100000:05d}",
+            "basecall_gpu": ONT_BASECALL_GPU,
             "protocol_group_id": f"{a.dataset}_ont_{a.assay}",
             "sample_id": a.dataset,
             "basecall_model_version_id": "dna_r10.4.1_e8.2_400bps_sup@v4.2.0",
+            # A fixed, deterministic run start. Not the wall clock: two builds of the same library would
+            # then differ in every read header, and the release is meant to be reproducible from a seed.
+            "start_epoch": 1760000000 + (stream_seed(a.seed, a.dataset, "ont_t0", a.assay) % 86400),
         }
         n_reads = combine_fastq(parts, cat, log=log, map_path=map_path, run_meta=run_meta)
 

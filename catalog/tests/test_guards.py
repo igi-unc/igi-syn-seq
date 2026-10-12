@@ -1690,5 +1690,109 @@ def test_kinnex_bulk_wraps_segments_without_materialising_them():
     plain = list(mas.build(molecules, random.Random(7)))
     assert BULK_TRUSEQ_R1 not in plain[0][1], "build() applies the bulk transform without being asked"
 
+
+def test_ont_headers_match_the_measured_layout_and_leak_no_truth(tmp_path):
+    """A delivered ONT header must look like a basecaller's and must not contain badread's answer.
+
+    Both halves are measured, from 511,401 real PromethION R10.4.1 reads in the site's own ONT data:
+    the nine fields of ONT_HEADER_FIELDS, in that order, on 511,400 of them. The first version of this
+    builder invented a layout -- it emitted `read=`, which that basecaller does not produce at all, a
+    16-hex `runid` where the real field is a UUID, no `start_time`, and `ch` last instead of second --
+    while a real header was sitting on disk the whole time. §26 is the same lesson.
+
+    And `check_ont_format` used to test `" " in header`. That is wrong in both directions at once: every
+    real ONT header contains spaces, so it would fail a release whose headers had just been made
+    correct, while a bare UUID carrying no run metadata passed it. This asserts the replacement catches
+    the case the old one was for -- a leaked description -- AND the case it could not see.
+    """
+    import re
+    from igi_catalog.longread import (ONT_ACTIVE_CHANNELS, ONT_CHANNELS, ONT_HEADER_FIELDS,
+                                      ONT_SIMULATOR_FIELDS, combine_fastq)
+
+    meta = {"runid": "aa773787-6b3e-4ae6-b0e4-99917e0808ff", "flow_cell_id": "PAW12345",
+            "basecall_gpu": "NVIDIA_A100_80GB_PCIe", "protocol_group_id": "DS_ont_wgs",
+            "sample_id": "IGI-SYN-SEQ-01",
+            "basecall_model_version_id": "dna_r10.4.1_e8.2_400bps_sup@v4.3.0",
+            "start_epoch": 1760000000}
+
+    part = tmp_path / "p0.fq"
+    with open(part, "w") as fh:
+        for i in range(12000):
+            # a real badread genomic header, truth and all
+            fh.write(f"@{i:08x}-aaaa-bbbb-cccc-ddddeeeeffff "
+                     f"chr2_T_hap0_all_chunk0,-strand,11285896-11296902 length=10893 "
+                     f"error-free_length=10928 read_identity=98.306%\n{'ACGT' * 10}\n+\n{'I' * 40}\n")
+    out = tmp_path / "all.fq"
+    n = combine_fastq([str(part)], str(out), log=lambda m: None,
+                      map_path=str(tmp_path / "map.tsv.gz"), run_meta=meta)
+    assert n == 12000
+    heads = [l.rstrip() for i, l in enumerate(open(out)) if i % 4 == 0]
+
+    for h in heads[:500]:
+        keys = tuple(t.split("=", 1)[0] for t in h.split()[1:] if "=" in t)
+        assert keys == ONT_HEADER_FIELDS, f"field order differs from the measurement: {keys}"
+        assert "read=" not in h, "read= is emitted; the measured basecaller does not produce it"
+        for k in ONT_SIMULATOR_FIELDS:
+            assert k not in h, f"the simulator's {k} reached a delivered header: {h[:120]}"
+        rid = h.split()[0][1:]
+        assert f"parent_read_id={rid}" in h, "parent_read_id is not the read id"
+    # runid is a UUID, not a hex blob
+    runid = re.search(r"runid=(\S+)", heads[0]).group(1)
+    assert re.fullmatch(r"[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}", runid), runid
+    # channels are bounded by the flow cell and do not cycle
+    chs = [int(re.search(r" ch=(\d+)", h).group(1)) for h in heads]
+    assert 1 <= min(chs) and max(chs) <= ONT_CHANNELS, (min(chs), max(chs))
+    # NOT equality. 12,000 draws from 2,664 channels do not touch all of them: coupon collector gives
+    # 2,664 * (1 - e^-4.505) = 2,635 expected distinct, and the first version of this assertion demanded
+    # 2,664, got 2,634, and failed correct code. What matters is the CEILING -- a library must never use
+    # a channel outside the active subset -- and that the whole flow cell is in play.
+    assert len(set(chs)) <= ONT_ACTIVE_CHANNELS, (
+        f"{len(set(chs))} distinct channels exceeds the {ONT_ACTIVE_CHANNELS} active ones")
+    assert len(set(chs)) > 0.9 * ONT_ACTIVE_CHANNELS, (
+        f"only {len(set(chs))} of {ONT_ACTIVE_CHANNELS} channels used over {len(chs)} reads")
+    cycled = sum(1 for i in range(len(chs) - ONT_ACTIVE_CHANNELS)
+                 if chs[i] == chs[i + ONT_ACTIVE_CHANNELS])
+    assert cycled < len(chs) / 10, (
+        f"{cycled} reads repeat their channel exactly {ONT_ACTIVE_CHANNELS} later, so channel order is "
+        f"a fixed cycle -- a periodicity no real run has")
+    # start_time: one-second resolution, constant sub-second part, and it advances
+    fracs = {re.search(r"start_time=\S+?\.(\d+)", h).group(1) for h in heads}
+    assert len(fracs) == 1, f"the sub-second part varies ({fracs}); on real reads it is constant"
+    secs = {re.search(r"start_time=(\S+?)\.", h).group(1) for h in heads}
+    assert len(secs) > 1, "start_time never advances across 12,000 reads"
+
+    # now the check: it must pass this and fail a bare UUID and a leaked description
+    qa = _qa()
+    rel = tmp_path / "release" / "ont_wgs_merged" / "DS"
+    rel.mkdir(parents=True)
+    good = rel / "DS_tumor_ont_wgs.fastq.gz"
+    with gzip.open(good, "wt") as fh:
+        for i, h in enumerate(heads[:400]):
+            fh.write(f"{h}\n{'ACGT' * 10}\n+\n{'I' * 40}\n")
+    (rel / "DS_tumor_ont_wgs_read_map.tsv.gz").write_bytes(
+        gzip.compress(b"read_name\tsource\n" + b"".join(
+            f"{h.split()[0][1:]}\tsrc\n".encode() for h in heads[:400])))
+    res = []
+    qa.check_ont_format(str(tmp_path / "release"), res)
+    layout = [r for r in res if r["check"].endswith("measured ONT layout")]
+    truth = [r for r in res if "no simulator truth" in r["check"]]
+    assert layout and layout[0]["verdict"] == "PASS", layout
+    assert truth and truth[0]["verdict"] == "PASS", truth
+
+    # a bare UUID: what the builder produced before run_meta, and what the old check called correct
+    bare = rel / "DS_normal_ont_wgs.fastq.gz"
+    with gzip.open(bare, "wt") as fh:
+        for h in heads[:400]:
+            fh.write(f"{h.split()[0]}\n{'ACGT' * 10}\n+\n{'I' * 40}\n")
+    (rel / "DS_normal_ont_wgs_read_map.tsv.gz").write_bytes(
+        gzip.compress(b"read_name\tsource\n" + b"".join(
+            f"{h.split()[0][1:]}\tsrc\n".encode() for h in heads[:400])))
+    res = []
+    qa.check_ont_format(str(tmp_path / "release"), res)
+    bad = [r for r in res if r["file"] == "DS_normal_ont_wgs.fastq.gz"
+           and r["check"].endswith("measured ONT layout")]
+    assert bad and bad[0]["verdict"].startswith("FAIL"), (
+        f"a header of nothing but a read id passed the layout check: {bad}")
+
 if __name__ == "__main__":
     sys.exit(_main())
