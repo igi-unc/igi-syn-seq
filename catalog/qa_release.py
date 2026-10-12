@@ -797,6 +797,131 @@ def check_consumer_preflight(release, results):
                         "value": value, "verdict": verdict})
 
 
+
+# What each arm was ASKED for and what it reports WRITING, as the builders' own meta JSONs name them.
+# A target expressed per cell is multiplied by the cell count in the same file, so the two numbers always
+# come from one document and cannot be compared across a version boundary.
+#
+# The tolerance is per arm because the legitimate losses are per arm, and each one is a measured figure
+# rather than a round number chosen to make the check pass:
+#
+#   10x GEX, 10x TCR   0.10  one FASTA record per intended read, so the only honest loss is the records
+#                           shorter than one read; measured at 0.1-0.5 % before the -c 1 fix
+#   Kinnex bulk/sc     0.08  skera segmentation drops arrays whose adapters are mangled; the delivered
+#                           libraries ran 0.974 and 1.006 of target
+#   ONT RNA            0.05  one read per reference record, and badread emits whole references here;
+#                           the delivered libraries ran 1.004 and 1.003
+#   bulk RNA           0.15  the ONLY arm where fold coverage is the right parameterisation -- it is a
+#                           shotgun of full-length cDNA, so reads SHOULD scale with length x abundance
+#                           and a 0.01 TPM transcript genuinely drawing none is correct sampling. The
+#                           delivered library ran 0.957. A tight bound here would be wrong.
+YIELD = {
+    "tenx_gex":     ("reads_per_cell_target", "cells",    "read_pairs_written",   0.10),
+    "tenx_tcr":     ("reads_per_cell_target", "t_cells",  "read_pairs_written",   0.10),
+    "kinnex_bulk":  ("segments_target",       None,       "segments_post_skera",  0.08),
+    "kinnex_sc":    ("segments_target",       None,       "segments_post_skera",  0.08),
+    "ont_bulk_rna": ("reads_target",          None,       "reads",                0.05),
+    "ont_sc_rna":   ("reads_target",          None,       "reads",                0.05),
+    "rna":          ("pairs_target",          None,       "pairs_written",        0.15),
+}
+
+
+def check_designed_yield(release, results):
+    """Did each arm deliver the amount of data it was asked for?
+
+    Every builder already wrote its target and its delivered count into the same meta JSON, and nothing
+    compared them. Two libraries shipped on that:
+
+      * 10x GEX held 140,980,551 read pairs against a designed 160,000,000, and the missing 11.9 % was
+        every transcript shorter than 450 nt -- 66,666 records with no reads at all -- because a fold
+        coverage calibrated for a 450 nt window floors shorter references to zero reads.
+      * the first rebuild of 10x TCR held 917,896 against 6,000,000, for the same reason once
+        `vdj_amplicon` made the records vary in length.
+
+    Neither is visible to anything else in this file, and the reason is worth stating because it is the
+    §24.2 pattern again: the truth maps correctly describe the reads that WERE written, the length and
+    accuracy checks sample what is there, and every acceptance figure is a ratio measured within one
+    library. **Reads that do not exist appear in no ratio.** The only way to see a missing length class
+    is to compare against what was requested, from outside the library.
+
+    This asks the weaker of the two available questions, and says so: it compares two numbers the builder
+    reported, so it catches "the builder produced the wrong amount" and not "the builder miscounted what
+    it produced". The stronger form is the assertion inside each builder, which fails the job. For the
+    arms shipping a per-read truth map the count is cross-checked against the map's row count below,
+    which is independent of the builder's own counter.
+    """
+    for arm, (tkey, perkey, dkey, tol) in sorted(YIELD.items()):
+        for meta_path in sorted(glob.glob(f"{release}/{arm}/*/*_full_{arm}.json")):
+            try:
+                with open(meta_path) as fh:
+                    m = json.load(fh)
+            except (OSError, ValueError) as e:
+                results.append({"check": "delivered yield vs design", "file": os.path.basename(meta_path),
+                                "value": f"unreadable: {e}", "verdict": "FAIL (meta unreadable)"})
+                continue
+            got = m.get(dkey)
+            target = m.get(tkey)
+            if target is not None and perkey:
+                target = target * (m.get(perkey) or 0)
+            name = os.path.basename(meta_path)
+            if got is None or not target:
+                # NOT a pass. A builder that records no target is a builder whose yield cannot be
+                # checked, and reporting that as "no target" next to a row of PASSes is how an arm
+                # exempts itself from the one question this check exists to ask.
+                missing = tkey if not target else dkey
+                results.append({"check": "delivered yield vs design", "file": name,
+                                "value": f"{missing} is absent from the meta",
+                                "verdict": f"FAIL (yield unverifiable: no {missing} recorded)"})
+                continue
+            frac = got / target
+            verdict = ("PASS" if abs(got - target) <= tol * target
+                       else f"FAIL ({frac:.1%} of design, outside {1-tol:.0%}-{1+tol:.0%})")
+            results.append({"check": "delivered yield vs design", "file": name,
+                            "value": f"{got:,} of {target:,} ({frac:.1%})", "verdict": verdict})
+
+
+def check_yield_against_truth_map(release, results):
+    """The builder's own read counter, against the truth map it wrote row by row.
+
+    check_designed_yield compares two numbers from one document, so a builder that miscounted reports a
+    consistent lie. For the arms that ship one row per read the map is an independent count of the same
+    quantity, written by a different line of code on a different pass, so the two disagreeing means one
+    of them is wrong and that is worth knowing.
+
+    Kinnex's `_arrays.tsv.gz` is deliberately absent from this list: its rows are MOLECULES, not reads,
+    and one array carries several. A check that compared them would fail on a correct release, which is
+    worse than not asking.
+    """
+    for arm, pat, key in (("tenx_gex", "*_gex_molecules.tsv.gz", "read_pairs_written"),
+                          ("tenx_tcr", "*_tcr_molecules.tsv.gz", "read_pairs_written"),
+                          ("ont_sc_rna", "*_molecules.tsv.gz", None)):
+        if key is None:
+            continue
+        for meta_path in sorted(glob.glob(f"{release}/{arm}/*/*_full_{arm}.json")):
+            ds = os.path.basename(os.path.dirname(meta_path))
+            maps = sorted(glob.glob(f"{release}/{arm}/{ds}/{pat}"))
+            maps = [f for f in maps if "chr1to6" not in os.path.basename(f)]
+            if not maps:
+                continue
+            with open(meta_path) as fh:
+                m = json.load(fh)
+            got = m.get(key)
+            rows = 0
+            with gzip.open(maps[0], "rt") as fh:
+                fh.readline()
+                for _ in fh:
+                    rows += 1
+            name = os.path.basename(meta_path)
+            if got is None:
+                verdict = f"FAIL (no {key} recorded to compare the map against)"
+            elif rows == got:
+                verdict = "PASS"
+            else:
+                verdict = f"FAIL (the map has {rows:,} rows for {got:,} reads)"
+            results.append({"check": "read count vs truth map", "file": name,
+                            "value": f"{rows:,} map rows, {got if got is None else format(got, ',')} "
+                                     f"reads reported", "verdict": verdict})
+
 def check_currency(release, results):
     """Every assembled deliverable must be NEWER than the per-chromosome reads it was assembled from.
 
@@ -1212,6 +1337,8 @@ def main():
     check_tcr_r2_direction(a.release, fmt)
     check_alignment(a.release, fmt)
     check_consumer_preflight(a.release, fmt)
+    check_designed_yield(a.release, fmt)
+    check_yield_against_truth_map(a.release, fmt)
     check_currency(a.release, fmt)
     check_subset_currency(a.release, fmt)
     report["format"] = fmt

@@ -263,6 +263,12 @@ def main():
             "fastq": out_fq, "runtime_s": round(time.time() - t0)}
     if a.assay == "wgs":
         meta.update({"chrom": a.chrom, "library": a.library, "depth": a.depth})
+    else:
+        # The RNA assays are given a read COUNT, and it belongs in the record beside the delivered one.
+        # Without it a release-level yield check has nothing to compare against and can only report the
+        # number it found -- which is the shape of check that let the 10x GEX library ship missing every
+        # transcript under 450 nt. The WGS assay is given a depth instead, and acceptance measures that.
+        meta["reads_target"] = a.reads
     with open(os.path.join(a.out, f"{a.dataset}_{label}_ont_{a.assay}.json"), "w") as fh:
         json.dump(meta, fh, indent=2); fh.write("\n")
     log(f"  done in {time.time() - t0:.0f}s")
