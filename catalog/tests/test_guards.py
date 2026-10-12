@@ -1532,5 +1532,41 @@ def _main():
     return 1 if failed else 0
 
 
+
+def test_tcr_asks_the_simulator_for_a_read_count_not_a_fold_coverage():
+    """One read per FASTA record has to be requested as a count, because -f cannot express it.
+
+    `reads_for_molecule` appends each molecule to the chunk once per intended read, so every record in
+    the FASTA stands for exactly one read. The builder expressed that as fold coverage instead, and the
+    arithmetic only works while every record is the same length: ART draws f * (L - l + 1) / l reads per
+    reference and FLOORS the result, so one f calibrated on the mean amplicon gives a read to everything
+    above the mean and nothing at all to the rest.
+
+    Measured on 800 synthetic amplicons spread over 560-740 nt at the f the first rebuild used: 100
+    reads, every one of them from the 740 nt records, 700 records silent. The delivered library held
+    917,896 read pairs against a designed 6,000,000 and the job reported COMPLETED.
+
+    The 450 bp GEX window that `vdj_amplicon` replaced hid this by making every record exactly 450 nt,
+    which is why the defect arrived WITH the fix for the window rather than before it.
+
+    Pinned at the source, because the alternative is a test that runs ART. The arithmetic above is not
+    reproduced here: this asserts the builder does not depend on it.
+    """
+    import re
+    src = open(os.path.join(CATALOG, "run_tenx_tcr.py")).read()
+    # the ART invocation, whichever way it is formatted
+    m = re.search(r"art\.format\(args=\((.*?)\)\)", src, re.S)
+    assert m, "could not find the ART invocation in run_tenx_tcr.py"
+    cmd = m.group(1)
+    assert "-c 1" in cmd, (
+        "the TCR builder no longer asks ART for one read per record; a fold coverage over "
+        "variable-length amplicons floors the short ones to zero reads")
+    assert "-f " not in cmd, (
+        f"the TCR builder passes a fold coverage to ART: {cmd.strip()[:120]}")
+    # and the yield it was asked for must be asserted, not merely recorded next to the delivered one
+    assert "reads_per_cell * len(tcells)" in src and "is not at its requested depth" in src, (
+        "run_tenx_tcr records the requested and delivered read counts in its meta JSON but no longer "
+        "compares them; that is how a library at 15 % of its depth passed")
+
 if __name__ == "__main__":
     sys.exit(_main())

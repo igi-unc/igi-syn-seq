@@ -193,20 +193,28 @@ def main():
             # The whole V(D)J amplicon, not GEX's 5' window: reads must tile V through the proximal
             # constant region or Cell Ranger cannot call the constant gene and drops the chain. See
             # vdj_amplicon for what the 450 bp window cost.
-            wins = []
+            wins = []   # amplicon lengths, reported below; the simulator no longer derives -f from them
             with open(fa, "w") as fh:
                 for i, m in enumerate(chunk):
                     w = vdj_amplicon(m[4], m[5])
                     if len(w) >= R2_LEN:
                         fh.write(f">m{i}\n{w}\n")
                         wins.append(len(w))
-            # Fold coverage from the amplicons' own mean length rather than a hard-coded 450, so the
-            # reads-per-molecule this job was asked for is what ART is actually told to produce. ART's -f
-            # is per reference base, so a single -f over varying lengths yields reads in proportion to
-            # amplicon length, which is what fragmenting a real amplicon pool does.
-            mean_len = (sum(wins) / len(wins)) if wins else float(R2_LEN)
+            # -c 1: ONE read per record, asked for as a count rather than as fold coverage. Each
+            # intended read already has its own FASTA record (reads_for_molecule appends the molecule
+            # once per read), so a count is what this loop means, and -f was only ever an indirect way
+            # of expressing it.
+            #
+            # -f cannot express it once the records differ in length. The reads ART draws for a
+            # reference go as f * (L - l + 1) / l and are then FLOORED, so a single f calibrated on the
+            # mean amplicon gives one read to everything above the mean and nothing at all to the rest.
+            # Measured on 800 records spread over 560-740 nt at the f this job first used: 100 reads,
+            # all of them from the 740 nt records, and 700 of 800 records silently produced none. The
+            # first rebuild of this library wrote 917,896 read pairs against a designed 6,000,000 for
+            # exactly that reason. The 450 bp window this replaced hid it by making every record the
+            # same length.
             pre = os.path.join(work, f"c{ci:05d}_")
-            cmd = art.format(args=(f"{qual} -i {fa} -l {R2_LEN} -f {R2_LEN/mean_len*1.02:.4f} "
+            cmd = art.format(args=(f"{qual} -i {fa} -l {R2_LEN} -c 1 "
                                    f"-ss HS25 -rs {stream_seed(a.seed, a.dataset, 'tenx_tcr') + ci} -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
             fq = f"{pre}.fq" if os.path.exists(f"{pre}.fq") else f"{pre}1.fq"
@@ -246,6 +254,14 @@ def main():
         flush(chunk, ci)
 
     log(f"  {n_reads:,} read pairs over {n_chunks} ART chunk(s) -> {os.path.basename(r2_out)}")
+    # The requested yield, asserted rather than merely recorded beside the delivered one. Both numbers
+    # were already written into the meta JSON and nothing compared them, so a library at 15 % of its
+    # designed depth was a COMPLETED job with a cheerful log line. 10 % covers the Gaussian spread in
+    # reads_for_molecule and the amplicons shorter than one read; it does not cover a wrong -f.
+    want = a.reads_per_cell * len(tcells)
+    if want and abs(n_reads - want) > 0.10 * want:
+        raise SystemExit(f"wrote {n_reads:,} read pairs against a designed {want:,} "
+                         f"({100.0 * n_reads / want:.1f} %); the library is not at its requested depth")
 
     # The design asks for five flagpost clonotypes "mapped in the truth bundle to specific flagpost
     # neoantigens". The catalog owns which events are flagposts, so the link is made here, where it is
