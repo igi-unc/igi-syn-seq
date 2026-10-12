@@ -1578,5 +1578,56 @@ def test_tenx_builders_ask_for_a_read_count_not_a_fold_coverage():
             f"{runner} records the requested and delivered read counts in its meta JSON but no longer "
             f"compares them; that is how a library at 15 % of its depth passed")
 
+
+def test_yield_check_sees_a_short_library_and_an_unrecordable_one(tmp_path):
+    """A library below its designed yield must fail, and a library with no target must also fail.
+
+    Both halves matter. The first is the defect: 10x GEX shipped 140,980,551 read pairs against a
+    designed 160,000,000, with every transcript under 450 nt contributing none, and nothing in the
+    release QA compared the two numbers that were sitting in the same meta JSON.
+
+    The second is how the first stays findable. A missing target is the case where the question cannot
+    be asked, and reporting that as a neutral "no target" beside a row of PASSes is how an arm exempts
+    itself from the only check that can see a missing length class -- four ONT metas recorded no target
+    at all. So it is a FAIL, and this asserts that rather than leaving it to a reading of the code.
+
+    The tolerances are also asserted to be assay-specific, because bulk RNA is the one arm where fold
+    coverage is correct -- a shotgun of full-length cDNA, where a 0.01 TPM transcript drawing no reads
+    is sampling rather than a bug -- and a single global bound would either fail it or stop seeing GEX.
+    """
+    qa = _qa()
+    rel = tmp_path / "release"
+
+    def meta(arm, ds, body):
+        d = rel / arm / ds
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"{ds}_full_{arm}.json").write_text(json.dumps(body))
+
+    # at design, short of design, and no target to compare against
+    meta("tenx_gex", "DS-OK", {"reads_per_cell_target": 40000, "cells": 10,
+                               "read_pairs_written": 400000})
+    meta("tenx_gex", "DS-SHORT", {"reads_per_cell_target": 40000, "cells": 10,
+                                  "read_pairs_written": 352400})      # 88.1 %, the delivered figure
+    meta("tenx_gex", "DS-NOTARGET", {"cells": 10, "read_pairs_written": 400000})
+    # bulk RNA at the same 95.7 % the real library delivered, which must PASS: see the docstring
+    meta("rna", "DS-OK", {"pairs_target": 80_000_000, "pairs_written": 76_544_058})
+
+    res = []
+    qa.check_designed_yield(str(rel), res)
+    by = {r["file"]: r["verdict"] for r in res}
+    assert len(by) == 4, f"expected one verdict per meta, got {by}"
+
+    assert by["DS-OK_full_tenx_gex.json"] == "PASS", by
+    assert by["DS-SHORT_full_tenx_gex.json"].startswith("FAIL"), (
+        f"a library at 88.1 % of its designed yield passed: {by['DS-SHORT_full_tenx_gex.json']}")
+    assert "88.1%" in by["DS-SHORT_full_tenx_gex.json"], (
+        f"the verdict does not say how short it is: {by['DS-SHORT_full_tenx_gex.json']}")
+    assert by["DS-NOTARGET_full_tenx_gex.json"].startswith("FAIL"), (
+        "a meta with no target recorded was not a failure, so an arm can exempt itself from this check "
+        f"by not writing one: {by['DS-NOTARGET_full_tenx_gex.json']}")
+    assert by["DS-OK_full_rna.json"] == "PASS", (
+        f"bulk RNA at the 95.7 % it legitimately delivers was failed: {by['DS-OK_full_rna.json']}; "
+        f"fold coverage is the right parameterisation for that arm and the bound has to allow it")
+
 if __name__ == "__main__":
     sys.exit(_main())
