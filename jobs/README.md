@@ -50,8 +50,8 @@ you had to reconstruct:
 ./jobs/submit.sh 90_subset_map.sbatch              # record -> chromosome map, 2 tasks; read by every filter
 ./jobs/submit.sh 90_subset_chr1to6.sbatch          # chr1to6 for the six whole-library arms, 12 tasks
 ./jobs/submit.sh 91_merge_chr1to6.sbatch           # merge the chr1-6 shards of the four per-chromosome arms
+./jobs/submit.sh 74_truth_bundle.sbatch           # truth bundle (design S11) + RAFT manifests
 ./jobs/70_stage_inputs.sh                          # symlink the release into the RAFT workspace (not sbatch)
-python3 catalog/make_lens_manifest.py --release both
 python3 catalog/qa_release.py --release <release> --out qa.json --samtools "<cmd>"
 python3 catalog/tests/test_guards.py               # the delivery guards; no cluster, no data, 0.2 s
 ```

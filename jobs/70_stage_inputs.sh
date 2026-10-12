@@ -175,7 +175,35 @@ for d in "${DATASETS[@]}"; do
     done
   done
   echo "    10x TCR: kept complete per design §12; the chr1to6 manifest points at the full/ copy"
+
+  # METADATA IS COPIED, NOT LINKED, and that is the one deliberate inconsistency in this script. The
+  # reads are 1.3 TB on a filesystem the manifest marks `durable: no`, so a link is the honest
+  # representation. The truth bundle and the manifests are a few MB and are the two things a benchmark
+  # user cannot reconstruct from anything else -- a dangling link to the answer key when scratch is
+  # cleaned is a different kind of loss from a dangling link to reads that can be rebuilt.
+  #
+  # 74_truth_bundle.sbatch writes both into the release; this puts them where design §2 says they live.
+  MD_DST=$IGI_RAFT/inputs/metadata/$d
+  echo "=== $d: metadata ==="
+  for src in "$IGI_RELEASE/truth/$d" "$IGI_RELEASE/manifests/$d"; do
+    if [ ! -d "$src" ]; then
+      echo "    skip (absent): $(basename "$(dirname "$src")")/$d"; n_skip=$((n_skip+1)); continue
+    fi
+    sub=""; [ "$(basename "$(dirname "$src")")" = truth ] && sub="/truth"
+    if [ "$DRY" = 1 ]; then
+      echo "    would copy $(find "$src" -type f | wc -l) file(s) -> ${MD_DST}${sub}/"
+      n_link=$((n_link+$(find "$src" -type f | wc -l)))
+      continue
+    fi
+    mkdir -p "${MD_DST}${sub}"
+    # -p to keep mtimes, so `check_currency` and the staleness tests downstream compare build times
+    # rather than copy times. No --delete: this script has never removed a metadata file and a
+    # truth bundle assembled with --allow-missing must not silently erase a complete earlier one.
+    cp -p -r "$src"/. "${MD_DST}${sub}/"
+    n=$(find "$src" -type f | wc -l); n_link=$((n_link+n))
+    echo "    copied $n file(s) -> ${MD_DST}${sub}/"
+  done
 done
 
 echo
-echo "  linked $n_link   absent $n_skip   pending the chr1to6 filter $n_pend"
+echo "  staged $n_link   absent $n_skip   pending the chr1to6 filter $n_pend"
