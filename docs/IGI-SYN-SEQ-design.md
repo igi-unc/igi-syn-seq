@@ -33,13 +33,24 @@ germline baseline and tumor architecture. Each is its own RAFT dataset with its 
 | Dataset | Germline baseline | Sex | Architecture |
 |---|---|---|---|
 | `IGI-SYN-SEQ-01` | HG002 (GIAB Q100 phased assembly calls) | male | diploid, purity 0.70, no WGD, HRD (SBS3) |
-| `IGI-SYN-SEQ-02` | IPISRC044 (public; called + phased here) | male | WGD, purity 0.45, APOBEC-dominated |
+| `IGI-SYN-SEQ-02` | IPISRC044 (public for download; called + phased here) | male | WGD, purity 0.45, APOBEC-dominated |
 
 Both baselines are male. TNBC in a male host is biologically unusual but has no simulation
 cost; the benefit is that HG002 is the PacBio reference sample (public Revio HiFi WGS, Kinnex
 bulk, Kinnex sc + matched 10x 5' Illumina) which is what makes accurate long-read error models
 possible. If a female baseline is later wanted, HG004 (HG002's mother, GIAB trio-phased) is a
 drop-in swap of the baseline VCF only. **[default: keep HG002 and IPISRC044]**
+
+Provenance of the two baselines, per the owner, 2026-10-12: IPISRC044 is public for download,
+and the derived IGI-SYN-SEQ data will not be distributed. Those are two separate permissions and
+both are needed before anything leaves here: the first makes it legitimate to build from, the
+second is why `publish_haplotype_windows` (decision D12) leaves IPISRC044 false while HG002,
+GIAB material consented for redistribution, is true. "Not distributed" is the premise the
+release rests on rather than a property of the files, so the guards keep enforcing D12 on the
+delivered tree -- `make_truth_bundle.py` refuses to write a delivered file that names an
+unconsented baseline, with `design.yaml` and `MANIFEST.json` exempt because recording what a
+release was built from is what they are for. If distribution is ever wanted, that is a new
+decision and D12 is where it belongs, not a flag on the build.
 
 Each dataset has two releases: `full` and `chr1to6`. Manifest values, using `IGI-SYN-SEQ-01`
 as the example: `Dataset` = `IGI-SYN-SEQ-01` or `IGI-SYN-SEQ-01-chr1to6`; `Patient_Name` =
