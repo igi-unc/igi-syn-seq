@@ -14,7 +14,7 @@
 # roughly three times the records.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/rna; W=$IGI_WORK/release/rna_work
+O=$IGI_RELEASE/rna; W=$IGI_RELEASE/rna_work
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$O/$d"

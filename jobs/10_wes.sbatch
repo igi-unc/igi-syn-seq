@@ -7,7 +7,7 @@
 # (D7 condition 3).
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/wes; W=$IGI_WORK/release/wes_work
+O=$IGI_RELEASE/wes; W=$IGI_RELEASE/wes_work
 LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1))
 c=${CHROMS_ALL[$((i % 24))]}; j=$((i / 24)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j / 2))]}

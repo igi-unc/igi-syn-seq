@@ -13,7 +13,7 @@
 # germline segments, so invented framework would leave every read unassignable.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/tenx_tcr; W=$IGI_WORK/release/tenx_tcr_work
+O=$IGI_RELEASE/tenx_tcr; W=$IGI_RELEASE/tenx_tcr_work
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 mkdir -p "$O/$d"
 cd "$IGI_REPO/catalog"

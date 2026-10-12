@@ -11,7 +11,7 @@
 # (barcode, UMI) pair mapping to more than one transcript.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/tenx_gex; W=$IGI_WORK/release/tenx_gex_work
+O=$IGI_RELEASE/tenx_gex; W=$IGI_RELEASE/tenx_gex_work
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$O/$d"

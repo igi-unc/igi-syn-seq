@@ -17,7 +17,7 @@
 # and only kept them queued behind the QOS cap.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-R=$IGI_WORK/release
+R=$IGI_RELEASE
 cd "$IGI_REPO/catalog"
 PBI=$(python3 -c "import yaml,sys; print(yaml.safe_load(open('$IGI_PATHS')).get('pbindex_cmd',''))")
 SKERA=$(python3 -c "import yaml,sys; print(yaml.safe_load(open('$IGI_PATHS')).get('skera_cmd',''))")

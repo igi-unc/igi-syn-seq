@@ -22,9 +22,9 @@
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 
-OUT=$IGI_WORK/release/preflight
+OUT=$IGI_RELEASE/preflight
 mkdir -p "$OUT"
-R=$IGI_WORK/release
+R=$IGI_RELEASE
 I=$IGI_REF/imgs
 # Consumer reference bundles come from the environment, not from a path baked in here.
 P=${IGI_LENS_REFS:?set IGI_LENS_REFS in jobs/env.sh to the consumer reference directory}

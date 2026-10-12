@@ -22,8 +22,8 @@
 # scored a 2026-10-05 alignment of a 2026-10-06 library in 35 minutes instead of 21 hours. Compare mtimes.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/wgs; M=$IGI_WORK/release/wgs_merged
-A=$IGI_WORK/release/wgs_bams; R=$IGI_WORK/release/wgs_acceptance
+O=$IGI_RELEASE/wgs; M=$IGI_RELEASE/wgs_merged
+A=$IGI_RELEASE/wgs_bams; R=$IGI_RELEASE/wgs_acceptance
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 mkdir -p "$M/$d" "$A/$d" "$R/$d"
 # Use 50_merge_longread.sbatch's output rather than merging again. Both scripts wrote the same libraries
@@ -63,9 +63,10 @@ for c in "${ACCEPT_CHROMS[@]}"; do
     --assay wgs --bam "$B" --reference "$IGI_FASTA_NOALT" \
     --normal-bam "$A/$d/${d}_normal.bam" \
     --designed-normal-depth 30 --designed-tumor-depth 100 \
-    `# The normal WGS library has never been aligned: wgs_merged holds its FASTQs, wgs_bams holds only` \
-    `# the tumour. So this check fails until 13_align is run for the normal arm, and that failure is` \
-    `# correct -- an unaligned normal is a normal whose 20.7x-against-30x defect nothing could see.` \
+    `# 23_align_wgs_normal.sbatch writes this BAM, and must have run before this stage. Until it did,` \
+    `# wgs_merged held the normal's FASTQs and wgs_bams held only the tumour, so acceptance never` \
+    `# opened a normal library at all -- which is how the 20.7x-against-30x defect survived a passing` \
+    `# 40/40. A missing normal BAM is reported as a FAILURE here, not a skip, for the same reason.` \
     --arms-bed "$IGI_ARMS_BED" --paths "$IGI_PATHS" $jopt \
     --work "$R/$d/$c" --report "$R/$d/${d}_${c}.json" 2>&1 | sed "s/^/[$d $c] /" || true
 done

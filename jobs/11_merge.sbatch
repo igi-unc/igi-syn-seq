@@ -19,7 +19,7 @@ source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 # (0b89bd5) into three merge stages at once, none of which ran again until now. IGI_ENV is an
 # absolute path by contract (submit.sh refuses without it), so its directory is the jobs/ dir.
 source "$(dirname "$IGI_ENV")/lib.sh"
-O=$IGI_WORK/release/wes; M=$IGI_WORK/release/merged
+O=$IGI_RELEASE/wes; M=$IGI_RELEASE/merged
 LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1)); d=${DATASETS[$((i/2))]}; l=${LB[$((i%2))]}
 mkdir -p "$M/$d"

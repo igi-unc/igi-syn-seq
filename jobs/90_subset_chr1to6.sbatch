@@ -21,8 +21,8 @@ ARMS=(rna tenx_gex kinnex_bulk kinnex_sc ont_bulk_rna ont_sc_rna)
 i=$((SLURM_ARRAY_TASK_ID-1))
 arm=${ARMS[$((i/2))]}
 d=${DATASETS[$((i%2))]}
-M=$IGI_WORK/subset
-R=$IGI_WORK/release
+M=$IGI_RELEASE/subset
+R=$IGI_RELEASE
 map=$M/$d.chr1to6_records.tsv.gz
 [ -s "$map" ] || { echo "no record map at $map; run 90_subset_map.sbatch first" >&2; exit 1; }
 

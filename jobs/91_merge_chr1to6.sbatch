@@ -40,8 +40,8 @@ stale() {
 ASSAYS=(wes wgs ont_wgs pacbio); LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1))
 asy=${ASSAYS[$((i / 4))]}; j=$((i % 4)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j / 2))]}
-O=$IGI_WORK/release/$asy
-M=$IGI_WORK/release/${asy}_chr1to6/$d
+O=$IGI_RELEASE/$asy
+M=$IGI_RELEASE/${asy}_chr1to6/$d
 mkdir -p "$M"
 echo "=== $asy $d $l chr1to6 ==="
 
@@ -61,16 +61,31 @@ shards() {  # shards <suffix-template with %s for the chromosome>
 case "$asy" in
   wes|wgs)
     sfx=""; [ "$asy" = wgs ] && sfx="_wgs"
-    for m in 1 2; do
-      out=$M/${d}_chr1to6_${l}${sfx}_R${m}.fastq.gz
-      mapfile -t IN < <(shards "$O/$d/${d}_%s_${l}${sfx}_R${m}.fastq.gz")
-      if stale "$out" "${IN[@]}"; then
-        echo "  merging R${m} from ${#IN[@]} chromosomes"
-        cat "${IN[@]}" > "$out"
-      else
-        echo "  R${m} is newer than every shard; keeping it"
-      fi
-    done
+    # INTERLEAVED, like the full-library merges. The read-ordering fix changed 11_merge, 22_accept_wgs and
+    # 50_merge_longread and left this stage concatenating, so the chr1to6 deliverables kept the block order
+    # the full ones had just lost -- six chromosomes instead of twenty-four, which is a smaller version of
+    # the same defect and not a different one. The consumer preflight samples the head of a library, and
+    # chr1to6 is the release it samples from when the full one is too big.
+    #
+    # BOTH MATES IN ONE PASS, because the order has to be identical in both files. The loop this replaces
+    # was correct for `cat` and would silently unmate every pair here.
+    out1=$M/${d}_chr1to6_${l}${sfx}_R1.fastq.gz
+    out2=$M/${d}_chr1to6_${l}${sfx}_R2.fastq.gz
+    mapfile -t IN1 < <(shards "$O/$d/${d}_%s_${l}${sfx}_R1.fastq.gz")
+    mapfile -t IN2 < <(shards "$O/$d/${d}_%s_${l}${sfx}_R2.fastq.gz")
+    # `shards` reports a missing file on stderr and returns non-zero, but it runs in a process
+    # substitution, where set -e cannot see it -- so a missing chr3 gave a five-chromosome library and a
+    # job that said DONE. Assert the count against the list this stage declared.
+    [ "${#IN1[@]}" -eq "${#CH[@]}" ] && [ "${#IN2[@]}" -eq "${#CH[@]}" ] || {
+      echo "FAIL: ${#IN1[@]} R1 and ${#IN2[@]} R2 shards for ${#CH[@]} chromosomes"; exit 1; }
+    if stale "$out1" "${IN1[@]}" || stale "$out2" "${IN2[@]}"; then
+      echo "  interleaving ${#IN1[@]} chromosomes"
+      python3 "$IGI_REPO/catalog/interleave_fastq.py" \
+        --in-r1 "$(IFS=,; echo "${IN1[*]}")" --in-r2 "$(IFS=,; echo "${IN2[*]}")" \
+        --out-r1 "$out1" --out-r2 "$out2" --threads 8
+    else
+      echo "  both mates are newer than every shard; keeping them"
+    fi
     n=$(zcat $M/${d}_chr1to6_${l}${sfx}_R1.fastq.gz | awk 'NR%4==1' | wc -l)
     u=$(zcat $M/${d}_chr1to6_${l}${sfx}_R1.fastq.gz | awk 'NR%4==1' | sort -T "$M" --parallel=8 $(sort_buffer_arg) -u | wc -l)
     echo "  reads $n, distinct names $u"
@@ -97,9 +112,13 @@ case "$asy" in
     # arms, so nothing in the release QA ever looked at ont_wgs_chr1to6's truth files.
     out=$M/${d}_chr1to6_${l}_ont_wgs.fastq.gz
     mapfile -t IN < <(shards "$O/$d/${d}_%s_${l}_ont_wgs.fastq.gz")
+    [ "${#IN[@]}" -eq "${#CH[@]}" ] || {
+      echo "FAIL: ${#IN[@]} shards for ${#CH[@]} chromosomes"; exit 1; }
     if stale "$out" "${IN[@]}"; then
-      echo "  merging ${#IN[@]} chromosomes"
-      cat "${IN[@]}" > "$out"
+      # Interleaved, not concatenated: see the wes|wgs branch. Single-end, so no mate to keep in step.
+      echo "  interleaving ${#IN[@]} chromosomes"
+      python3 "$IGI_REPO/catalog/interleave_fastq.py" \
+        --in-r1 "$(IFS=,; echo "${IN[*]}")" --out-r1 "$out" --threads 8
     else
       echo "  merged library is newer than every shard; keeping it"
     fi

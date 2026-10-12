@@ -7,7 +7,7 @@
 # designed classes reach an RNA library, and the first test of the 0.01 expression floor.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/rna; M=$IGI_WORK/release/merged; A=$IGI_WORK/release/acceptance
+O=$IGI_RELEASE/rna; M=$IGI_RELEASE/merged; A=$IGI_RELEASE/acceptance
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$A/$d"

@@ -12,7 +12,7 @@ PBI=$(python3 -c "import yaml;print(yaml.safe_load(open('$IGI_PATHS')).get('pbin
 LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1))
 d=${DATASETS[$((i / 2))]}; l=${LB[$((i % 2))]}
-B=$IGI_WORK/release/pacbio_merged/$d/${d}_${l}_hifi.bam
+B=$IGI_RELEASE/pacbio_merged/$d/${d}_${l}_hifi.bam
 if [ -s "$B.pbi" ] && [ "$B.pbi" -nt "$B" ]; then echo "SKIP $B.pbi is current"; exit 0; fi
 eval "${PBI/\{args\}/$B}"
 echo "DONE $(basename $B).pbi $(stat -c%s "$B.pbi") bytes"

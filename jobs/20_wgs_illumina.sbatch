@@ -19,7 +19,7 @@
 # delivered 0.974 of the callable-base expectation. Do not read a shortfall against raw length as a bug.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/wgs; W=$IGI_WORK/release/wgs_work
+O=$IGI_RELEASE/wgs; W=$IGI_RELEASE/wgs_work
 LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1))
 c=${CHROMS_ALL[$((i % 24))]}; j=$((i / 24)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j / 2))]}

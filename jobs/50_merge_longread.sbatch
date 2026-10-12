@@ -39,8 +39,8 @@ stale() {
 ASSAYS=(wgs pacbio ont_wgs); LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1))
 asy=${ASSAYS[$((i / 4))]}; j=$((i % 4)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j / 2))]}
-O=$IGI_WORK/release/$asy
-M=$IGI_WORK/release/${asy}_merged/$d
+O=$IGI_RELEASE/$asy
+M=$IGI_RELEASE/${asy}_merged/$d
 mkdir -p "$M"
 echo "=== $asy $d $l ==="
 

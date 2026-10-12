@@ -20,9 +20,9 @@
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 
-OUT=$IGI_WORK/release/align_qc
+OUT=$IGI_RELEASE/align_qc
 mkdir -p "$OUT"
-R=$IGI_WORK/release
+R=$IGI_RELEASE
 BWA="singularity exec -B $IGI_BIND $IGI_REF/imgs/michaelfranklin-bwasamtools-0.7.17-1.10.img bwa {args}"
 MM2="singularity exec -B $IGI_BIND $IGI_REF/imgs/quay.io_biocontainers_minimap2_2.28--h577a1d6_4.sif minimap2 {args}"
 SM="singularity exec -B $IGI_BIND $IGI_SAMTOOLS_IMG samtools {args}"

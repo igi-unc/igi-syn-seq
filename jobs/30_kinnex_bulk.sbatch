@@ -12,7 +12,7 @@
 # the molecule count; at a mean 6.91 segments per array that is about 2.2 M arrays.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/kinnex_bulk; W=$IGI_WORK/release/kinnex_bulk_work
+O=$IGI_RELEASE/kinnex_bulk; W=$IGI_RELEASE/kinnex_bulk_work
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$O/$d"

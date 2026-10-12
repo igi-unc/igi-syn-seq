@@ -7,7 +7,7 @@
 # different roster.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/ont_sc_rna; W=$IGI_WORK/release/ont_sc_rna_work
+O=$IGI_RELEASE/ont_sc_rna; W=$IGI_RELEASE/ont_sc_rna_work
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$O/$d"

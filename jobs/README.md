@@ -29,7 +29,8 @@ two places a path belongs.
 ./jobs/submit.sh 15_accept_rna.sbatch              # acceptance, RNA + class presence
 ./jobs/submit.sh 20_wgs_illumina.sbatch            # short-read WGS, 96 tasks
 ./jobs/submit.sh 21_wgs_pacbio.sbatch              # HiFi WGS, 96 tasks
-./jobs/submit.sh 22_accept_wgs.sbatch              # acceptance, short-read WGS
+./jobs/submit.sh 23_align_wgs_normal.sbatch        # bwa mem on the merged normal WGS (needs 50_merge)
+./jobs/submit.sh 22_accept_wgs.sbatch              # acceptance, short-read WGS; needs 23's BAM
 ./jobs/submit.sh 30_kinnex_bulk.sbatch             # Kinnex bulk RNA, pre- and post-skera BAMs
 ./jobs/submit.sh 31_kinnex_sc.sbatch               # Kinnex single cell + cell roster + clonotypes
 ./jobs/submit.sh 32_tenx_gex.sbatch                # 10x 5' v2 gene expression (Cell Ranger naming)
@@ -59,6 +60,31 @@ python3 catalog/tests/test_guards.py               # the delivery guards; no clu
 map is derived from that dataset's regenerated transcript manifest. `70_stage_inputs.sh` holds back any
 chr1to6 deliverable older than what it was derived from, so a stale subset cannot be staged as current --
 see build-reference §15.3 for the incident that made that necessary.
+
+## Building a candidate release
+
+`70_stage_inputs.sh` stages the release into the RAFT workspace as **symlinks**, so the deliverables have
+no copy of their own: a builder writing into the live release root changes what the workspace serves the
+moment it writes, with no staging step left to hold anything back and no old library to compare against.
+
+So a rebuild of delivered data goes into a new root. `IGI_RELEASE` names it and every stage reads it:
+
+```bash
+export IGI_RELEASE=$IGI_WORK/release-$(date +%Y%m%d)
+./jobs/73_populate_release_root.sh --from $IGI_WORK/release --to $IGI_RELEASE \
+  --arm wes --arm wgs --arm pacbio --arm 'rna:*_full_rna*' \
+  --except 'IGI-SYN-SEQ-02_chr*_normal*'          # what the rebuild writes; nothing matching is linked
+```
+
+The candidate root then holds links to the arms the rebuild does not touch, so the merge, subset and
+acceptance stages see a complete release without copying terabytes. `--except` is what makes it safe: a
+shell redirect follows a symlink, so a link left where the rebuild will write would have the job overwrite
+the live release while believing it writes somewhere else. The script proves no such link exists rather
+than reporting that it tried, and `IGI_RELEASE=$IGI_WORK/release` is still the default, so nothing changes
+for an ordinary build.
+
+Stage it with `IGI_RELEASE=... ./jobs/submit.sh 71_stage_after_merge.sbatch`, which is a deliberate step
+and prints the root it repointed the workspace at.
 
 ## Re-running one arm
 

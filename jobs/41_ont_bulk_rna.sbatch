@@ -12,7 +12,7 @@
 # truncated file, which is why run_chunks now checks FASTQ framing and not just size and return code.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
-O=$IGI_WORK/release/ont_bulk_rna; W=$IGI_WORK/release/ont_bulk_rna_work
+O=$IGI_RELEASE/ont_bulk_rna; W=$IGI_RELEASE/ont_bulk_rna_work
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$O/$d"

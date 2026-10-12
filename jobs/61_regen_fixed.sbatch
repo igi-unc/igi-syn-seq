@@ -29,21 +29,21 @@ cd "$IGI_REPO/catalog"
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 
 if [ "$t" -le 2 ]; then
-  O=$IGI_WORK/release/ont_bulk_rna; W=$IGI_WORK/release/ont_bulk_rna_work
+  O=$IGI_RELEASE/ont_bulk_rna; W=$IGI_RELEASE/ont_bulk_rna_work
   mkdir -p "$O/$d"
   python3 -u run_ont.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" --assay bulk_rna \
     --chroms "$CH" --reads 20000000 --min-tpm 0.01 --jobs 48 --records-per-chunk 15000 --label full \
     --out "$O/$d" --work "$W" --seed $(( 9600 + ((t-1) % 2) + 1 ))
 
 elif [ "$t" -le 4 ]; then
-  O=$IGI_WORK/release/tenx_gex; W=$IGI_WORK/release/tenx_gex_work
+  O=$IGI_RELEASE/tenx_gex; W=$IGI_RELEASE/tenx_gex_work
   mkdir -p "$O/$d" "$W"
   python3 -u run_tenx_gex.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" \
     --chroms "$CH" --cells 4000 --reads-per-cell 40000 --label full \
     --out "$O/$d" --work "$W" --seed 9100
 
 else
-  O=$IGI_WORK/release/tenx_tcr; W=$IGI_WORK/release/tenx_tcr_work
+  O=$IGI_RELEASE/tenx_tcr; W=$IGI_RELEASE/tenx_tcr_work
   mkdir -p "$O/$d" "$W"
   python3 -u run_tenx_tcr.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" \
     --catalog-dir output --cells 4000 --reads-per-cell 5000 --molecules-per-cell 120 --label full \

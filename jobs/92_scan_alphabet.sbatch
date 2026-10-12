@@ -20,8 +20,8 @@
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 
-R=$IGI_WORK/release
-OUT=$IGI_WORK/release/alphabet_scan
+R=$IGI_RELEASE
+OUT=$IGI_RELEASE/alphabet_scan
 mkdir -p "$OUT"
 
 # ONE deterministic list, built by ONE task. The first version let whichever task arrived first build it

@@ -11,6 +11,20 @@ IGI_PATHS=$IGI_REPO/config/sites/unc-lccc.paths.yaml
 
 # Scratch root for build outputs, working directories and logs. Needs several TB.
 IGI_WORK=/path/to/scratch/igi-syn
+# Release root: where the builders WRITE and the merge, subset, acceptance and staging stages READ.
+# Defaults to $IGI_WORK/release and is a variable because 70_stage_inputs.sh stages the release into the
+# RAFT workspace as SYMLINKS. The deliverables therefore have no copy of their own: a rebuild that writes
+# into the live release root changes what the workspace serves the moment it writes, with no staging step
+# in between and nothing to review first. Pointing this at a new directory builds a CANDIDATE release
+# beside the live one, which is then staged deliberately -- the review step the symlink layout otherwise
+# removes.
+#
+#   IGI_RELEASE=$IGI_WORK/release-20261012 ./jobs/submit.sh 10_wes.sbatch --array=73-96
+#
+# A candidate root needs the arms it does not rebuild. populate_release_root.sh links them in from
+# another root and refuses to link any file the rebuild would then write through.
+IGI_RELEASE=${IGI_RELEASE:-$IGI_WORK/release}
+
 
 # Reference and container root (the RAFT workspace at this site).
 IGI_REF=/path/to/raft

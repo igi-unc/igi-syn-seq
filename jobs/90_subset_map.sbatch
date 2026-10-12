@@ -9,8 +9,8 @@ set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 GTF=$(python3 -c "import sys,yaml;print(yaml.safe_load(open(sys.argv[1]))['gtf'])" "$IGI_PATHS")
-mkdir -p "$IGI_WORK/subset"
+mkdir -p "$IGI_RELEASE/subset"
 cd "$IGI_REPO/catalog"
-python3 -u subset_chr1to6.py map --dataset "$d" --release "$IGI_WORK/release" \
-  --catalog-out output --gtf "$GTF" --out-dir "$IGI_WORK/subset"
+python3 -u subset_chr1to6.py map --dataset "$d" --release "$IGI_RELEASE" \
+  --catalog-out output --gtf "$GTF" --out-dir "$IGI_RELEASE/subset"
 echo "DONE $d $(date)"
