@@ -19,25 +19,33 @@ Two things to know before using it:
 ## 1. The fifteen sample types
 
 Per dataset (`IGI-SYN-SEQ-01` from HG002, `IGI-SYN-SEQ-02` from IPISRC044). "Built" means release-scale
-reads exist and passed acceptance; "tested" means a single-chromosome run completed and was checked.
+reads exist; "accepted" means a release-scale acceptance stage ran over them and passed. The two are
+deliberately separate columns, because for most sample types only the first is true. Status verified
+against the release tree on 2026-10-12, not from memory -- every row below has full-release files for
+both datasets, built 2026-10-09/10.
 
-| # | Sample | Builder | Status |
-|---|---|---|---|
-| 1 | tumor WES 150x | `run_wes.py` | **built** |
-| 2 | normal WES 100x | `run_wes.py` | **built** |
-| 3 | tumor bulk RNA 80M pairs | `run_rna.py` | **built** |
-| 4 | tumor bulk WGS 30x Illumina | `run_wgs.py` | tested (chr21) |
-| 5 | normal bulk WGS 30x Illumina | `run_wgs.py` | tested (chr21) |
-| 6 | tumor WGS 30x PacBio HiFi | `run_pacbio_wgs.py` | tested (chr21) |
-| 7 | normal WGS 30x PacBio HiFi | `run_pacbio_wgs.py` | tested (chr21) |
-| 8 | tumor Kinnex bulk RNA | `run_kinnex_bulk.py` | **validated on chr21** |
-| 9 | tumor Kinnex scRNA (MAS 16-mer, 10x 5' v2) | `run_kinnex_sc.py` | written, adapter layout unresolved |
-| 10 | tumor 10x 5' GEX | not written | — |
-| 11 | tumor 10x 5' TCR | not written | — |
-| 12 | tumor ONT scRNA | not written | — |
-| 13 | tumor ONT bulk RNA | not written | — |
-| 14 | tumor ONT WGS | not written | — |
-| 15 | normal ONT WGS | not written | — |
+| # | Sample | Builder | Built | Accepted |
+|---|---|---|---|---|
+| 1 | tumor WES 150x | `run_wes.py` | **yes** | 44/44 (`14_accept`) |
+| 2 | normal WES 100x | `run_wes.py` | **yes** | never examined -- see §24 |
+| 3 | tumor bulk RNA 80M pairs | `run_rna.py` | **yes** | 5/5 (`15_accept_rna`) |
+| 4 | tumor bulk WGS 30x Illumina | `run_wgs.py` | **yes** | 40/40 (`22_accept_wgs`) |
+| 5 | normal bulk WGS 30x Illumina | `run_wgs.py` | **yes**, FASTQs only | not aligned, so never examined |
+| 6 | tumor WGS 30x PacBio HiFi | `run_pacbio_wgs.py` | **yes** | no acceptance stage |
+| 7 | normal WGS 30x PacBio HiFi | `run_pacbio_wgs.py` | **yes** | no acceptance stage |
+| 8 | tumor Kinnex bulk RNA | `run_kinnex_bulk.py` | **yes** | consumer preflight only |
+| 9 | tumor Kinnex scRNA (10x 5' v2) | `run_kinnex_sc.py` | **yes** | consumer preflight only |
+| 10 | tumor 10x 5' GEX | `run_tenx_gex.py` | **yes** | Cell Ranger count only |
+| 11 | tumor 10x 5' TCR | `run_tenx_tcr.py` | **yes** | Cell Ranger vdj only -- see §25 |
+| 12 | tumor ONT scRNA | `run_ont.py --assay sc_rna` | **yes** | no acceptance stage |
+| 13 | tumor ONT bulk RNA | `run_ont.py --assay bulk_rna` | **yes** | no acceptance stage |
+| 14 | tumor ONT WGS | `run_ont.py --assay wgs` | **yes** | no acceptance stage |
+| 15 | normal ONT WGS | `run_ont.py --assay wgs` | **yes** | no acceptance stage |
+
+The "Accepted" column is the honest picture of coverage, and it is thin. Eleven of fifteen sample types
+have no acceptance stage at all; two more are built but never opened. That is the gap §24 came out of --
+a defect in four ds-02 normal libraries survived because nothing in the suite ever looked at a normal
+library.
 
 Earlier counts of "thirteen" and "fourteen" in the channel log were wrong; 15 is the count after the
 2026-10-01 decisions to add Illumina bulk WGS and to mirror the four PacBio sample types in ONT. The
@@ -1862,7 +1870,8 @@ That is the argument for the one thing that would change the odds more than any 
 here: **run the consumer on a slice before delivering.** Every one of the three defects was found by
 LENS, in minutes, on data that had passed everything this release asserts -- the `*` by Cell Ranger, the
 IUPAC by razers3, the orientation by Cell Ranger's chemistry detector. The chr1to6 release exists and is
-~8x smaller than the full one. A LENS run over it, as a gate before the full release is staged, tests
+2.5x smaller than the full one (chr1-6 is 1.232 Gb of 3.088 Gb of primary sequence, 39.9 %; an earlier
+version of this line said "~8x", which no measurement supports). A LENS run over it, as a gate before the full release is staged, tests
 every assumption at once, including the ones nobody has written down.
 
 That is a decision for the owner rather than something to adopt unilaterally, because it costs a pipeline
@@ -2300,3 +2309,163 @@ error with a floor is the right shape, and it is why -01's chr8 A1 survives a 44
 while -02's chr8 T_amp nearly fails on a 2 % one at 2.7 sigma -- but it is drawn around *design
 conformance* and what it measures is *consumer recovery*. The number to put in its place is the recovery
 loss itself, and that wants measuring across more than two chromosomes before anyone picks it.
+
+## 24. Every IGI-SYN-SEQ-02 normal library was written at 69 % of its designed depth
+
+Found 2026-10-11 by an independent review of the release, not by any check in it.
+
+Normal WES is 69x against a designed 100x; normal Illumina WGS, HiFi and ONT are 20.7x against 30x. The
+per-chromosome JSON shows it directly -- ds-02 normal HiFi chr10 plans 10.34x per haplotype where ds-01
+plans 15.0, and 15.0 x 0.6897 = 10.35.
+
+### 24.1 The arithmetic
+
+`source_plan(..., tumor=False)` returns a flat diploid plan: two haplotypes, weight 1.0 each, summing to
+2.0. Its own comment says "the normal library is diploid everywhere." That plan was then divided by the
+**tumour** mixture denominator:
+
+```
+depth_denominator = purity * sum(excl) * sum(base) + (1 - purity) * 2
+  ds-01: 0.70 * 1 * 2 + 0.30 * 2 = 2.0000     normal factor 2/2.0 = 1.0000
+  ds-02: 0.45 * 1 * 4 + 0.55 * 2 = 2.9000     normal factor 2/2.9 = 0.6897
+```
+
+Three call sites computed it: `pipeline.WesBuilder.__init__` (WES and Illumina WGS),
+`derived.build_derived` (ONT WGS and HiFi), and `run_pacbio_wgs` locally. Note what `pipeline.py` already
+had: `depth_denominator(...) if purity is not None else 2.0`. The `None` branch existed for exactly this
+case and no caller used it -- `run_wes.py` reads purity from the design at line 43 and hands it to the
+builder at line 55 whatever `--library` says.
+
+### 24.2 Why nothing caught it
+
+Two reasons, and the second is the one worth keeping.
+
+**ds-01 cannot show it.** No WGD and purity 0.70 give a denominator of exactly 2.0, so ds-01's normal
+libraries are correct by coincidence. Any check or test exercising one dataset would have passed.
+
+**Every depth and allele-fraction check in the suite measures a ratio.** Allele fractions are ratios;
+`depth by copy number` is a ratio between regions; `truth_af.py` is a ratio of delivered to designed. A
+ratio within one library is blind to a constant factor on that library, by construction. And acceptance
+runs on `${d}_tumor.bam` only -- it has never opened a normal BAM at all. §1's new "Accepted" column
+exists because of this: eleven of fifteen sample types have no acceptance stage, and two more are built
+but never examined.
+
+This is the fifth entry in the §22-23 pattern and the first where the adjacent question hid a real
+defect rather than inventing one. The four before it pointed at correct releases.
+
+### 24.3 The fix and the two guards
+
+`depth_denominator` now takes the same `tumor` flag that selects the plan, and returns 2.0 when it is
+false. Deriving both from one argument is the point: the plan and its normaliser can no longer disagree.
+All three call sites pass it.
+
+`test_normal_library_depth_ignores_tumour_ploidy` asserts the denominator is 2.0 for every dataset in the
+design and that a normal haplotype plans exactly half the requested depth, and separately that the
+**tumour** denominator is unchanged -- a fix that flattened both would be just as wrong. It also asserts
+that the design still contains a WGD dataset, because without one the test cannot see the defect it
+exists for. Mutation tested in both directions: reverting the normal branch reports 2.9000 and 0.690,
+flattening the tumour reports the tumour denominator.
+
+`check_normal_depth` is the release-level counterpart. Absolute depth cannot be compared against the
+design directly -- capture efficiency, duplicates and mapping loss put the delivered figure well below
+the requested one, and a tolerance wide enough to absorb that is far too wide to notice 0.69. So the
+tumour is the ruler: over the same copy-number-neutral captured bases both libraries lose the same
+fraction to the same aligner, so
+
+```
+observed_normal / observed_tumor  ==  designed_normal / designed_tumor
+```
+
+and the recovery loss cancels. That is sensitive to exactly the defect it exists for and insensitive to
+the one thing a design-versus-pileup comparison cannot separate from it -- the lesson of §23. A missing
+normal BAM reports a **failure**, not a skip, because an unaligned normal is a normal whose depth has
+never been measured. The WGS arm will report that until sample 5 is aligned.
+
+### 24.4 What needs rebuilding
+
+Four ds-02 libraries: normal WES, normal Illumina WGS, normal HiFi WGS, normal ONT WGS, plus their merges
+and chr1to6 subsets. ds-01 is unaffected and needs nothing. No tumour library is affected, so every
+acceptance result in §23 stands.
+
+## 25. The 10x TCR library sequenced GEX's 5' window
+
+`run_tenx_tcr.py` drew reads through `five_prime_window` -- 450 bp, the constant 5' GEX uses. That is
+correct for GEX, whose chemistry template-switches at the 5' end and reads a short way in. A 5' V(D)J
+library is a different enrichment built from the same cDNA: a nested PCR with primers **inside** the
+constant region amplifies the whole V-through-C span, which is then fragmented and read across its
+length, because CDR3 sits in the middle and no clonotype can be called without it.
+
+Measured from the gene tables the builder itself assembles:
+
+| | V framework | C region | C begins at | nt of C inside 450 bp |
+|---|---|---|---|---|
+| TRA | 303-459 (median 356) | TRAC, 978 nt | median 404 | **46** |
+| TRB | 303-459 (median 356) | TRBC2, 758 nt | median 434 | **16** |
+
+So the window ended essentially at the V-J/C boundary. Cell Ranger called a constant gene on 89 % of TRA
+contigs and 17 % of TRB -- that 30-nucleotide median difference between the chains is the whole gap --
+and found a productive TRA+TRB pair in 38 % of ds-01 cells and 54 % of ds-02.
+
+**Not a truth defect.** All 1,532 contigs that did assemble were full-length and productive, so the
+recombination, the CDR3 anchors, the clonotype roster and the per-cell truth were all correct. The
+library under-reported its own correct truth, and a consumer scoring clonotype recall against the truth
+table would have measured 38-54 % and blamed their tool.
+
+`vdj_amplicon` replaces it: 5' end through a nested primer 250 nt into C, giving 653 nt median on TRA and
+683 on TRB with 250 nt of constant region on both -- the real 10x V(D)J amplicon range. ART's `-f` now
+comes from the amplicons' own mean length instead of a hard-coded 450, so the reads-per-molecule the job
+was asked for is what ART is told to produce. Because the roster is untouched, seed 9100's shared cell
+roster stays valid and no other single-cell library needs rebuilding.
+
+`test_vdj_reads_reach_the_constant_region` asserts both chains with TRB carrying the point, and asserts
+that the old window covered **less** of C than the new one, so the test can tell the fix from the defect.
+The mutation back to 450 bp reports a median 46 nt, independently reproducing the table above.
+
+## 26. Kinnex bulk segments began and ended in bare cDNA
+
+The bulk builder gave its segments no Iso-Seq primers and no polyA tail, so nothing downstream could
+orient or trim them. LENS's bulk path goes straight to `pbmm2` with no `lima`, and pigeon classified 34 %
+of reads antisense and 51 % of isoforms novel-not-in-catalog -- against 0.01 % antisense and 89 %
+full-splice-match for the single-cell library, which carries its 10x structure and does pass through
+`lima`. §6 listed "Kinnex primer structure" as a known gap without its consequence, which is the reason
+this was still open: a gap with no cost attached does not get prioritised.
+
+### 26.1 The structure, recovered by measurement
+
+The same method §6 used for the single-cell layout, against the real HG002 bulk `1-Sreads/segmented.bam`
+rather than a kit document. 3,748 of 3,994 segments orient by the 3' SMART primer; the column consensus
+over the oriented set is exact to position 50 and collapses to ~0.30 at 51, which is the cDNA start:
+
+```
+[0:22]   CTACACGACGCTCTTCCGATCT     TruSeq Read 1 primer        96-97 %
+[22:30]  GTATGACG                   sample barcode              92 % carry this one
+[30:50]  CAATGAAGTCGCAGGGTTGG       Iso-Seq Express 5' primer   92-97 %
+[50:]    cDNA
+...      polyA                      median 29, p10 26, p90 32
+tail     GTACTCTGCGTTGATACCACTGCTT  SMART primer, revcomp       99-100 %
+```
+
+A naive consensus over **unoriented** reads reads 0.49 at every column and shows nothing: the real
+library is 1,908 forward against 1,840 reverse before `lima`. Orienting first is what makes the structure
+visible, and it is the same trap as §23's germline-het control -- the measurement has to be set up so the
+answer can appear.
+
+The polyA distribution matches what §6 independently measured for the single-cell library to within a
+nucleotide, which is a useful consistency check on both.
+
+### 26.2 The preflight passed a library with no primers
+
+`consumer_preflight.py` set its verdict from `rc == 0`. `lima` exits 0 having found a valid primer pair
+in one read of a thousand -- it writes whatever passed and reports success. So the stage ran the 10x
+primer FASTA against a bulk library that had no primers at all and called it ok.
+
+That is this script's own documented failure mode, committed a second time in the same file: §20.5
+records it running a salmon mode LENS never calls, and the header comment already argues that a
+verification stage which cannot fail is not a gate. Asking whether the tool **ran** rather than whether
+it **did anything** is the same error one level down. It now counts reads in against reads out and fails
+below a 50 % floor.
+
+One thing fell out well: the 10x FASTA's two entries are `CTACACGACGCTCTTCCGATCT` and
+`GTACTCTGCGTTGATACCACTGCTT`, which are exactly the outer primers the measurement above found on the real
+bulk segments. So the preflight's existing reference is the right one for this library -- now that the
+library has primers.

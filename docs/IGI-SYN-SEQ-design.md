@@ -59,13 +59,13 @@ inputs/metadata/IGI-SYN-SEQ-01/                manifests, truth bundle, design t
 |---|---|---|---|---|
 | tumor WES | WES, hg38_exome.bed | Illumina PE150 | 150x on-target | FASTQ R1/R2 |
 | normal WES | WES | Illumina PE150 | 100x | FASTQ |
-| tumor bulk RNA | RNA-Seq, polyA, stranded | Illumina PE150 | 80 M pairs | FASTQ |
+| tumor bulk RNA | RNA-Seq, polyA, **unstranded** | Illumina PE150 | 80 M pairs | FASTQ |
 | tumor bulk WGS | WGS, short read | Illumina PE150 | **100x** | FASTQ R1/R2 |
 | normal bulk WGS | WGS, short read | Illumina PE150 | 30x | FASTQ |
 | tumor WGS | HiFi WGS | PacBio Revio | 30x | `*.hifi_reads.bam` + `.pbi` + FASTQ |
 | normal WGS | HiFi WGS | PacBio Revio | 30x | same |
 | tumor Kinnex bulk RNA | Kinnex full-length (MAS 8-mer array) | PacBio Revio | 15 M segmented reads | pre-skera `hifi_reads.bam` **and** post-skera `segmented.bam` |
-| tumor Kinnex scRNA | Kinnex single-cell (MAS 16-mer), 10x 5' v2 cDNA | PacBio Revio | 4,000 cells, ~12 M segmented reads | pre-skera + post-skera BAMs |
+| tumor Kinnex scRNA | Kinnex single-cell (MAS 8-mer array carrying 16 cDNAs), 10x 5' v2 cDNA | PacBio Revio | 4,000 cells, ~12 M segmented reads | pre-skera + post-skera BAMs |
 | tumor 10x 5' GEX | scRNA-Seq 5' v2 | Illumina | 4,000 cells, ~40k reads/cell | FASTQ (Cell Ranger naming) |
 | tumor 10x 5' TCR | scTCR-Seq V(D)J | Illumina | ~5k reads/cell | FASTQ |
 | tumor ONT scRNA | single-cell cDNA, 10x 5' structure | Oxford Nanopore R10.4.1 | 4,000 cells, ~10 M reads | FASTQ |
@@ -86,6 +86,20 @@ single TSO -- and edited this table to say so. Both observations were real; the 
 skera's output is whole un-segmented arrays averaging 8.6 TSOs, which is where the other eight cDNAs were
 hiding. The adapter layout remains unresolved and is the one open item for this assay; see
 `build-reference.md` §6.3.
+
+**What that compromise costs, measured 2026-10-11.** Nine adapters bracket the first eight cDNAs and the
+remaining eight are concatenated directly, so `isoseq refine` sees the double-stuffed eighth segment as a
+concatemer and discards it: 12.6 % of segments, and roughly half of the designed molecules, never reach
+the cell matrix. `bcstats` recovers 3,707 of the 4,000 cells. The cells and clonotypes that do arrive are
+correct -- this is a yield loss, not a truth defect -- but a consumer scoring recall against the truth
+table will measure it, so the number belongs here rather than in a log. Resolving the MAS-16 adapter
+layout is what fixes it.
+
+**Strandedness, corrected 2026-10-11.** The bulk RNA row above said "stranded" from the design intent;
+salmon calls both delivered libraries unstranded, and `build-reference.md` §20.5 records the measurement.
+The table now says what the data are. Nothing downstream in LENS depends on the strand for bulk RNA, so
+this is a specification correction rather than a defect, but the two documents disagreed for nine days
+and the one describing the data wins.
 
 The Kinnex sc, 10x GEX and 10x TCR libraries derive from the same 4,000 cells and share
 barcodes and UMIs (independent molecule sampling from a common per-cell molecule pool).

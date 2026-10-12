@@ -23,6 +23,13 @@ and ONT WGS, bulk RNA and single-cell RNA.
 - `jobs/`: the SLURM array jobs that run the build, and the measurement jobs that fit the simulator
   constants. `jobs/README.md` gives the run order.
 
-Status: the exomes and bulk RNA are built at release scale and pass acceptance (40/40 + 5/5 on both
-datasets). Illumina and PacBio WGS are validated on chr21 against real-data targets. The Kinnex, 10x and
-ONT builders are specified but not written; see `docs/build-reference.md` §1 for per-sample-type status.
+Status (2026-10-12, verified against the release tree): **all fifteen sample types are built at release
+scale for both datasets.** Acceptance coverage is much thinner than that sounds -- exomes pass 44/44,
+bulk RNA 5/5, Illumina WGS 40/40, and the remaining eleven sample types have no acceptance stage at all.
+`docs/build-reference.md` §1 gives the per-sample-type picture in two separate columns, built and
+accepted, because they are not the same claim.
+
+Known defects, both found 2026-10-11 and fixed in the generator but **not yet rebuilt**: all four
+IGI-SYN-SEQ-02 normal libraries were written at 69 % of their designed depth (§24), and the 10x TCR
+libraries were sequenced over GEX's 5' window so Cell Ranger pairs only 38-54 % of cells (§25). Both are
+read-level defects with correct underlying truth.
