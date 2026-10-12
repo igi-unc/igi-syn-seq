@@ -2629,3 +2629,99 @@ consumer preflight samples when the full one is too large.
 Its shard lists are now asserted against the chromosome list as well. `shards` reports a missing file on
 stderr and returns non-zero, but it runs inside a process substitution, where `set -e` cannot see it -- so
 a missing chr3 gave a five-chromosome library and a job that printed DONE.
+
+## 29. Two 10x libraries were not at their designed yield, and one was missing a length class
+
+Both found by rebuilding, not by any check in the release. They are one defect with two faces, and the
+reason it survived is the sharpest version of the §22-24 pattern.
+
+### 29.1 The construction, and the arithmetic it depends on
+
+The 10x builders put **one FASTA record per intended read**: `reads_for_molecule` appends a molecule to
+the chunk once per read it should be sequenced, so a chunk of 375,000 records means 375,000 reads. Both
+then asked ART for that via *fold coverage*:
+
+```
+GEX:  -f R2_LEN / 450.0 * 1.02      # commented "~1 read per record"
+TCR:  -f R2_LEN / 450.0 * 1.02      # the same, through five_prime_window
+```
+
+ART draws `f * (L - l + 1) / l` reads per reference and **floors** the result. That expression equals ~1
+only at `L = 450`. Measured directly, 200 records at each length at the GEX builder's own `f`:
+
+```
+  120 nt  0 reads     400 nt  0 reads     460 nt  1 read
+  200 nt  0 reads     440 nt  0 reads    1000 nt  2 reads
+  300 nt  0 reads     450 nt  1 read
+```
+
+### 29.2 GEX: every transcript under 450 nt was absent
+
+`five_prime_window(seq)` returns the whole cDNA when it is *shorter* than the window, so a short
+transcript's record is short, and a short record got no read at all. Against the transcript manifest the
+ds-01 pool was drawn from:
+
+| transcript length | in manifest | in the GEX library | covered |
+|---|---|---|---|
+| 0-200 | 2,458 | 0 | 0.0 % |
+| 200-300 | 10,514 | 0 | 0.0 % |
+| 300-400 | 27,032 | 0 | 0.0 % |
+| 400-450 | 26,662 | 0 | 0.0 % |
+| 450-500 | 35,057 | 21,955 | 62.6 % |
+| 500-1000 | 413,027 | 255,820 | 61.9 % |
+| 1000+ | 711,745 | 497,210 | 69.9 % |
+
+66,666 transcript records with no reads between them; the 62-70 % above the threshold is ordinary pool
+sampling. The library held 140,980,551 read pairs against a designed 160,000,000, and the missing 11.9 %
+is one length class rather than a uniform shortfall.
+
+This is a **quantitative truth defect**, not only a yield one: the designed expression profile contains
+short transcripts and the library does not, and short transcripts are not a neutral class -- histones,
+many chemokines and most ribosomal protein genes live there.
+
+### 29.3 TCR: the window fix made the same arithmetic wrong
+
+§25 replaced the 450 bp window with `vdj_amplicon`, which returns the amplicon's own length -- 653 nt
+median on TRA, 683 on TRB, with spread. A fold coverage calibrated on the *mean* then gave a read to
+everything above the mean and nothing to the rest: the first rebuild wrote 917,896 read pairs against
+6,000,000. Measured on 800 records spread over 560-740 nt at that `f`: 100 reads, every one from the
+740 nt records.
+
+**The defect arrived with the fix.** `five_prime_window` truncating to exactly 450 nt is what made
+`R2_LEN/450` exactly right, and the live release's TCR library is at 100.1 % of design for that reason.
+A fix that changes the shape of the data can invalidate arithmetic elsewhere that was only ever correct
+because of that shape.
+
+### 29.4 Why nothing saw it
+
+Every acceptance and QA figure in the release is computed **from the delivered library**: allele
+fractions, depth ratios, length and accuracy distributions, truth-map resolution. Every one of them was
+correct. The truth maps describe the reads that *were* written, accurately. **Reads that do not exist
+appear in no ratio.**
+
+And the two numbers that show it were already in the same file. Every builder wrote its target and its
+delivered count into one meta JSON, and nothing compared them:
+
+```
+  tenx_gex   reads_per_cell_target 40,000 x cells 4,000 = 160,000,000   read_pairs_written 140,980,551
+```
+
+`run_kinnex_sc.py` even carries a comment about having had this exact defect once before -- "taking
+--segments as a molecule count delivered 4.0 M segments against a 12 M target" -- and no guard came out
+of it.
+
+### 29.5 The fix, at both layers
+
+`-c 1` in both builders: the count the loop actually means, independent of reference length. Each builder
+now **asserts** its requested yield and exits non-zero outside 10 %, because a target recorded beside a
+delivered figure that nothing compares is not a check.
+
+`check_designed_yield` is the release-level counterpart, over every arm's meta, with per-arm tolerances
+that are measured rather than chosen. A **missing** target is a failure, not a neutral note: an arm whose
+yield cannot be checked is exactly what this exists to find. `check_yield_against_truth_map` answers the
+weaker half -- whether the builder's own counter agrees with the map it wrote row by row -- for the arms
+shipping one row per read.
+
+Bulk RNA keeps fold coverage, deliberately. It is a shotgun of full-length cDNA, so reads *should* scale
+with length times abundance, and a 0.01 TPM transcript drawing none is correct sampling rather than a
+bug. Its bound is 15 % for that reason; a single global tolerance would either fail it or stop seeing GEX.
