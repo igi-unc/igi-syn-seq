@@ -64,6 +64,13 @@ SPECS=(
   "ds02_tcr:cellranger_vdj:$R/tenx_tcr/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02-TCR_S1_L001_R1_001.fastq.gz,$R/tenx_tcr/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02-TCR_S1_L001_R2_001.fastq.gz:$P/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0:"
   "ds01_hifi:pbmm2:$R/pacbio/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_chr10_tumor_hifi.bam:$IGI_FASTA_NOALT:"
   "ds02_hifi:pbmm2:$R/pacbio/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_chr10_tumor_hifi.bam:$IGI_FASTA_NOALT:"
+  # The 10x FASTA's two entries -- 5p CTACACGACGCTCTTCCGATCT, 3p GTACTCTGCGTTGATACCACTGCTT -- are the
+  # TruSeq Read 1 primer and the SMART primer's reverse complement, and those are exactly the OUTER
+  # primers the real HG002 Kinnex bulk segments carry (measured: 96-97 % and 99-100 % column agreement,
+  # see kinnex.kinnex_bulk_segment). So this is a valid test of the bulk library -- now. Until the
+  # builder added that structure, the bulk segments began and ended in bare cDNA and this test ran a
+  # primer pair against a library that had no primers at all, passing on one read in a thousand because
+  # the verdict was lima's exit code. consumer_preflight.py now asserts the demultiplexed fraction.
   "ds01_kinnex:lima:$R/kinnex_bulk/IGI-SYN-SEQ-01/IGI-SYN-SEQ-01_full_kinnex_bulk_segmented.bam:$P/10x_5kit_primers.fasta:"
   "ds02_kinnex:lima:$R/kinnex_bulk/IGI-SYN-SEQ-02/IGI-SYN-SEQ-02_full_kinnex_bulk_segmented.bam:$P/10x_5kit_primers.fasta:"
 )

@@ -228,6 +228,49 @@ TENX_SMART_RC = "GTACTCTGCGTTGATACCACTGCTT"
 POLYA_MEDIAN, POLYA_P10, POLYA_P90 = 29, 26, 33
 
 
+# ---------------------------------------------------------------------------
+# Kinnex BULK (Iso-Seq Express) segment structure
+#
+# Recovered the same way as the single-cell layout below -- measured off the real HG002 Kinnex bulk
+# `1-Sreads/segmented.bam`, not taken from a kit document. 3,748 of 3,994 segments could be oriented by
+# the 3' SMART primer; the column consensus over the oriented set is exact to position 50 and collapses
+# to ~0.30 at 51, which is where the cDNA starts:
+#
+#     [0:22]   CTACACGACGCTCTTCCGATCT    TruSeq Read 1 primer      (96-97 % column agreement)
+#     [22:30]  GTATGACG                  sample barcode            (92 % of segments carry this one)
+#     [30:50]  CAATGAAGTCGCAGGGTTGG      Iso-Seq Express 5' primer (92-97 %)
+#     [50:]    cDNA
+#     ...      polyA                     median 29 bp, p10 26, p90 32
+#     tail     GTACTCTGCGTTGATACCACTGCTT SMART primer, reverse complement (99-100 %)
+#
+# The real library is ~50/50 in orientation before lima (1,908 forward against 1,840 reverse), which is
+# why a naive column consensus over unoriented reads reads ~0.49 everywhere and shows nothing.
+#
+# This structure was MISSING: bulk segments began in cDNA and ended in cDNA. Nothing downstream could
+# then orient or trim them, and LENS's bulk path goes straight to pbmm2 with no lima, so pigeon
+# classified 34 % of reads antisense and 51 % of isoforms novel-not-in-catalog -- against 0.01 %
+# antisense and 89 % full-splice-match for the single-cell library, which does carry its 10x structure
+# and does go through lima. The builder listed "Kinnex primer structure" as a known gap without its
+# consequence.
+BULK_TRUSEQ_R1 = "CTACACGACGCTCTTCCGATCT"
+BULK_SAMPLE_BARCODE = "GTATGACG"
+BULK_ISOSEQ_5P = "CAATGAAGTCGCAGGGTTGG"
+BULK_SMART_RC = "GTACTCTGCGTTGATACCACTGCTT"
+BULK_POLYA = (26, 29, 32)          # p10, median, p90, measured above
+
+
+def kinnex_bulk_segment(cdna, rng, barcode=BULK_SAMPLE_BARCODE):
+    """One Iso-Seq Express cDNA as it appears in a real post-skera bulk segment.
+
+    Forward frame only. The array builder writes arrays forward and the read simulator picks a strand per
+    read, so reverse-complementing here as well would randomise orientation twice -- the same trap
+    recorded in `MasArrays.build`.
+    """
+    lo, mode, hi = BULK_POLYA
+    n_a = int(round(rng.triangular(lo, hi, mode)))
+    return (BULK_TRUSEQ_R1 + barcode + BULK_ISOSEQ_5P + cdna + "A" * n_a + BULK_SMART_RC)
+
+
 def tenx_segment(barcode, umi_seq, cdna, rng):
     """One full-length 10x 5' v2 cDNA molecule as Kinnex sequences it.
 

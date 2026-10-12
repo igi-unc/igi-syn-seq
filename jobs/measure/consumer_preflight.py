@@ -209,8 +209,39 @@ def main():
                          "not a valid", "malformed", "invalid character", "Invalid FASTQ",
                          "unexpected end", "quality string length")
              if k.lower() in err.lower()]
+    # YIELD, NOT JUST EXIT CODE, for the demultiplexers. lima exits 0 having found a valid primer pair
+    # in one read of a thousand: it writes whatever passed and reports success, so `ok = rc == 0` called
+    # a library with no primer structure at all a pass. That is this script's own documented failure mode
+    # -- asking whether the tool RAN rather than whether it did anything -- committed a second time in
+    # the same file. The same applies to any stage whose job is to recognise structure.
+    yield_info = {}
+    if rc == 0 and a.tool == "lima":
+        lima_bam = f"{work}/pf_{a.label}_lima.bam"
+        n_in = n_out = None
+        for name, path in (("in", cut[0]), ("out", lima_bam)):
+            r = run(a.samtools_cmd.format(args=f"view -c {path}"))
+            if r.returncode == 0 and r.stdout.strip().isdigit():
+                if name == "in":
+                    n_in = int(r.stdout.strip())
+                else:
+                    n_out = int(r.stdout.strip())
+        frac = (n_out / n_in) if (n_in and n_out is not None) else None
+        # A real Iso-Seq or 10x library demultiplexes most of its reads; 0.50 is loose enough for a
+        # 5 % slice of a mixed-orientation library and nowhere near 1-in-1000.
+        FLOOR = 0.50
+        yield_info = {"reads_in": n_in, "reads_out": n_out,
+                      "fraction_demultiplexed": round(frac, 4) if frac is not None else None,
+                      "floor": FLOOR}
+        if frac is None:
+            rc, err = 1, (err + "\nlima exited 0 but its yield could not be counted, so nothing was "
+                                "established about whether it recognised the primer structure")
+        elif frac < FLOOR:
+            rc, err = 1, (err + f"\nlima exited 0 and demultiplexed {n_out} of {n_in} reads "
+                                f"({frac:.1%}), under the {FLOOR:.0%} floor: it ran, and it did not "
+                                f"recognise this library's primers")
+
     out = {"label": a.label, "tool": a.tool, "reads": paths, "fraction": a.fraction,
-           "exit_code": rc, "ok": rc == 0, "parse_error": bool(choke),
+           "exit_code": rc, "ok": rc == 0, "parse_error": bool(choke), "yield": yield_info,
            "signature": choke[0] if choke else "", "stderr_tail": err.strip()[-300:],
            # Which stage the verdict came from, and what every stage did. For a one-stage tool these
            # restate `tool` and the fields above; for a chain they are the difference between "bulk

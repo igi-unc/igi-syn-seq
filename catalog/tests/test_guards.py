@@ -1321,6 +1321,44 @@ def test_vdj_reads_reach_the_constant_region():
             f"cannot tell the fix from the defect")
 
 
+def test_kinnex_bulk_segment_carries_its_primers():
+    """A bulk Kinnex segment must start and end in primer, not in cDNA.
+
+    The builder emitted bare cDNA at both ends. Nothing downstream could orient or trim it, and LENS's
+    bulk path goes straight to pbmm2 with no lima, so pigeon called 34 % of reads antisense and 51 % of
+    isoforms novel-not-in-catalog -- against 0.01 % and 89 % full-splice-match for the single-cell
+    library, which carries its 10x structure and does pass through lima.
+
+    The constants are measured off the real HG002 bulk `segmented.bam`, so this test also pins the
+    recovered layout: a later edit that changes a primer silently would change what lima can demultiplex.
+    """
+    import random
+    from igi_catalog.kinnex import (BULK_ISOSEQ_5P, BULK_POLYA, BULK_SAMPLE_BARCODE, BULK_SMART_RC,
+                                   BULK_TRUSEQ_R1, kinnex_bulk_segment)
+
+    rng = random.Random(7)
+    cdna = "".join(rng.choice("ACGT") for _ in range(1200))
+    polya = []
+    for _ in range(300):
+        seg = kinnex_bulk_segment(cdna, rng)
+        assert seg.startswith(BULK_TRUSEQ_R1 + BULK_SAMPLE_BARCODE + BULK_ISOSEQ_5P), seg[:60]
+        assert seg.endswith(BULK_SMART_RC), seg[-40:]
+        assert cdna in seg, "the cDNA did not survive into the segment"
+        body = seg[len(BULK_TRUSEQ_R1 + BULK_SAMPLE_BARCODE + BULK_ISOSEQ_5P):-len(BULK_SMART_RC)]
+        assert body.startswith(cdna), "something was inserted between the 5' primer and the cDNA"
+        tail = body[len(cdna):]
+        assert set(tail) == {"A"}, f"the polyA run is not pure A: {tail!r}"
+        polya.append(len(tail))
+    lo, mode, hi = BULK_POLYA
+    assert lo <= min(polya) and max(polya) <= hi, (min(polya), max(polya), BULK_POLYA)
+    med = sorted(polya)[len(polya) // 2]
+    assert abs(med - mode) <= 2, f"polyA median {med} against a measured {mode}"
+
+    # the outer primers must be the pair the consumer preflight demultiplexes with
+    assert BULK_TRUSEQ_R1 == "CTACACGACGCTCTTCCGATCT"
+    assert BULK_SMART_RC == "GTACTCTGCGTTGATACCACTGCTT"
+
+
 def _main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

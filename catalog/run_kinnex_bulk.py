@@ -32,7 +32,7 @@ import yaml
 
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
-from igi_catalog.kinnex import MasArrays, SizeSelection
+from igi_catalog.kinnex import MasArrays, SizeSelection, kinnex_bulk_segment
 from igi_catalog.longread import chunk_fasta, combine_fastq, run_chunks
 from igi_catalog.pacbio_bam import source_of, write_hifi_bam, drop_empty_records
 from igi_catalog.rna_assembly import assemble
@@ -107,6 +107,17 @@ def main():
     molecules = mas.sample_molecules(rb.records, a.segments, rng)
     mean_len = sum(len(m["sequence"]) for m in molecules) / len(molecules)
     print(f"  {len(molecules):,} molecules sampled, mean cDNA length {mean_len:,.0f} bp", flush=True)
+
+    # Give every cDNA its Iso-Seq Express structure: TruSeq R1 + sample barcode + 5' primer, then polyA
+    # and the SMART primer's reverse complement. Without it the segments began and ended in bare cDNA,
+    # so nothing downstream could orient or trim them -- see kinnex_bulk_segment for what that cost.
+    #
+    # NEW dicts, not mutation: sample_molecules draws with replacement and returns the same record object
+    # several times, so wrapping in place would wrap a popular transcript's sequence repeatedly.
+    molecules = [dict(m, sequence=kinnex_bulk_segment(m["sequence"], rng)) for m in molecules]
+    seg_len = sum(len(m["sequence"]) for m in molecules) / len(molecules)
+    print(f"  Iso-Seq structure added: mean segment {seg_len:,.0f} bp "
+          f"({seg_len - mean_len:,.0f} bp of primer, barcode and polyA)", flush=True)
 
     # Arrays, chunked by record count: a chunk boundary inside an array would hand the simulator a
     # fragment as though it were a whole insert.
