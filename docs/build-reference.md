@@ -2556,3 +2556,76 @@ consumer rather than one check.
 **The cost is real and is stated in the job.** Concatenating gzip members needs no decompression and this
 does; on the ~180 GB ONT WGS arm that is the difference between minutes and hours. It buys a library
 whose head is representative, which is what the preflight assumed all along.
+
+## 28. Rebuilding the release without overwriting it
+
+The seven fixes in sections 24-27 all live in the generator. None of them reached a delivered byte until
+the affected arms were rebuilt, which is this section.
+
+### 28.1 The release root had to become a variable first
+
+`70_stage_inputs.sh` stages the release into the RAFT workspace as **symlinks** -- deliberately, because
+the release lives on scratch and the input manifest marks it `durable: no`, and a link makes that visible
+rather than hiding it behind a copy that looks durable. The consequence had not been drawn: the
+deliverables therefore have no copy of their own. Every builder wrote to a hard-coded
+`$IGI_WORK/release`, so re-running any arm would have replaced what the workspace serves the instant it
+wrote -- no staging step left to hold anything back, and no previous library to compare the new one
+against, because the old bytes are gone. `~/raft/inputs` would have been untouched and would have served
+different data.
+
+`IGI_RELEASE` now names the root and defaults to `$IGI_WORK/release`, so nothing changes for an ordinary
+build. A rebuild of delivered data sets it to a new directory and
+`73_populate_release_root.sh` links in the arms the rebuild does not touch, so the merge, subset and
+acceptance stages see a complete release without copying 6.9 TB.
+
+`--except` is the whole point of that script. A shell redirect follows a symlink: a link left in place
+where the rebuild will write makes the job overwrite the live release while believing it writes somewhere
+else. The patterns are supplied rather than inferred, because only the caller knows which array ids they
+are about to submit, and the script then **proves** no link in the destination matches one and that none
+dangles -- rather than reporting that it tried.
+
+### 28.2 What changes, and what does not
+
+Derived from which modules each runner imports, not from which arms seemed suspect:
+
+| arm | changed by | rebuilt |
+|---|---|---|
+| WES, Illumina WGS, HiFi WGS | §24, the normal-depth denominator | **ds-02 normal only** (array 73-96) |
+| ONT WGS, ONT bulk RNA, ONT sc RNA | §27, scoped simulator stream + real run metadata | all of it |
+| 10x TCR | §25 amplicon, §27 stream | both datasets |
+| 10x GEX, Kinnex sc | §27 stream | both datasets |
+| Kinnex bulk | §26 primers | both datasets |
+| bulk RNA | nothing | not rebuilt |
+
+ds-01's normal libraries are untouched because its denominator was already exactly 2.0 -- the coincidence
+that made §24 invisible also means ds-01 needs nothing. No tumour library changes, so every acceptance
+result in §23 stands. `run_rna.py` imports only `quality_model` and `shuffle_and_rename`, neither of
+which moved, so bulk RNA is byte-identical and is linked in rather than rebuilt.
+
+The three Illumina/PacBio arrays index `i = TASK-1`, `j = i/24`, `l = LB[j%2]`, `d = DATASETS[j/2]` with
+`LB=(tumor normal)`, so **ds-02 normal is tasks 73-96** and the other 72 tasks per arm are not resubmitted.
+
+### 28.3 Two gaps the rebuild exposed
+
+**`13_align` could not re-run.** It tested `[ "$R1" -nt "$B" ]` with nothing in the script setting `R1`.
+Under `set -u` that worked only when the BAM was absent, because `[ ! -s "$B" ]` short-circuits the `||`,
+and died with "R1: unbound variable" on exactly the rebuild the mtime comparison exists to serve. The
+comment above it describing the staleness check was describing a comparison that could not run.
+
+**Nothing aligned the normal WGS.** `22_accept_wgs` aligns the tumour and `13_align` covers the exomes, so
+`wgs_bams` held one BAM per dataset and acceptance had never opened a normal library -- which is the
+mechanism behind §24.2: the arm the defect was in was not merely unchecked, it was unaligned, so no check
+could have measured it even in principle. `23_align_wgs_normal.sbatch` is now a stage. It is separate from
+`22` because wall clock is the risk there: 21:42 of a 40 h limit already, a timeout is retried at the same
+limit, and the normal is 30x against the tumour's 100x so it would spend a third of the remaining margin.
+
+### 28.4 §27's read-ordering fix had missed the chr1to6 merges
+
+`11_merge`, `22_accept_wgs` and `50_merge_longread` were changed to interleave; `91_merge_chr1to6` was
+not, so the chr1to6 deliverables kept the block order the full ones had just lost. Six chromosomes rather
+than twenty-four is a smaller case of the same defect, not a different one, and chr1to6 is the release the
+consumer preflight samples when the full one is too large.
+
+Its shard lists are now asserted against the chromosome list as well. `shards` reports a missing file on
+stderr and returns non-zero, but it runs inside a process substitution, where `set -e` cannot see it -- so
+a missing chr3 gave a five-chromosome library and a job that printed DONE.
