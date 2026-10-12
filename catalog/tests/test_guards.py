@@ -1533,7 +1533,7 @@ def _main():
 
 
 
-def test_tcr_asks_the_simulator_for_a_read_count_not_a_fold_coverage():
+def test_tenx_builders_ask_for_a_read_count_not_a_fold_coverage():
     """One read per FASTA record has to be requested as a count, because -f cannot express it.
 
     `reads_for_molecule` appends each molecule to the chunk once per intended read, so every record in
@@ -1546,27 +1546,37 @@ def test_tcr_asks_the_simulator_for_a_read_count_not_a_fold_coverage():
     reads, every one of them from the 740 nt records, 700 records silent. The delivered library held
     917,896 read pairs against a designed 6,000,000 and the job reported COMPLETED.
 
-    The 450 bp GEX window that `vdj_amplicon` replaced hid this by making every record exactly 450 nt,
-    which is why the defect arrived WITH the fix for the window rather than before it.
+    The 450 bp GEX window that `vdj_amplicon` replaced hid this in the TCR builder by making every
+    record exactly 450 nt, which is why that defect arrived WITH the fix for the window.
+
+    GEX had it all along and worse, because `five_prime_window` returns the whole cDNA when it is
+    SHORTER than 450 nt: at its f, 200 records at each of 120, 200, 300, 400 and 440 nt produced no
+    reads at all, 450 and 460 nt produced one each, and 1000 nt produced two. Every transcript under
+    450 nt was therefore absent from the delivered library -- 140,980,551 read pairs against a designed
+    160,000,000, with the missing 11.9 % being one whole length class rather than a uniform shortfall.
+    That is a quantitative truth defect: the designed expression profile contains short transcripts and
+    the library does not.
 
     Pinned at the source, because the alternative is a test that runs ART. The arithmetic above is not
     reproduced here: this asserts the builder does not depend on it.
     """
     import re
-    src = open(os.path.join(CATALOG, "run_tenx_tcr.py")).read()
-    # the ART invocation, whichever way it is formatted
-    m = re.search(r"art\.format\(args=\((.*?)\)\)", src, re.S)
-    assert m, "could not find the ART invocation in run_tenx_tcr.py"
-    cmd = m.group(1)
-    assert "-c 1" in cmd, (
-        "the TCR builder no longer asks ART for one read per record; a fold coverage over "
-        "variable-length amplicons floors the short ones to zero reads")
-    assert "-f " not in cmd, (
-        f"the TCR builder passes a fold coverage to ART: {cmd.strip()[:120]}")
-    # and the yield it was asked for must be asserted, not merely recorded next to the delivered one
-    assert "reads_per_cell * len(tcells)" in src and "is not at its requested depth" in src, (
-        "run_tenx_tcr records the requested and delivered read counts in its meta JSON but no longer "
-        "compares them; that is how a library at 15 % of its depth passed")
+    for runner, target in (("run_tenx_tcr.py", "reads_per_cell * len(tcells)"),
+                           ("run_tenx_gex.py", "reads_per_cell * len(roster.cells)")):
+        src = open(os.path.join(CATALOG, runner)).read()
+        # the ART invocation, whichever way it is formatted
+        m = re.search(r"art\.format\(args=\((.*?)\)\)", src, re.S)
+        assert m, f"could not find the ART invocation in {runner}"
+        cmd = m.group(1)
+        assert "-c 1" in cmd, (
+            f"{runner} no longer asks ART for one read per record; a fold coverage over "
+            f"variable-length references floors the short ones to zero reads")
+        assert "-f " not in cmd and "-f {" not in cmd, (
+            f"{runner} passes a fold coverage to ART: {cmd.strip()[:120]}")
+        # and the yield it was asked for must be asserted, not merely recorded next to the delivered one
+        assert target in src and "is not at its requested depth" in src, (
+            f"{runner} records the requested and delivered read counts in its meta JSON but no longer "
+            f"compares them; that is how a library at 15 % of its depth passed")
 
 if __name__ == "__main__":
     sys.exit(_main())

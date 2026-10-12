@@ -133,10 +133,23 @@ def main():
                         continue
                     fh.write(f">m{i}\n{w}\n")
             pre = os.path.join(work, f"c{chunk_i:05d}_")
-            cov = R2_LEN / 450.0 * 1.02   # ~1 read per record
+            # -c 1: ONE read per record, as a count. `-f R2_LEN/450*1.02` read as "~1 read per record"
+            # and was only that for a record of EXACTLY 450 nt. ART draws f * (L - l + 1) / l reads per
+            # reference and floors it, and `five_prime_window` returns the whole cDNA when it is shorter
+            # than the window -- so every transcript under 450 nt got ZERO reads and was absent from the
+            # library altogether. Measured at this f on 200 records at each length: 0 reads at 120, 200,
+            # 300, 400 and 440 nt, 1 at 450 and 460, and 2 at 1000. The delivered ds-01 GEX library holds
+            # 140,980,551 read pairs against a designed 160,000,000, and the missing 11.9 % is every
+            # short transcript in the pool rather than a uniform shortfall.
+            #
+            # This is a quantitative truth defect, not just a yield one: the designed expression profile
+            # includes short transcripts and the library does not. Nothing caught it because the molecule
+            # map describes the reads that WERE written, correctly, and every check compared ratios
+            # within the library -- the reads that do not exist appear in no ratio.
+            #
             # No `-na`: it suppresses the ALN, which is the only exact record of which strand ART drew.
             # Reads are bit-identical with and without it at the same -rs.
-            cmd = art.format(args=(f"{qual} -i {fa} -l {R2_LEN} -f {cov:.4f} -ss HS25 "
+            cmd = art.format(args=(f"{qual} -i {fa} -l {R2_LEN} -c 1 -ss HS25 "
                                    f"-rs {stream_seed(a.seed, a.dataset, 'tenx_gex') + chunk_i} -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
             fq = f"{pre}.fq" if os.path.exists(f"{pre}.fq") else f"{pre}1.fq"
@@ -178,6 +191,14 @@ def main():
         flush(chunk, chunk_i)
 
     log(f"  {n_reads:,} read pairs over {n_chunks} ART chunk(s) -> {os.path.basename(r2_out)}")
+    # A JOB MUST ASSERT ITS OWN COVERAGE. reads_per_cell_target and read_pairs_written were both written
+    # into the meta below and nothing compared them, so a library missing every short transcript was a
+    # COMPLETED job. 10 % covers the Gaussian spread in reads_for_molecule and the windows shorter than
+    # one read; it does not cover a fold coverage that drops a whole length class.
+    want = a.reads_per_cell * len(roster.cells)
+    if want and abs(n_reads - want) > 0.10 * want:
+        raise SystemExit(f"wrote {n_reads:,} read pairs against a designed {want:,} "
+                         f"({100.0 * n_reads / want:.1f} %); the library is not at its requested depth")
     roster.write(os.path.join(a.out, f"{a.dataset}_{a.label or 'full'}_cells.tsv"))
     roster.write_clonotypes(os.path.join(a.out, f"{a.dataset}_{a.label or 'full'}_clonotypes.tsv"))
 
