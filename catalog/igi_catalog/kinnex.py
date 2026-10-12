@@ -123,11 +123,26 @@ class MasArrays:
             return self.n_seg
         return rng.choices(self.yield_k, weights=self.yield_w, k=1)[0]
 
-    def build(self, molecules, rng, start_index=0):
+    def build(self, molecules, rng, start_index=0, transform=None):
         """Group molecules into arrays. Yields (array_name, sequence, [member records]).
 
         Molecules are consumed in order, so the caller controls their composition; the array size is drawn
         per array from the measured yield distribution.
+
+        `transform(sequence, rng) -> sequence` is applied to each member AS THE ARRAY IS ASSEMBLED, and
+        exists for memory rather than for expressiveness. The bulk builder used to wrap all of its
+        molecules first:
+
+            molecules = [dict(m, sequence=kinnex_bulk_segment(m["sequence"], rng)) for m in molecules]
+
+        which is correct and unaffordable. `sample_molecules` draws with replacement, so the list holds
+        15,000,000 REFERENCES to a few hundred thousand distinct records; giving each its own wrapped
+        sequence materialises 15,000,000 strings of ~2.3 kb. That took the job from a measured 8 GB peak
+        to 23.3 GiB and OUT_OF_MEMORY against its 24 G request. Applied here, a wrapped sequence lives
+        for the eight segments of one array.
+
+        The member records yielded are the ORIGINAL dicts, untransformed, which is what the caller wants:
+        it reads `rec` from them to write the truth map, and the wrapped sequence is already in the FASTA.
         """
         i = 0
         idx = start_index
@@ -145,7 +160,7 @@ class MasArrays:
             parts = []
             for j, m in enumerate(members):
                 parts.append(self.adapters[self.order[j]])
-                parts.append(m["sequence"])
+                parts.append(transform(m["sequence"], rng) if transform else m["sequence"])
             parts.append(self.adapters[self.order[k]])
             # Arrays are written in the forward frame only. The read simulator picks a strand per read --
             # measured at 42/57 and 16/16 on two runs -- so reverse-complementing here as well would

@@ -1629,5 +1629,66 @@ def test_yield_check_sees_a_short_library_and_an_unrecordable_one(tmp_path):
         f"bulk RNA at the 95.7 % it legitimately delivers was failed: {by['DS-OK_full_rna.json']}; "
         f"fold coverage is the right parameterisation for that arm and the bound has to allow it")
 
+
+def test_kinnex_bulk_wraps_segments_without_materialising_them():
+    """The Iso-Seq structure must be applied as the array is assembled, not to a copied molecule list.
+
+    Correctness and cost are the same assertion here. `sample_molecules` draws with replacement, so the
+    molecule list holds one reference per segment to a far smaller set of distinct records -- 15,000,000
+    references to a few hundred thousand transcripts. Wrapping it into new dicts is correct and gives
+    each of the 15,000,000 its own ~2.3 kb string: the job went from a measured 8 GB peak to 23.3 GiB
+    and was killed against its 24 G request, which is also a reminder that 24 G was right-sized from
+    that 8 GB and had never been run at full scale with this code.
+
+    So this asserts the transform reaches the FASTA -- the array sequence must contain the WRAPPED
+    molecule, not the bare cDNA -- and that the yielded member records are left alone, because the
+    caller reads `rec` from them for the truth map and a wrapped copy there would be the materialisation
+    this exists to avoid, reintroduced one layer down.
+
+    Each occurrence of the same transcript also has to draw its own polyA length: two copies of a
+    transcript are two physical molecules, and a shared draw would make the array's segments
+    suspiciously uniform.
+    """
+    import random
+    from igi_catalog.kinnex import (MasArrays, kinnex_bulk_segment, BULK_TRUSEQ_R1, BULK_SMART_RC)
+
+    # the committed resources, not the site paths file: this suite runs with no cluster and no data, and
+    # these are exactly the measured constants the builder ships with
+    mas = MasArrays(os.path.join(CATALOG, "resources", "kinnex_mas8_adapters.fasta"),
+                    os.path.join(CATALOG, "resources", "kinnex_mas8_profile.json"))
+    cdna = "ACGT" * 150
+    # the SAME record object several times, which is what sampling with replacement returns
+    rec = {"rec": "r000000001", "sequence": cdna}
+    molecules = [rec] * 24
+
+    rng = random.Random(7)
+    arrays = list(mas.build(molecules, rng, transform=kinnex_bulk_segment))
+    assert arrays, "no arrays built"
+
+    name, seq, mols = arrays[0]
+    assert BULK_TRUSEQ_R1 in seq, "the array carries no TruSeq R1 primer, so the transform never ran"
+    assert BULK_SMART_RC in seq, "the array carries no 3' SMART primer"
+    assert cdna in seq, "the cDNA itself is missing from the array"
+    # the member records must be untouched: the truth map is written from these
+    for m in mols:
+        assert m["sequence"] == cdna, (
+            "build() wrapped the member record's sequence; the caller only needs `rec` from it, and a "
+            "wrapped copy per segment is the 15 M-string materialisation this signature exists to avoid")
+    assert all(m is rec for m in mols), "build() copied the record objects"
+
+    # per-occurrence polyA draws: the same cDNA wrapped twice must differ somewhere
+    rng2 = random.Random(7)
+    a = kinnex_bulk_segment(cdna, rng2)
+    b = kinnex_bulk_segment(cdna, rng2)
+    assert len({a, b}) == 2 or len(a) == len(b), "unexpected"
+    many = {len(kinnex_bulk_segment(cdna, rng2)) for _ in range(60)}
+    assert len(many) > 1, (
+        "every wrapped copy of one transcript has the same length, so the polyA tail is not drawn per "
+        "molecule and an array's segments are uniform in a way a real library's are not")
+
+    # and the transform must be optional, so build() still serves the single-cell path unchanged
+    plain = list(mas.build(molecules, random.Random(7)))
+    assert BULK_TRUSEQ_R1 not in plain[0][1], "build() applies the bulk transform without being asked"
+
 if __name__ == "__main__":
     sys.exit(_main())

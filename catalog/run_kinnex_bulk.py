@@ -39,18 +39,31 @@ from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
 
 
-def write_arrays(mas, molecules, rng, path, start=0):
-    """Write arrays to FASTA. Returns ({array_name: [record ids]}, sorted array lengths)."""
+def write_arrays(mas, molecules, rng, path, start=0, transform=None):
+    """Write arrays to FASTA.
+
+    Returns ({array_name: [record ids]}, sorted array lengths, (n_segments, total_segment_bases)).
+
+    `transform` is handed to MasArrays.build and applied per member as each array is assembled; see the
+    note there for why the alternative does not fit in memory. The segment total is accumulated here
+    rather than measured from a materialised list, for the same reason -- it is the only thing the
+    discarded list was still being used for.
+    """
     members, lengths = {}, []
+    n_seg = seg_bases = 0
+    adapter_len = sum(len(x) for x in mas.adapters.values()) / max(1, len(mas.adapters))
     with open(path, "w") as fh:
-        for name, seq, mols in mas.build(molecules, rng, start_index=start):
+        for name, seq, mols in mas.build(molecules, rng, start_index=start, transform=transform):
             members[name] = [m["rec"] for m in mols]
             lengths.append(len(seq))
+            n_seg += len(mols)
+            # the array minus its adapters is the sum of its segments
+            seg_bases += len(seq) - int(round(adapter_len * (len(mols) + 1)))
             fh.write(f">{name}\n")
             for i in range(0, len(seq), 60):
                 fh.write(seq[i:i + 60] + "\n")
     lengths.sort()
-    return members, lengths
+    return members, lengths, (n_seg, seg_bases)
 
 
 def main():
@@ -108,21 +121,26 @@ def main():
     mean_len = sum(len(m["sequence"]) for m in molecules) / len(molecules)
     print(f"  {len(molecules):,} molecules sampled, mean cDNA length {mean_len:,.0f} bp", flush=True)
 
-    # Give every cDNA its Iso-Seq Express structure: TruSeq R1 + sample barcode + 5' primer, then polyA
-    # and the SMART primer's reverse complement. Without it the segments began and ended in bare cDNA,
-    # so nothing downstream could orient or trim them -- see kinnex_bulk_segment for what that cost.
-    #
-    # NEW dicts, not mutation: sample_molecules draws with replacement and returns the same record object
-    # several times, so wrapping in place would wrap a popular transcript's sequence repeatedly.
-    molecules = [dict(m, sequence=kinnex_bulk_segment(m["sequence"], rng)) for m in molecules]
-    seg_len = sum(len(m["sequence"]) for m in molecules) / len(molecules)
-    print(f"  Iso-Seq structure added: mean segment {seg_len:,.0f} bp "
-          f"({seg_len - mean_len:,.0f} bp of primer, barcode and polyA)", flush=True)
-
     # Arrays, chunked by record count: a chunk boundary inside an array would hand the simulator a
     # fragment as though it were a whole insert.
+    #
+    # Every cDNA gets its Iso-Seq Express structure as the array is assembled: TruSeq R1 + sample
+    # barcode + 5' primer, then polyA and the SMART primer's reverse complement. Without it the segments
+    # began and ended in bare cDNA and nothing downstream could orient or trim them -- see
+    # kinnex_bulk_segment for what that cost.
+    #
+    # NOT a wrapped copy of the molecule list. sample_molecules draws with replacement, so the list is
+    # 15 M references to a few hundred thousand distinct records, and giving each its own wrapped
+    # sequence materialises 15 M strings of ~2.3 kb: a measured 8 GB peak became 23.3 GiB and the job
+    # was killed. Passing the transform keeps one array's worth alive at a time. Each occurrence still
+    # draws its own polyA length, which is what a real library does -- two copies of a transcript are
+    # two physical molecules.
     fa_all = os.path.join(work, "arrays.fa")
-    members, alen = write_arrays(mas, molecules, rng, fa_all)
+    members, alen, (n_seg_w, seg_bases) = write_arrays(mas, molecules, rng, fa_all,
+                                                      transform=kinnex_bulk_segment)
+    seg_len = seg_bases / max(1, n_seg_w)
+    print(f"  Iso-Seq structure added: mean segment {seg_len:,.0f} bp "
+          f"({seg_len - mean_len:,.0f} bp of primer, barcode and polyA)", flush=True)
     n_a = len(alen)
     print(f"  {len(members):,} arrays, mean {len(molecules)/len(members):.2f} segments each; "
           f"length median {alen[n_a//2]:,} p90 {alen[9*n_a//10]:,} max {alen[-1]:,} bp", flush=True)
