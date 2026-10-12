@@ -142,6 +142,37 @@ def recombine(chain, rng, v=None, j=None):
             "v_trim": tv, "j_trim": tj, "n_len": n_aa * 3}
 
 
+# How far a 10x 5' V(D)J enrichment primer sits inside the constant region. The library is a nested PCR
+# off TRAC/TRBC, so the amplicon runs from the transcript 5' end through the proximal part of C -- about
+# 650-700 bp in all, which is what Cell Ranger's assembler expects to see tiled.
+VDJ_C_PRIMER_NT = 250
+
+
+def vdj_amplicon(seq, rec, c_primer_nt=VDJ_C_PRIMER_NT):
+    """The span a 10x 5' V(D)J library actually sequences: 5' end through a nested primer inside C.
+
+    This is NOT the 5'-proximal window that 5' GEX sequences, and using the GEX window here was a defect.
+    A V(D)J library is a separate enrichment from the same cDNA: a nested PCR with primers in the constant
+    region amplifies the whole V-through-C span, which is then fragmented and read across its length,
+    because CDR3 sits in the middle and no clonotype can be called without it. Drawing reads from the
+    first 450 bp instead -- `five_prime_window`, GEX's constant -- stopped essentially at the V-J/C
+    boundary: the C region begins at a median 404 nt (TRA) and 434 nt (TRB), so the window reached a
+    median of 46 and 16 nt into constant regions 978 and 758 nt long.
+
+    Cell Ranger then called a constant gene on 89 % of TRA contigs and 17 % of TRB -- that 30-nt median
+    difference between the chains is the whole gap -- and found a productive TRA+TRB pair in 38 % of
+    ds-01 cells and 54 % of ds-02. Every contig that did assemble was full-length and productive, so the
+    recombination, the CDR3 anchors and the clonotype roster were all correct; only the read sampling was
+    wrong, and the library under-reported its own truth.
+    """
+    g = germline()
+    c = rec.get("c") if isinstance(rec, dict) else None
+    clen = len(g["c"][c]["framework"]) if c in g.get("c", {}) else 0
+    if not clen or clen >= len(seq):
+        return seq
+    return seq[:min(len(seq), len(seq) - clen + c_primer_nt)]
+
+
 def assemble(rec, chain=None):
     """A full-length TCR transcript: V framework + CDR3 + J framework + C.
 

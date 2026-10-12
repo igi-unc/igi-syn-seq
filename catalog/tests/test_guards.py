@@ -1276,6 +1276,51 @@ def test_normal_library_depth_ignores_tumour_ploidy():
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_vdj_reads_reach_the_constant_region():
+    """A TCR amplicon must cover J and the proximal constant region, not just the V framework.
+
+    The TCR builder drew reads through `five_prime_window`, GEX's 450 bp 5' constant. A V(D)J library is
+    a different enrichment -- nested PCR off TRAC/TRBC, amplifying V through C -- and 450 bp stops at the
+    V-J/C boundary: C begins at a median 404 nt on TRA and 434 on TRB, so the window reached 46 and 16 nt
+    into constant regions of 978 and 758 nt. Cell Ranger called a constant gene on 89 % of TRA contigs
+    and 17 % of TRB, and paired only 38-54 % of cells.
+
+    Both chains are asserted, and TRB carries the point: its longer junction is what pushed C out of
+    reach, so a test on TRA alone would have been nearly satisfied by the defect.
+    """
+    import random
+    from igi_catalog.vdj import assemble, germline, recombine, vdj_amplicon
+    from igi_catalog.tenx import five_prime_window
+
+    g = germline()
+    rng = random.Random(20261012)
+    for chain in ("TRA", "TRB"):
+        c_cov, old_cov, n = [], [], 0
+        for _ in range(200):
+            rec = recombine(chain, rng)
+            seq = assemble(rec)
+            if not seq:
+                continue
+            n += 1
+            c_start = len(seq) - len(g["c"][rec["c"]]["framework"])
+            c_cov.append(len(vdj_amplicon(seq, rec)) - c_start)
+            old_cov.append(len(five_prime_window(seq)) - c_start)
+        assert n > 100, f"{chain}: only {n} recombinants assembled"
+        med = sorted(c_cov)[len(c_cov) // 2]
+        assert med >= 150, (
+            f"{chain}: the amplicon covers a median {med} nt of the constant region; Cell Ranger needs "
+            f"enough C to call the constant gene and annotate the chain as productive")
+        assert min(c_cov) > 0, f"{chain}: some amplicons do not reach the constant region at all"
+        # the amplicon must stay a V(D)J amplicon, not become the whole transcript
+        assert max(len(vdj_amplicon(assemble(recombine(chain, rng)) or "", {"c": rec["c"]}) or "x")
+                   for _ in range(20)) < 1200, f"{chain}: amplicon is implausibly long"
+        # and the regression it exists for must be visible: the old window did not reach C
+        old_med = sorted(old_cov)[len(old_cov) // 2]
+        assert old_med < med, (
+            f"{chain}: the 5' GEX window covered {old_med} nt of C and the amplicon {med}; this test "
+            f"cannot tell the fix from the defect")
+
+
 def _main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

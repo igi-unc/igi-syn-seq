@@ -37,10 +37,10 @@ from igi_catalog.designer import build_env
 from igi_catalog.molecules import umi
 from igi_catalog.pipeline import quality_model
 from igi_catalog.tenx import (R1_LEN, R2_LEN, art_chunk_index, art_read_strands,
-                              cellranger_names, five_prime_window, orient_antisense,
+                              cellranger_names, orient_antisense,
                               r1_quality, r1_sequence, reads_for_molecule)
 from igi_catalog.readnames import NAME_SPACE_STRIDE, illumina_name
-from igi_catalog.vdj import assemble, genes
+from igi_catalog.vdj import assemble, genes, vdj_amplicon
 
 
 
@@ -190,13 +190,23 @@ def main():
             if not chunk:
                 return
             fa = os.path.join(work, f"c{ci:05d}.fa")
+            # The whole V(D)J amplicon, not GEX's 5' window: reads must tile V through the proximal
+            # constant region or Cell Ranger cannot call the constant gene and drops the chain. See
+            # vdj_amplicon for what the 450 bp window cost.
+            wins = []
             with open(fa, "w") as fh:
                 for i, m in enumerate(chunk):
-                    w = five_prime_window(m[4])
+                    w = vdj_amplicon(m[4], m[5])
                     if len(w) >= R2_LEN:
                         fh.write(f">m{i}\n{w}\n")
+                        wins.append(len(w))
+            # Fold coverage from the amplicons' own mean length rather than a hard-coded 450, so the
+            # reads-per-molecule this job was asked for is what ART is actually told to produce. ART's -f
+            # is per reference base, so a single -f over varying lengths yields reads in proportion to
+            # amplicon length, which is what fragmenting a real amplicon pool does.
+            mean_len = (sum(wins) / len(wins)) if wins else float(R2_LEN)
             pre = os.path.join(work, f"c{ci:05d}_")
-            cmd = art.format(args=(f"{qual} -i {fa} -l {R2_LEN} -f {R2_LEN/450.0*1.02:.4f} "
+            cmd = art.format(args=(f"{qual} -i {fa} -l {R2_LEN} -f {R2_LEN/mean_len*1.02:.4f} "
                                    f"-ss HS25 -rs {a.seed + ci} -o {pre}"))
             subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
             fq = f"{pre}.fq" if os.path.exists(f"{pre}.fq") else f"{pre}1.fq"
