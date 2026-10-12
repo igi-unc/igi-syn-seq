@@ -23,13 +23,24 @@ O=$IGI_WORK/release/wes; M=$IGI_WORK/release/merged
 LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1)); d=${DATASETS[$((i/2))]}; l=${LB[$((i%2))]}
 mkdir -p "$M/$d"
-for m in 1 2; do
-  out=$M/$d/${d}_${l}_R${m}.fastq.gz
-  newest=$(ls -t $O/$d/${d}_chr*_${l}_R${m}.fastq.gz 2>/dev/null | head -1)
-  if [ ! -s "$out" ] || { [ -n "$newest" ] && [ "$newest" -nt "$out" ]; }; then
-    cat $O/$d/${d}_chr*_${l}_R${m}.fastq.gz > "$out"
-  fi
-done
+# INTERLEAVED, not concatenated. `cat` of the per-chromosome pieces made every delivered library
+# chromosome-block ordered -- ds-01 tumour WES began with chr10 and its first 3.4 M pairs were chr10 and
+# chr11 only. Reads within a chromosome are already shuffled so no aligner and no acceptance result
+# depends on this, but the consumer preflight takes "the first 5 %" of the library, and on the exome that
+# slice contained no chr6 reads at all: the razers3 and OptiType preflight, whose whole purpose is the
+# MHC, tested a sample with no MHC in it. Anyone running `zcat | head` saw the same distortion.
+#
+# Both mates are advanced from the same chosen chromosome in one pass, so R1 record n stays mated to R2
+# record n. Cutting the mates independently is the §20.5 failure and would break every paired consumer.
+out1=$M/$d/${d}_${l}_R1.fastq.gz
+out2=$M/$d/${d}_${l}_R2.fastq.gz
+newest=$(ls -t $O/$d/${d}_chr*_${l}_R1.fastq.gz 2>/dev/null | head -1)
+if [ ! -s "$out1" ] || [ ! -s "$out2" ] || { [ -n "$newest" ] && [ "$newest" -nt "$out1" ]; }; then
+  in1=$(ls $O/$d/${d}_chr*_${l}_R1.fastq.gz | paste -sd,)
+  in2=$(ls $O/$d/${d}_chr*_${l}_R2.fastq.gz | paste -sd,)
+  python3 "$IGI_REPO/catalog/interleave_fastq.py" \
+    --in-r1 "$in1" --in-r2 "$in2" --out-r1 "$out1" --out-r2 "$out2" --threads 8
+fi
 # Truth maps: first file whole, the rest without their header. `tail -n +2` reads to EOF so nothing gets
 # SIGPIPE; `zcat | head` under `set -o pipefail` does, which killed this job the first time.
 for what in readmap records; do

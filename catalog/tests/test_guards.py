@@ -1359,6 +1359,60 @@ def test_kinnex_bulk_segment_carries_its_primers():
     assert BULK_SMART_RC == "GTACTCTGCGTTGATACCACTGCTT"
 
 
+def test_interleave_mixes_chromosomes_and_keeps_mates():
+    """A merged library's head must look like the whole library, and R1 record n must stay mated to R2 n.
+
+    The merge stages used `cat`, so every delivered library was chromosome-block ordered: ds-01 tumour
+    WES began with chr10 and its first 3.4 M pairs were chr10 and chr11 only. Reads within a chromosome
+    are shuffled, so no aligner and no acceptance result depended on it -- but the consumer preflight
+    pushes "the first 5 %" through each tool, and on the exome that slice held no chr6 reads at all. The
+    razers3 and OptiType preflight, whose entire purpose is the MHC region on chr6, tested a sample with
+    none of it in.
+
+    The inputs here are deliberately lopsided (200 against 50 against 10), because equal inputs would
+    make a naive round robin look correct.
+    """
+    root = tempfile.mkdtemp(prefix="igi_interleave_")
+    try:
+        sizes = {"chrA": 50, "chrB": 200, "chrC": 10}
+        for name, n in sizes.items():
+            for m in (1, 2):
+                with gzip.open(os.path.join(root, f"{name}_R{m}.fastq.gz"), "wt") as fh:
+                    for i in range(n):
+                        fh.write(f"@{name}_{i}/{m}\nACGT\n+\nIIII\n")
+        names = sorted(sizes)
+        rc = subprocess.run(
+            [sys.executable, os.path.join(CATALOG, "interleave_fastq.py"),
+             "--in-r1", ",".join(os.path.join(root, f"{n}_R1.fastq.gz") for n in names),
+             "--in-r2", ",".join(os.path.join(root, f"{n}_R2.fastq.gz") for n in names),
+             "--out-r1", os.path.join(root, "m_R1.fastq.gz"),
+             "--out-r2", os.path.join(root, "m_R2.fastq.gz")],
+            capture_output=True, text=True)
+        assert rc.returncode == 0, rc.stdout + rc.stderr
+
+        def heads(path):
+            with gzip.open(path, "rt") as fh:
+                return [l.strip() for i, l in enumerate(fh) if i % 4 == 0]
+        h1, h2 = heads(os.path.join(root, "m_R1.fastq.gz")), heads(os.path.join(root, "m_R2.fastq.gz"))
+        assert len(h1) == sum(sizes.values()) == len(h2), (len(h1), len(h2))
+        assert [x.rsplit("/", 1)[0] for x in h1] == [x.rsplit("/", 1)[0] for x in h2], \
+            "the mates desynced, which breaks every paired consumer"
+
+        src = [x.split("_")[0][1:] for x in h1]
+        head = src[:max(1, len(src) // 20)]
+        assert set(head) == set(sizes), (
+            f"the first 5 % holds only {sorted(set(head))}; this is the defect, not the fix")
+        # every decile must carry the library's composition, not just the first slice
+        for d in range(10):
+            seg = src[d * len(src) // 10:(d + 1) * len(src) // 10]
+            for name, n in sizes.items():
+                want = n / sum(sizes.values()) * len(seg)
+                got = seg.count(name)
+                assert abs(got - want) <= 1.5, (d, name, got, want)
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 def _main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

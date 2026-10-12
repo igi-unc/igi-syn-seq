@@ -34,7 +34,11 @@ R2=$M/$d/${d}_tumor_wgs_R2.fastq.gz
 newest=$(ls -t $O/$d/${d}_chr*_tumor_wgs_R1.fastq.gz 2>/dev/null | head -1)
 if [ ! -s "$R1" ] || { [ -n "$newest" ] && [ "$newest" -nt "$R1" ]; }; then
   echo "  merge job output absent or older than its chromosomes; merging here instead"
-  for m in 1 2; do cat $O/$d/${d}_chr*_tumor_wgs_R${m}.fastq.gz > $M/$d/${d}_tumor_wgs_R${m}.fastq.gz; done
+  # interleaved, not cat: see 11_merge.sbatch for why block order broke the consumer preflight
+  python3 "$IGI_REPO/catalog/interleave_fastq.py" \
+    --in-r1 "$(ls $O/$d/${d}_chr*_tumor_wgs_R1.fastq.gz | paste -sd,)" \
+    --in-r2 "$(ls $O/$d/${d}_chr*_tumor_wgs_R2.fastq.gz | paste -sd,)" \
+    --out-r1 "$R1" --out-r2 "$R2" --threads 8
 fi
 B=$A/$d/${d}_tumor.bam
 if [ ! -s "$B" ] || [ "$R1" -nt "$B" ]; then

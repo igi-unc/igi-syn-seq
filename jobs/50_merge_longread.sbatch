@@ -46,15 +46,20 @@ echo "=== $asy $d $l ==="
 
 case "$asy" in
   wgs)
-    for m in 1 2; do
-      out=$M/${d}_${l}_wgs_R${m}.fastq.gz
-      if stale "$out" $O/$d/${d}_chr*_${l}_wgs_R${m}.fastq.gz; then
-        echo "  merging R${m} ($(ls $O/$d/${d}_chr*_${l}_wgs_R${m}.fastq.gz | wc -l) chromosomes)"
-        cat $O/$d/${d}_chr*_${l}_wgs_R${m}.fastq.gz > "$out"
-      else
-        echo "  R${m} is newer than every input; keeping it"
-      fi
-    done
+    # Both mates in ONE pass, because the interleave order has to be the same for both. Looping over
+    # R1 and R2 separately was fine for `cat` and is not fine here.
+    out1=$M/${d}_${l}_wgs_R1.fastq.gz
+    out2=$M/${d}_${l}_wgs_R2.fastq.gz
+    if stale "$out1" $O/$d/${d}_chr*_${l}_wgs_R1.fastq.gz || \
+       stale "$out2" $O/$d/${d}_chr*_${l}_wgs_R2.fastq.gz; then
+      echo "  interleaving $(ls $O/$d/${d}_chr*_${l}_wgs_R1.fastq.gz | wc -l) chromosomes"
+      python3 "$IGI_REPO/catalog/interleave_fastq.py" \
+        --in-r1 "$(ls $O/$d/${d}_chr*_${l}_wgs_R1.fastq.gz | paste -sd,)" \
+        --in-r2 "$(ls $O/$d/${d}_chr*_${l}_wgs_R2.fastq.gz | paste -sd,)" \
+        --out-r1 "$out1" --out-r2 "$out2" --threads 8
+    else
+      echo "  both mates are newer than every input; keeping them"
+    fi
     # The name-uniqueness proof costs a full decompress plus an external sort -- 2 h 43 on the ds-01
     # tumour library -- and it ran unconditionally, including on an output `stale()` had just decided
     # to KEEP. That is the expensive half of this stage repeated for nothing: a library that was not
@@ -114,8 +119,13 @@ case "$asy" in
     n=$(ls $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz 2>/dev/null | wc -l)
     [ "$n" -eq 24 ] || { echo "  only $n/24 chromosomes present; not merging a partial library"; exit 0; }
     if stale "$out" $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz; then
-      echo "  merging $n chromosomes"
-      cat $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz > "$out"
+      echo "  interleaving $n chromosomes"
+      # Single-end, so no mate to keep in step. NOTE THE COST: concatenating gzip members needs no
+      # decompression and this does, which is the price of a library whose head is representative. On
+      # the ~180 GB ONT WGS arm that is the difference between minutes and hours.
+      python3 "$IGI_REPO/catalog/interleave_fastq.py" \
+        --in-r1 "$(ls $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz | paste -sd,)" \
+        --out-r1 "$out" --threads 8
     else
       echo "  merged library is newer than every input; keeping it"
     fi
