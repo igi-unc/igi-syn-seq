@@ -120,9 +120,10 @@ case "$asy" in
     [ "$n" -eq 24 ] || { echo "  only $n/24 chromosomes present; not merging a partial library"; exit 0; }
     if stale "$out" $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz; then
       echo "  interleaving $n chromosomes"
-      # Single-end, so no mate to keep in step. NOTE THE COST: concatenating gzip members needs no
-      # decompression and this does, which is the price of a library whose head is representative. On
-      # the ~180 GB ONT WGS arm that is the difference between minutes and hours.
+      # Single-end, so no mate to keep in step. The cost is real but this is NOT where it lands:
+      # measured at ~43,000 pairs/s, the expensive arm is Illumina WGS at 943 M pairs (~6.1 h), while an
+      # ONT library is ~5 M reads and takes minutes. An earlier version of this note put the cost here,
+      # on "the ~180 GB ONT WGS arm", which confused bytes with records -- ONT reads are ~18 kb each.
       python3 "$IGI_REPO/catalog/interleave_fastq.py" \
         --in-r1 "$(ls $O/$d/${d}_chr*_${l}_ont_wgs.fastq.gz | paste -sd,)" \
         --out-r1 "$out" --threads 8

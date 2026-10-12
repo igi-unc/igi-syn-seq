@@ -20,9 +20,25 @@ Block order is also a fingerprint: no real sequencer emits reads sorted by refer
 ordering alone says the library is synthetic. That is cosmetic next to the preflight problem.
 
 HOW. A weighted round robin, so the chromosomes exhaust together rather than one at a time. Records are
-counted once per input (a cheap decompression pass), then drawn with a largest-remaining-fraction
-scheduler: at each step take from whichever input has the greatest share of itself still unread. That
-needs no sort and no temp space, holds one record per input in memory, and is deterministic.
+counted once per input (a decompression pass), then drawn with a largest-remaining-fraction scheduler:
+at each step take from whichever input has the greatest share of itself still unread. That needs no sort
+and no temp space, holds one record per input in memory, and is deterministic.
+
+COST, MEASURED rather than guessed. 33,191,885 pairs over three chromosomes on 8 cores: 772 s, against
+4 s for `cat` of the same inputs. So ~43,000 pairs/s, roughly 190x the cost of concatenation, because
+`cat` of gzip members needs no decompression and this needs two passes of it plus a Python loop per
+record.
+
+What that means per arm, which matters more than the ratio:
+
+  Illumina WGS tumour   943,646,057 pairs   ~6.1 h, and this is the expensive one
+  Illumina WGS normal   ~280 M pairs        ~1.8 h
+  exome                 68,114,175 pairs    ~26 min
+  ONT WGS               ~5 M single reads   a couple of minutes; the decompression dominates
+
+An earlier note in 50_merge_longread.sbatch put the cost on "the ~180 GB ONT WGS arm", which is the
+wrong arm: ONT libraries hold millions of reads, not hundreds of millions. The 24 h limits on the merge
+stages hold with room to spare, and the figure above is what to check that against when a depth changes.
 
 MATES. R1 and R2 are advanced in lockstep from the same chosen input, so mate n of the output R1 is
 still mate n of the output R2. Cutting them independently is what §20.5's preflight failure was, and the
