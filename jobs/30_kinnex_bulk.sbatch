@@ -6,7 +6,13 @@
 # hifi_reads BAM, where one read is one whole array, and the segmented BAM from the real `skera split`.
 #
 # Memory matches 12_rna.sbatch: the same transcript record set is assembled, and --min-tpm 0.01 keeps about
-# three times the records a 0.5 floor would.
+# three times the records a 0.5 floor would. 24G held at full scale once the segment wrap stopped being
+# materialised: MEASURED peak 16.4 GiB over both tasks (2026-10-13, 18 h), against the 23.3 GiB that hit
+# this same 24G limit and killed the job when `build` wrapped all 15 M molecules into new dicts up front.
+# sample_molecules draws WITH REPLACEMENT, so that list is 15 M references to a few hundred thousand
+# transcripts and giving each its own string materialises 15 M sequences of ~2.3 kb. The 24G was itself
+# right-sized on 2026-10-08 from a measured 8 GB peak, before any full-scale run -- the request was
+# untested, not wrong.
 #
 # 15 M segmented reads against the real set's 38.7 M. One molecule yields one segment, so --segments is also
 # the molecule count; at a mean 6.91 segments per array that is about 2.2 M arrays.
