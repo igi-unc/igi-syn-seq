@@ -20,6 +20,72 @@ from igi_catalog.germline_spikein import GermlineSpikein
 from igi_catalog import diffcards
 
 
+# GRCh38 class I windows, hardcoded rather than read from the GTF: the annotation is not an input to this
+# script, and these three spans are stable coordinates.
+HLA_CLASS_I = {"HLA-A": ("chr6", 29942532, 29945870),
+               "HLA-B": ("chr6", 31353875, 31357188),
+               "HLA-C": ("chr6", 31268749, 31272130)}
+
+
+def check_hla_phasing(vcf, dcfg):
+    """Assert the VCF just written can actually express the HLA genotype the design declares.
+
+    This exists because it could not. IGI-SYN-SEQ-02's germline VCF was built from a baseline whose MHC had
+    never been recovered -- alt-aware alignment had parked the HLA reads on GRCh38's 525 HLA-* contigs -- so
+    chr6:29.6-31.4 Mb held 214 records and 6 heterozygous calls against ds-01's 12,212 and 6,597, and
+    HLA-A, -B and -C held NONE AT ALL. Both simulated haplotypes were byte-identical bare GRCh38 at all
+    three loci, measured through haplotype_seqs: the delivered reads were not B*08:01 or B*27:05, they were
+    the reference's own allele, in every ds-02 arm. HLA typing could not return the designed genotype and
+    the designed HLA LOH had no allelic signal to be seen in.
+
+    The recovery had been run, verified, merged and re-phased 13 h before that VCF was built. Only the
+    `germline_vcf_baseline` key still named the superseded file. The recovery job asserts its own output;
+    nothing asserted that the output was ever USED, which is the gap this closes -- at the one step that
+    holds both the declared genotype and the file being written.
+
+    Phase is checked too, and it is not a formality. `Germline.haplotype_seqs` assigns alleles by GT ORDER
+    and never consults the phase flag, so unphased 0/1 calls would put every alternate allele on hap1 and
+    leave hap0 bare reference: one chimera carrying both real alleles' variants, and -- since design.yaml
+    loses hap1 to HLA LOH -- a tumour reading as homozygous reference. The record count would look right.
+    """
+    by_locus = {}
+    for allele in dcfg.get("hla") or []:
+        by_locus.setdefault(allele.split("*")[0], []).append(allele)
+    problems = []
+    for locus, (chrom, lo, hi) in sorted(HLA_CLASS_I.items()):
+        alleles = by_locus.get(locus) or []
+        if len(alleles) != 2:
+            continue                      # not a declared class I pair; nothing to assert
+        het_expected = alleles[0] != alleles[1]
+        reg = f"{chrom}:{lo}-{hi}"
+        r = subprocess.run(["bcftools", "view", "-H", "-r", reg, vcf], capture_output=True, text=True)
+        if r.returncode != 0:
+            raise SystemExit(f"[germline] could not read {reg} from {vcf}: {r.stderr.strip()[-200:]}")
+        n_het = n_phased = 0
+        for line in r.stdout.splitlines():
+            cols = line.split("\t")
+            if len(cols) < 10:
+                continue
+            gt = cols[9].split(":")[0]
+            a1, a2 = (gt.replace("|", "/").split("/") + ["."])[:2]
+            if a1 != a2 and "." not in (a1, a2):
+                n_het += 1
+                n_phased += ("|" in gt)
+        tag = "heterozygous by design" if het_expected else "homozygous by design"
+        print(f"[germline] {locus} {'/'.join(alleles)} ({tag}): {n_het} heterozygous, {n_phased} phased",
+              flush=True)
+        if het_expected and n_het == 0:
+            problems.append(f"{locus} is {'/'.join(alleles)} in the design, but the VCF has no "
+                            f"heterozygous call in {reg}; both haplotypes would be bare reference there, "
+                            f"so the reads would carry neither allele")
+        elif het_expected and n_phased < n_het:
+            problems.append(f"{locus} has {n_het - n_phased} unphased heterozygous call(s) in {reg}; "
+                            f"haplotype_seqs reads GT order, so those alleles would all land on hap1")
+    if problems:
+        raise SystemExit("[germline] FAIL: this VCF cannot express the declared HLA genotype:\n  - "
+                         + "\n  - ".join(problems))
+
+
 def write_spike_vcf(base_vcf, rows, path):
     """A VCF with the baseline's header and sample carrying only the designed records."""
     src = pysam.VariantFile(base_vcf)
@@ -101,6 +167,7 @@ def main(argv=None):
     print(f"[germline] {base} ({n_base:,} records) + {len(rows)} -> {a.vcf_out} ({n_out:,} records)")
     if n_out != n_base + len(rows):
         raise SystemExit(f"record count mismatch: expected {n_base + len(rows)}, got {n_out}")
+    check_hla_phasing(a.vcf_out, dcfg)
 
     os.makedirs(a.out, exist_ok=True)
     write_table(rows, os.path.join(a.out, f"{a.dataset}.germline_spikein.tsv"))

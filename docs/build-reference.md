@@ -2962,3 +2962,100 @@ two deliverables that look rebuilt and are not.
 A related habit, cheaply learned here: **an unexpectedly fast task is evidence.** Six minutes against a
 20-120 minute norm was in the log the whole time, in a line that also said `skipping simulation and
 combine`. The arithmetic of a build is a check nobody has to write.
+
+## 33. The MHC recovery was done, verified, and never pointed at
+
+Reported from downstream on 2026-10-13: HLA typing on IGI-SYN-SEQ-02 looked "effectively monoallelic per
+locus", while IGI-SYN-SEQ-01 looked properly heterozygous. The suggested explanation was that ds-02's HLA
+region had been simulated from a single haplotype, with a question back to the generator about whether a
+diploid HLA reference had been used.
+
+It is worse than monoallelic, and the mechanism is not haplotype selection.
+
+### 33.1 Both haplotypes were bare reference
+
+`Germline.haplotype_seqs` builds each haplotype as GRCh38 plus that haplotype's germline variants. There is
+no HLA allele sequence anywhere in the build: the only thing that makes a class I locus allele-specific is
+the baseline VCF's content there. Measured through that same code path, over the three class I windows:
+
+| | ds-01 hap0 vs hap1 | ds-02 hap0 vs hap1 |
+|---|---|---|
+| HLA-A | differs | **0 -- and both equal reference** |
+| HLA-B | differs | **0 -- and both equal reference** |
+| HLA-C | differs | **0 -- and both equal reference** |
+
+(The ds-01 difference counts are not divergence estimates: the comparison is positional, so one indel
+shifts everything after it. Only the zero/non-zero distinction is meaningful.)
+
+So ds-02's delivered reads at HLA-A, -B and -C are GRCh38's own allele, in every arm, tumour and normal.
+They are not B\*08:01 and they are not B\*27:05 -- they are neither. Two consequences follow, and the second
+is the larger one:
+
+- HLA typing on ds-02 cannot return the designed genotype, because the evidence for it is not in the reads.
+- The designed `HLA_LOH_loses_hap1` has **no allelic signal at any class I locus**. §D3 already recorded
+  that HLA-A LOH is undetectable in ds-02 because the donor is homozygous there; in fact all three loci are,
+  for a different and unintended reason. The manifest still declares all six alleles, so a consumer typing
+  from the reads disagrees with the truth bundle that ships beside them.
+
+### 33.2 The cause was a stale pointer, not a missing step
+
+The germline VCF counts tell the story on their own:
+
+| chr6 window | ds-01 | ds-02 |
+|---|---|---|
+| class I, 29.6-31.4 Mb, records / het | 12,212 / 6,597 | 214 / **6** |
+| HLA-A, -B, -C, records | 134 / 105 / 153 | **0 / 0 / 0** |
+
+`jobs/03_mhc_recover.sbatch` had already fixed this. It ran on 2026-09-28 and recovered 7,532 PASS records
+in chr6:28-34 Mb, 3,991 heterozygous -- HLA-A 32/0, HLA-B 93/64, HLA-C 105/100 -- and asserted those counts
+rather than printing them. The merge back into the baseline and the re-phasing were then done by hand, and
+they worked: `IPISRC044.germline.phased.final.v2.vcf.gz` (Sep 29 02:13) carries 7,532 records in the MHC,
+3,926 heterozygous, **all 7,532 phased**, and is identical to `.final` everywhere outside chr6:28-34 Mb --
+the two files differ by exactly 5,710 records, which is precisely the MHC swap.
+
+`IGI-SYN-SEQ-02.germline.vcf.gz` was built at Sep 29 15:30, thirteen hours after `.v2` existed, from
+`.final`, because `germline_vcf_baseline` still named `.final`. One key in one paths file.
+
+The recovery job asserts its own output. Nothing asserted that the output was ever *used*, and the two
+hand-run steps that produced `.v2` are documented nowhere -- `baseline-references.md` lists five steps and
+stops at "verify". That is the §22 shape again: the work was done and the result never reached the thing
+that consumes it.
+
+### 33.3 Phase is half the fix, and the trap is quiet
+
+A naive merge would not have worked. The recovered calls come out of DeepVariant unphased (`GT=0/1`), and
+`Germline.haplotype_seqs` assigns alleles **by GT order, never consulting the phase flag**. Unphased calls
+therefore put every alternate allele on hap1 and leave hap0 bare reference: one chimeric allele carrying
+both real alleles' variants, and -- because `design.yaml` loses hap1 to the HLA LOH -- a tumour that reads
+as homozygous reference. The record count would have looked correct throughout. `.v2` is fully phased, which
+is why it is the right input and `.mhc` (2,318 of 7,532 phased) is not.
+
+### 33.4 The guard
+
+`check_hla_phasing` in `run_germline_spikein.py`, run on the VCF it has just written. For each class I locus
+it compares the design's declared pair against the heterozygous calls present, and refuses when a locus
+declared heterozygous has none, or has unphased ones. It asks a question whose answer is already known from
+`design.yaml`, at the one step holding both the declaration and the file.
+
+Verified against three inputs before being trusted:
+
+| input | verdict |
+|---|---|
+| ds-02 as currently built | **REFUSED** -- HLA-B and HLA-C have no heterozygous call |
+| ds-02 from `.v2` | PASS -- HLA-B 55/55 phased, HLA-C 104/104 phased, HLA-A 0 (homozygous by design) |
+| ds-01 as currently built | PASS -- 111/74/55, all phased |
+
+A guard that does not fire on the defect it was written for is worth nothing, so the first row is the one
+that mattered.
+
+### 33.5 What the rebuild costs
+
+Smaller than it looks. `.v2` differs from `.final` only inside chr6:28-34 Mb, and **no designed somatic event
+of any class lands there** -- 11,695 background SNVs, 874 snv_indel, 99 SVs, 20 fusions, 15 splice, 3
+viruses, 1 germline spike-in, and zero in the MHC for ds-02. So the catalog does not move and the designer
+does not re-run. What is needed is: repoint the key, rebuild `IGI-SYN-SEQ-02.germline.vcf.gz`, then rebuild
+the ds-02 arms covering chr6 and the chr1to6 subsets and merged libraries that contain it.
+
+`haplotype_seqs` already raises on a somatic edit that does not match its haplotype, so if a catalog event
+did collide with a newly added germline record the read builder would fail loudly rather than quietly --
+which is why rebuilding reads before re-running the designer is safe here.

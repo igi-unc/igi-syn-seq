@@ -219,3 +219,30 @@ bwa/samtools image, which has no `bcftools`. Every count printed `command not fo
 job log said zero records had been recovered when 7,532 had. The counts now run in the bcftools image and are
 asserted -- a recovery that genotypes under 1,000 PASS or under 500 heterozygous sites fails the job rather
 than completing quietly.
+
+### Steps 6 and 7: merge and re-phase — done by hand, not yet scripted
+
+The recovery above ends at "verify". It writes `$IGI_WORK/hla_recover/IPISRC044.mhc.recovered.vcf.gz` and
+stops, and **that file is not an input to anything**. Two further steps are required and were carried out by
+hand on 2026-09-29:
+
+6. Replace chr6:28-34 Mb in the phased baseline with the recovered calls, giving
+   `IPISRC044.germline.phased.final.mhc.vcf.gz` (7,532 records in the MHC, but only 2,318 of them phased).
+7. Re-phase, giving `IPISRC044.germline.phased.final.v2.vcf.gz` — 7,532 records, 3,926 heterozygous, all
+   7,532 phased, and identical to `.final` outside chr6:28-34 Mb (the files differ by exactly 5,710
+   records, the MHC swap).
+
+**`.v2` is the baseline to build from**, and `config/sites/*.paths.yaml` must name it under
+`germline_vcf_baseline`. It did not until 2026-10-13, so `IGI-SYN-SEQ-02.germline.vcf.gz` was built from
+`.final` thirteen hours after `.v2` existed, and every ds-02 arm shipped bare GRCh38 at all three class I
+loci. Section 33 of `build-reference.md` has the measurement and the consequences.
+
+Step 7 matters as much as step 6: the recovered calls are unphased out of DeepVariant, and
+`Germline.haplotype_seqs` assigns alleles by GT order without consulting the phase flag, so merging
+without re-phasing produces one chimeric allele on hap1 and bare reference on hap0.
+
+Open item: neither step is in `03_mhc_recover.sbatch`, so the only record of how `.v2` was made is the file
+itself and this note. The exact phasing invocation was not captured and should be reconstructed and added to
+the script before the next baseline is built, so that `.v2` is reproducible rather than an artefact.
+`run_germline_spikein.py` now refuses a VCF that cannot express the declared HLA genotype, which makes the
+omission fail loudly instead of shipping, but a guard is not a procedure.
