@@ -143,7 +143,7 @@ def main(argv=None):
     if not specs:
         print(f"[germline] {a.dataset}: nothing to add")
         return
-    env = build_env(paths, design, a.dataset)
+    env = build_env(paths, design, a.dataset, verify_hla=False)
     # always build from the untouched baseline, never from a VCF this script already wrote: `germline_vcf`
     # points at the spiked file once it exists, so working from that key would either double-spike or
     # report the allele this script added as a pre-existing conflict

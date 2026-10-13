@@ -23,7 +23,7 @@ from .structural import StructuralDesigner
 from .expressed_classes import ExpressedClassDesigner
 
 
-def build_env(paths, design, ds_name):
+def build_env(paths, design, ds_name, verify_hla=True):
     dcfg = design["datasets"][ds_name]
     t0 = time.time()
     tx = load_or_build(paths["gtf"], paths.get("annotation_cache"))
@@ -44,7 +44,13 @@ def build_env(paths, design, ds_name):
     # names, and nothing derived it from the data. Measure it against the VCF's phase before using it:
     # ds-01's was inverted, so every HLA LOH truth row named the wrong three alleles while the reads were
     # correct. Raises on a clear inversion, says so loudly when it cannot tell.
-    verify_or_die(paths["reference_fasta"], germline, hla_loss.by_hap, ds_name)
+    # verify_hla=False is for run_germline_spikein.py alone: it calls build_env in order to BUILD the
+    # dataset VCF, so the VCF this would check is the stale one it is about to replace, and checking it
+    # here would refuse the run that fixes it. That script verifies its own output instead, which is the
+    # stronger check. Every read builder leaves this on, so none of them can build from a VCF that
+    # cannot express the declared genotype.
+    if verify_hla:
+        verify_or_die(paths["reference_fasta"], germline, hla_loss.by_hap, ds_name)
     hla_retained, hla_lost = hla_loss.retained(), hla_loss.lost()
     print(f"[env] {ds_name}: {len(tx)} transcripts, {len(rep)} representative CDS, loaded in {time.time() - t0:.0f}s", flush=True)
     if hla_lost:

@@ -16,8 +16,8 @@
     "phased_pair": 50,
     "nonsense": 60,
     "synonymous": 40,
-    "start_loss": 10,
-    "stop_loss": 10,
+    "start_loss": 12,
+    "stop_loss": 8,
     "frameshift_del": 80,
     "frameshift_ins": 60,
     "inframe_del": 40,
@@ -29,59 +29,71 @@
     "intronic": 25,
     "nonsense": 60,
     "synonymous": 40,
-    "start_loss": 10,
-    "stop_loss": 10,
+    "start_loss": 12,
+    "stop_loss": 8,
     "frameshift": 155,
-    "inframe_deletion": 60,
-    "inframe_insertion": 35
+    "inframe_deletion": 63,
+    "inframe_insertion": 32
   },
   "by_clonality_tier": {
-    "T_LOH": 75,
-    "T_het": 201,
+    "T_LOH": 79,
+    "T_het": 194,
     "T_amp": 24,
-    "A": 181,
+    "A": 166,
     "B": 200,
-    "A1": 193
+    "A1": 211
   },
   "by_expression_tier": {
-    "T10": 305,
-    "T100": 143,
-    "T1": 134,
-    "T0": 231,
-    "T1000": 61
+    "T10": 318,
+    "T100": 152,
+    "T1": 139,
+    "T0": 210,
+    "T1000": 55
   },
   "by_binding_tier": {
-    "strong": 349,
-    "weak": 203,
-    "non": 169,
-    "na": 153
+    "strong": 319,
+    "weak": 208,
+    "non": 197,
+    "na": 150
   },
   "by_context": {
-    "clean": 569,
-    "segdup": 52,
-    "exon_edge": 124,
-    "homopolymer": 65,
-    "near_germline_het": 37,
+    "clean": 554,
+    "segdup": 51,
+    "exon_edge": 134,
+    "homopolymer": 67,
+    "near_germline_het": 40,
     "deep_intronic": 25,
-    "repeat_other": 2
+    "repeat_other": 3
   },
-  "chr1to6_fraction": 0.629,
+  "chr1to6_fraction": 0.626,
   "flagposts": 30,
   "by_binding_tier_retained": {
-    "weak": 220,
-    "strong": 268,
-    "non": 233,
-    "na": 153
+    "weak": 229,
+    "strong": 234,
+    "non": 261,
+    "na": 150
   },
-  "best_allele_is_lost": 323,
-  "tier_changed_by_hla_loss": 126,
+  "best_allele_is_lost": 338,
+  "tier_changed_by_hla_loss": 131,
   "grid_cells_filled": 80,
   "grid_cells_total": 90,
+  "flagposts_all_classes": {
+    "total": 40,
+    "target": 40,
+    "by_class": {
+      "snv": 28,
+      "indel": 2,
+      "fusion": 4,
+      "cta": 2,
+      "erv": 2,
+      "splice": 2
+    }
+  },
   "svs": {
-    "n": 99,
+    "n": 98,
     "by_subclass": {
-      "non_coding": 49,
-      "coding": 50
+      "coding": 49,
+      "non_coding": 49
     }
   },
   "viruses": {
@@ -96,9 +108,9 @@
     "by_subclass": {
       "clone_restricted": 4,
       "tumor_wide": 11,
-      "tumor_associated": 17,
       "tumor_specific": 25,
-      "unexpressed_negative": 18
+      "tumor_associated": 16,
+      "unexpressed_negative": 19
     }
   },
   "hla_loh": {
@@ -117,19 +129,19 @@
     },
     "by_mechanism": {
       "INV": 4,
-      "TRA": 9,
-      "DEL": 2,
+      "TRA": 10,
       "DUP": 3,
+      "DEL": 1,
       "none": 2
     },
     "in_frame": 16,
-    "wes_visible": 13,
+    "wes_visible": 10,
     "by_binding_tier": {
-      "strong": 7,
-      "weak": 7,
-      "non": 6
+      "strong": 12,
+      "weak": 6,
+      "non": 2
     }
   },
-  "runtime_s": 129,
+  "runtime_s": 6312,
   "scale": 1.0
 }

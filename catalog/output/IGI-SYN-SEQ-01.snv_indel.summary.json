@@ -68,15 +68,27 @@
   "chr1to6_fraction": 0.645,
   "flagposts": 30,
   "by_binding_tier_retained": {
-    "non": 308,
-    "strong": 194,
-    "weak": 220,
+    "weak": 242,
+    "strong": 235,
+    "non": 245,
     "na": 151
   },
-  "best_allele_is_lost": 449,
-  "tier_changed_by_hla_loss": 217,
+  "best_allele_is_lost": 273,
+  "tier_changed_by_hla_loss": 125,
   "grid_cells_filled": 80,
   "grid_cells_total": 90,
+  "flagposts_all_classes": {
+    "total": 40,
+    "target": 40,
+    "by_class": {
+      "snv": 28,
+      "indel": 2,
+      "fusion": 4,
+      "cta": 2,
+      "erv": 2,
+      "splice": 2
+    }
+  },
   "svs": {
     "n": 99,
     "by_subclass": {
@@ -130,6 +142,6 @@
       "non": 4
     }
   },
-  "runtime_s": 9465,
+  "runtime_s": 7287,
   "scale": 1.0
 }
