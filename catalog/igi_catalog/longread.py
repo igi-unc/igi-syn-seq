@@ -206,9 +206,10 @@ def combine_fastq(parts, out_path, log=print, map_path=None, keep_description=Fa
     The map keeps the link for whoever needs it, in the one place a tool under test will not read.
 
     `run_meta` puts REAL ONT run metadata back in the stripped header. Stripping the description left a
-    bare UUID, which no basecaller produces: a real header carries runid, read, ch, start_time,
-    flow_cell_id, protocol_group_id and sample_id, and tools and users alike expect them. Supply a dict
-    of fixed fields and `read=` and `ch=` are filled in per record.
+    bare UUID, which no basecaller produces. The layout is the nine fields of ONT_HEADER_FIELDS, in that
+    order, MEASURED from 511,401 real PromethION reads -- there is no `read=` field, which the first
+    version of this emitted; see section 30. Supply the fixed fields and `ch=`, `start_time=` and
+    `parent_read_id=` are filled in per record.
 
     `sample_id` must be the SYNTHETIC dataset name. The ds-02 germline baseline is called from a real
     donor and the baseline VCF still carries that donor's cohort accession as its sample name; putting
