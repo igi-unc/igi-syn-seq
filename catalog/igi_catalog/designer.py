@@ -15,6 +15,7 @@ from .germline import Germline
 from .context import ContextAnnotator
 from .clones import CloneModel
 from .hla_loss import HlaLoss
+from .hla_phase_check import verify_or_die
 from .binding import NetMHCpan
 from .snv_indel import SnvIndelDesigner
 from .fusions import FusionDesigner
@@ -39,6 +40,11 @@ def build_env(paths, design, ds_name):
     # owner decision D4: every event is scored twice, once over all alleles and once over the alleles the
     # tumour still has after HLA loss, and carries a flag when its best allele is one that was lost
     hla_loss = HlaLoss(dcfg, clones)
+    # The declaration in design.yaml is the only thing that turns a lost haplotype INDEX into allele
+    # names, and nothing derived it from the data. Measure it against the VCF's phase before using it:
+    # ds-01's was inverted, so every HLA LOH truth row named the wrong three alleles while the reads were
+    # correct. Raises on a clear inversion, says so loudly when it cannot tell.
+    verify_or_die(paths["reference_fasta"], germline, hla_loss.by_hap, ds_name)
     hla_retained, hla_lost = hla_loss.retained(), hla_loss.lost()
     print(f"[env] {ds_name}: {len(tx)} transcripts, {len(rep)} representative CDS, loaded in {time.time() - t0:.0f}s", flush=True)
     if hla_lost:

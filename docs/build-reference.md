@@ -3059,3 +3059,103 @@ the ds-02 arms covering chr6 and the chr1to6 subsets and merged libraries that c
 `haplotype_seqs` already raises on a somatic edit that does not match its haplotype, so if a catalog event
 did collide with a newly added germline record the read builder would fail loudly rather than quietly --
 which is why rebuilding reads before re-running the designer is safe here.
+
+## 34. The HLA LOH truth named the wrong three alleles, and the reads were right all along
+
+Reported from downstream on 2026-10-13: LOHHLA on the IGI-SYN-SEQ-01 WES pair calls `A*01:01`, `B*35:08`
+and `C*04:01` lost, at about 0.3x of normal coverage. The truth bundle named the other haplotype. The
+conclusion offered was that the fix is in the truth bundle rather than in LENS, and that is correct.
+
+The coverage figure is the first thing worth checking, because it tells you the measurement is sound
+rather than a typing artefact. ds-01 is purity 0.70 with `cn: [1, 0]` over the HLA region, so in the
+tumour the retained haplotype is at `0.70 x 1 + 0.30 x 1 = 1.0` and the lost one at `0.30 x 1 = 0.3`,
+against 1.0 each in the normal. A lost allele should sit at **0.3x of normal**, which is what was
+measured. The simulation did remove a haplotype; the only question is which alleles were on it.
+
+### 34.1 The declaration was never derived from anything
+
+`design.yaml`'s `hla_haplotypes` is the only thing that turns a lost haplotype *index* into allele names.
+A SNV-level phased VCF does not name HLA alleles, so the arrangement was declared from linkage
+disequilibrium, and the comment beside it said so: *"which haplotype is maternal is still unverified
+(Q3), and the arrangement is what decides which alleles the 17q-style HLA loss takes, so it is declared
+here rather than inferred."* Nothing checked it. `hla_loss.py` reads the declaration, the CNA removes
+haplotype index 1, and the truth bundle prints whichever three alleles the declaration put there.
+
+### 34.2 The reference already contains the answer
+
+No external database is needed. GRCh38's analysis set ships **525 `HLA-*` allele contigs**, so every
+declared two-field allele has a full-length sequence in the same FASTA the build already opens. Measure
+by k-mer containment (k=31): reconstruct both haplotypes over the gene window from the VCF's own phase,
+then ask what fraction of each allele contig's 31-mers appears in each haplotype, best of both
+orientations. Containment rather than Jaccard because a reconstructed haplotype is reference-plus-variants
+and so longer and noisier than the clean allele sequence.
+
+| allele | containment in hap0 | containment in hap1 | sits on |
+|---|---|---|---|
+| A\*01:01 | 0.3711 | **0.9200** | hap1 |
+| A\*26:01 | **0.9203** | 0.3697 | hap0 |
+| B\*35:08 | 0.5841 | **1.0000** | hap1 |
+| B\*38:01 | **0.9138** | 0.5375 | hap0 |
+| C\*04:01 | 0.6303 | **0.9232** | hap1 |
+| C\*12:03 | **0.9325** | 0.6210 | hap0 |
+
+Three independent loci, six measurements, every one saying the declaration was **backwards**. hap1 --
+the haplotype the CNA removes -- carries `A*01:01/B*35:08/C*04:01`. The reads were always correct; the
+label described the wrong three alleles. LOHHLA and this measurement agree, and they share no inputs:
+one reads the simulated reads, the other reads the VCF phase and the reference's allele contigs.
+
+The two sources of evidence being independent is what makes this conclusive rather than circular. The
+declaration came from LD reasoning in `design.yaml`; nothing in the pipeline had ever compared it to the
+sequence it was supposed to describe.
+
+### 34.3 ds-02 is not inverted
+
+Checked before repointing ds-02 to the `.v2` baseline (section 33), because shipping the same inversion
+there would have been the obvious way to make this worse:
+
+| allele | hap0 | hap1 | sits on | declared |
+|---|---|---|---|---|
+| B\*08:01 | **0.7943** | 0.7096 | hap0 | hap0 |
+| B\*27:05 | 0.6807 | **0.7536** | hap1 | hap1 |
+| C\*07:01 | **0.6594** | 0.5129 | hap0 | hap0 |
+| C\*01:02 | 0.4733 | **0.6198** | hap1 | hap1 |
+
+Four of four agree with the declaration, so ds-02's `hla_haplotypes` stands. The margins are a fifth of
+ds-01's -- 0.07 to 0.15 against 0.30 to 0.46 -- which is expected twice over: ds-02 is the less divergent
+genotype, and its MHC comes from short-read DeepVariant calls rather than an assembly projection, so its
+reconstructed haplotypes are less complete. Supportive, not conclusive. HLA-A is homozygous and carries
+no phase information at all.
+
+### 34.4 The guard, and why an indeterminate result does not fail the build
+
+`hla_phase_check.verify_or_die`, called from `designer.py` where `HlaLoss` is constructed. It raises on a
+clear inversion and prints every measurement, including the ones it cannot judge. Three outcomes short of
+"ok" are distinguished, because they mean different things:
+
+- **INVERTED** -- fatal. The truth bundle and the reads disagree about which alleles the tumour lost.
+- **NO ALLELIC DIFFERENCE** -- fatal, and it is the section 33 defect seen from here: a locus declared
+  heterozygous whose two haplotypes are byte-identical, so containment comes out *exactly* equal on both.
+  `run_germline_spikein.py` refuses this earlier and more specifically, but this reading costs nothing and
+  would otherwise have passed it as merely unmeasurable.
+- **indeterminate** -- reported loudly, not fatal. Failing here would block a genotype for being less
+  divergent, which is not a defect; the honest outcome is a visible "not checked".
+
+Verified before being trusted, which given section 33 is the only way a guard earns anything:
+
+| input | verdict |
+|---|---|
+| ds-01, corrected declaration | PASS, all six measurements agree |
+| ds-01, the old declaration | **REFUSED**, all six flagged with their containments |
+| ds-02 against `.v2` | PASS (HLA-A reported as homozygous, B and C ok) |
+| ds-02 against the VCF currently in use | **REFUSED**, no allelic difference at B or C |
+
+### 34.5 What this costs to fix
+
+Nothing is rebuilt. The reads are correct and unchanged; only the label was wrong. `hla_haplotypes` for
+ds-01 is flipped, and the catalog is re-scored: `HlaLoss` now reports `A*01:01/B*35:08/C*04:01` lost and
+`A*26:01/B*38:01/C*12:03` retained, which is what LOHHLA measured.
+
+Event *selection* is unaffected, which is what keeps this cheap. Per section 6.4 the evidence grid is
+filled on the tier over all six alleles, and that set is the same whichever haplotype each allele sits on.
+Only the retained-allele tier and the "best allele was lost" flag change, so the designer re-run is a
+re-scoring over cached netMHCpan results rather than fresh prediction, followed by `74_truth_bundle`.

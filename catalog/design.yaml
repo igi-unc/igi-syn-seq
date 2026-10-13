@@ -61,10 +61,16 @@ datasets:
     baseline: HG002
     sex: male
     hla: [HLA-A*01:01, HLA-A*26:01, HLA-B*35:08, HLA-B*38:01, HLA-C*04:01, HLA-C*12:03]
-    # B*35:08-C*04:01 and B*38:01-C*12:03 are both established B-C linkages; which haplotype is maternal
-    # is still unverified (Q3), and the arrangement is what decides which alleles the 17q-style HLA loss
-    # takes, so it is declared here rather than inferred.
-    hla_haplotypes: {0: [HLA-A*01:01, HLA-B*35:08, HLA-C*04:01], 1: [HLA-A*26:01, HLA-B*38:01, HLA-C*12:03]}
+    # B*35:08-C*04:01 and B*38:01-C*12:03 are both established B-C linkages, and the arrangement is what
+    # decides which alleles the 17q-style HLA loss takes. This was declared from LD and marked unverified
+    # (Q3) until 2026-10-13, and it was BACKWARDS. Measured against the phase in the baseline VCF by
+    # k-mer containment of GRCh38's own HLA allele contigs (hla_phase_check.py), hap1 carries
+    # A*01:01/B*35:08/C*04:01 -- containment 0.9200 / 1.0000 / 0.9232 on hap1 against 0.3711 / 0.5841 /
+    # 0.6303 on hap0, all three loci agreeing. LOHHLA on the WES pair independently called exactly those
+    # three lost, at ~0.3x of normal coverage, which is what purity 0.70 predicts for cn [1, 0].
+    # The reads were always right; only this line was wrong, so nothing is rebuilt and the catalog is
+    # re-scored. verify_or_die now measures this rather than trusting it.
+    hla_haplotypes: {0: [HLA-A*26:01, HLA-B*38:01, HLA-C*12:03], 1: [HLA-A*01:01, HLA-B*35:08, HLA-C*04:01]}
     purity: 0.70
     wgd: false
     clones:                  # ccf = fraction of tumor cells carrying the clone's events; parent null = truncal
