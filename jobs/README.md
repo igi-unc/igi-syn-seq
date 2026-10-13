@@ -148,7 +148,7 @@ Every single-cell assay (`31`, `32`, and the TCR and ONT single-cell arms when w
 different roster and a barcode stops meaning one cell across assays -- the one property the single-cell
 design exists to provide.
 
-## Two things that will bite
+## Three things that will bite
 
 **Read-name uniqueness is proved, not assumed.** `11_merge.sbatch` sorts the merged read names and fails
 the job if the count of distinct names differs from the count of reads. An earlier build had 667,090 of
@@ -160,3 +160,21 @@ check to save wall time.
 pipefail turns that into a failed pipeline. This killed two jobs. Where subsampling is unavoidable the
 scripts turn pipefail off around it and verify the record count afterwards; elsewhere they use
 `tail -n +2`, which reads to EOF.
+
+**A held task is a silent stop, so watch for the hold and not just for failure.** On 2026-10-12 a
+two-second cluster-wide launch failure put 56 tasks across four jobs into
+`launch_failed_requeued_held`; nothing ran for the next 1 h 56 m and no failure was ever reported,
+because requeue-held is a `PENDING` state with no exit code and no end time. The pending reason is not in
+`sacct`, so a watcher built on job states cannot see it:
+
+```bash
+squeue -u "$USER" -h -o '%i|%j|%T|%r' | awk -F'|' '$4 ~ /[Hh]eld/'   # both spellings SLURM uses
+for i in <ids>; do scontrol release "$i"; done                        # once the cause is understood
+```
+
+Nothing needs cleaning up after a launch failure -- the batch script never started, so no partial output
+exists -- but check *why* before releasing: a blip wants a release, an unreachable `WorkDir` or
+unwritable log directory would be released straight back into failing. Note also that
+`--array=1-96%6` does not bound the damage: the scheduler tries the next task the moment one fails, so a
+single transient fault cascades through every remaining task in seconds. §31 of `docs/build-reference.md`
+has the measurements.

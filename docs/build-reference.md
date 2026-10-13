@@ -2783,3 +2783,64 @@ It now tests for the fields badread actually writes (`length=`, `error-free_leng
 The first version of the guard demanded all 2,664 channels appear in 12,000 reads. Coupon collector gives
 2,635 expected; it got 2,634 and failed correct code. Equality on a sampled quantity is not an invariant,
 and the fix is a ceiling plus a floor rather than a tighter sample.
+
+## 31. A hold is a silent stop, and the watcher was not watching for one
+
+At 2026-10-12T19:18:22, 56 tasks of the rebuild -- 42 of `ont_wgs`, 7 of `pacbio`, 5 of `wgs`, both of
+`accept_wes` -- entered `launch_failed_requeued_held` inside a two-second window, across five nodes and
+four jobs. Nothing ran for the next 1 h 56 m, and nothing said so.
+
+The cause is not local to any job. The window is the tell:
+
+| requeued at | node | tasks |
+|---|---|---|
+| 19:18:21-23 | fc830-9-0 | 26 |
+| 19:18:22 | r650-9-0 | 21 |
+| 19:18:22 | r660-9-3 | 7 |
+| 19:18:22 | fc830-9-11, fc830-9-15 | 1 each |
+
+Five nodes failing to launch simultaneously is a cluster-wide blip, not a node fault and not a script
+fault: the batch script never began, so nothing partial was written and nothing needed cleaning up. The
+likely trigger is the `WorkDir` NFS mount (`/home3`) becoming briefly unreachable, since a slurmd that
+cannot `chdir` into the submit directory fails the launch before the script exists. Whatever the trigger,
+the throttle turns one failure into a whole array: with `--array=1-96%6`, the scheduler tries the next
+task the moment one fails, and the launch failure cascades through every remaining task in two seconds.
+That is why 42 tasks were held when only 6 could ever have been running.
+
+### 31.1 Requeue-held is a PENDING state
+
+`scratchpad/watch_failures.sh` matched `FAILED|TIMEOUT|OUT_OF_MEMORY|CANCELLED|NODE_FAIL|BOOT_FAIL|
+DEADLINE|PREEMPTED` and treated anything `RUNNING|PENDING|REQUEUED|SUSPENDED|RESIZING` as healthy. A held
+task is `PENDING`, so all 56 counted as normal queueing. The watcher was not broken; it was answering
+*did any job fail?* when the question that mattered was *is the chain still moving?* -- the same
+adjacent-question failure as the four checks in §24, in the one piece of tooling whose whole job was to
+notice.
+
+The distinction matters more than it looks. A failure prints, exits, and gets noticed. A hold has no
+terminal state, no exit code, no end time, and never clears itself. It is indefinite by construction, so
+it is the one stop that an exit-code watcher cannot see and the one that costs the most wall clock.
+
+The hold is also invisible to `sacct`, which carries `State` but not the pending `Reason`. Detecting it
+needs `squeue -o '%r'`:
+
+```bash
+held=$(squeue -u "$USER" -h -o '%i|%j|%T|%r' | awk -F'|' '$4 ~ /[Hh]eld/ {print}')
+```
+
+The case-insensitive class covers both spellings SLURM uses: `launch failed requeued held` from the
+scheduler and `JobHeldUser` / `JobHeldAdmin` from a person.
+
+### 31.2 Report, do not release
+
+The watcher reports held jobs and exits rather than releasing them. A transient blip wants a release --
+`scontrol release` on all 56 brought them straight back to RUNNING and PENDING with no other change --
+but a hold caused by something real, an unreachable `WorkDir` or an unwritable log directory, would be
+released into failing again, forever, with the watcher dutifully releasing it each time. An automatic
+retry loop around an unknown cause is how a two-hour stall becomes a two-day one.
+
+### 31.3 What this does not excuse
+
+The release had to be noticed by a human asking. Two hours is recoverable; the same hold landing on the
+44 h Kinnex arm overnight would not have been. The check is cheap, the failure mode is silent, and the
+only reason it was absent is that it was never imagined -- which is the argument for matching on
+*everything that is not progress* rather than on a list of ways to fail.
