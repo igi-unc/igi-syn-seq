@@ -1796,3 +1796,72 @@ def test_ont_headers_match_the_measured_layout_and_leak_no_truth(tmp_path):
 
 if __name__ == "__main__":
     sys.exit(_main())
+
+
+def test_a_resume_refuses_an_intermediate_from_other_code_or_a_truncated_one(tmp_path):
+    """A resume must not carry a pre-fix intermediate across the fix, nor accept a truncated one.
+
+    Both halves happened, in one rebuild, on 2026-10-12. The ONT header was replaced with a measured one
+    and the job was cancelled and resubmitted to pick the fix up. Two of its 96 tasks had been cancelled
+    mid-flight leaving a complete-looking `all.fq` written by the PRE-FIX code, and the resume reused it:
+    IGI-SYN-SEQ-01 chr1 and chr8 tumour shipped the invented header the rebuild existed to remove, with a
+    fresh mtime making them look rebuilt. Cancelling a job does not unwrite what its tasks already wrote.
+
+    The old gate was `_framed(cat) and size > 1_000_000`, and then it LOGGED "all.fq is complete".
+    `_framed` tests that the file ends on a record boundary -- which is exactly where a killed combine
+    leaves it, because it writes whole records -- so the gate could not see truncation at all and the log
+    line asserted something nothing had checked.
+
+    The third case is the one that surfaced the other two: combine_fastq writes the FASTQ and the read map
+    together, so skipping the combine skipped the map, and the defect only became visible two stages later
+    as a chr1to6 merge failing on a missing shard.
+    """
+    import json
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    import run_ont
+
+    cat = tmp_path / "all.fq"
+    mp = tmp_path / "map.tsv.gz"
+    with open(cat, "w") as fh:
+        for i in range(10):
+            fh.write(f"@r{i}\nACGT\n+\nIIII\n")
+    mp.write_text("x")
+    quiet = lambda _m: None
+    good = {"reads": 10, "code": run_ont._combine_stamp(), "map": str(mp)}
+
+    # the legitimate resume still works, or this guard would just be forbidding resumption
+    (tmp_path / "all.fq.done").write_text(json.dumps(good))
+    assert run_ont._resume_block(str(cat), str(mp), quiet) is None
+
+    # no completion record: every all.fq a killed task leaves behind looks like this
+    (tmp_path / "all.fq.done").unlink()
+    assert run_ont._resume_block(str(cat), str(mp), quiet) == "no completion record beside it"
+
+    # written by other code -- the case that shipped two wrong deliverables
+    (tmp_path / "all.fq.done").write_text(json.dumps(dict(good, code="0000badc0de00000")))
+    why = run_ont._resume_block(str(cat), str(mp), quiet)
+    assert why and "written by code" in why, why
+
+    # truncated at a record boundary, which _framed cannot see and the size floor passes
+    (tmp_path / "all.fq.done").write_text(json.dumps(dict(good, reads=11)))
+    why = run_ont._resume_block(str(cat), str(mp), quiet)
+    assert why and "truncated" in why, why
+
+    # the read map gone, so a resume would deliver a library with no truth beside it
+    (tmp_path / "all.fq.done").write_text(json.dumps(dict(good, map=str(tmp_path / "gone.tsv.gz"))))
+    why = run_ont._resume_block(str(cat), str(mp), quiet)
+    assert why and "read map is gone" in why, why
+
+    # the stamp has to actually depend on the code it claims to cover, or every check above is vacuous
+    before = run_ont._combine_stamp()
+    src = os.path.abspath(run_ont._longread_mod.__file__)
+    original = open(src, "rb").read()
+    try:
+        with open(src, "ab") as fh:
+            fh.write(b"\n# touched by a test\n")
+        assert run_ont._combine_stamp() != before, "the stamp ignores longread.py, so it proves nothing"
+    finally:
+        with open(src, "wb") as fh:
+            fh.write(original)
+    assert run_ont._combine_stamp() == before

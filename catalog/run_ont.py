@@ -26,6 +26,7 @@ calibrate an R10.4.1 model, which is why the genomic parameters come from ONT's 
 """
 import argparse
 import gzip
+import hashlib
 import json
 import os
 import shutil
@@ -41,11 +42,67 @@ from igi_catalog.genome_build import read_events
 from igi_catalog.derived import build_derived
 from igi_catalog.kinnex import SizeSelection, ont_cdna
 from igi_catalog.readnames import stream_seed
+from igi_catalog import longread as _longread_mod
 from igi_catalog.longread import (ONT_BASECALL_GPU, _framed, chunk_fasta, combine_fastq,
                                   run_chunks, split_fasta_bp)
 from igi_catalog.molecules import MoleculePool
 from igi_catalog.rna_assembly import assemble
 from igi_catalog.simulate import clone_weights
+
+
+def _combine_stamp():
+    """A fingerprint of the code that produces all.fq, so a resume cannot cross a code change.
+
+    WHY THIS EXISTS. On 2026-10-12 the ONT header was replaced with a measured one (section 30). The job
+    was cancelled and resubmitted to pick the fix up. Two of its 96 tasks had been cancelled mid-flight
+    with a complete all.fq already written by the PRE-FIX code, and the resume below reused it -- so
+    IGI-SYN-SEQ-01 chr1 and chr8 tumour shipped the invented header the rebuild existed to remove, with a
+    fresh mtime on them. Cancelling a job does not unwrite what its tasks already wrote, and a resume that
+    asks only "is this file complete?" will happily carry the old behaviour across the fix.
+
+    The hash covers this file and longread.py, which between them decide every byte of all.fq: the
+    simulator invocation here and the header rewrite plus read map in combine_fastq there.
+    """
+    h = hashlib.sha256()
+    for mod in (os.path.abspath(__file__), os.path.abspath(_longread_mod.__file__)):
+        with open(mod, "rb") as fh:
+            h.update(fh.read())
+    return h.hexdigest()[:16]
+
+
+def _resume_block(cat, map_path, log):
+    """Why all.fq beside it cannot be resumed from, or None when it can.
+
+    Three things have to hold, and `_framed` plus a size floor is none of them:
+
+      * a completion record exists. `_framed` tests that the file ENDS ON A RECORD BOUNDARY, which is
+        exactly where a killed combine leaves it, since it writes whole records. The old check logged
+        "all.fq is complete" on the strength of a test that cannot see truncation at all.
+      * the record's code stamp matches this code.
+      * the read map is still where the record says, because combine_fastq writes the FASTQ and the map
+        together. Skipping the combine skipped the map too, so a resumed task delivered a library with no
+        truth beside it -- which is what finally surfaced this, as a chr1to6 merge failing on a missing
+        shard two stages downstream.
+    """
+    done = cat + ".done"
+    if not os.path.exists(done):
+        return "no completion record beside it"
+    try:
+        rec = json.load(open(done))
+    except (ValueError, OSError) as e:
+        return f"its completion record is unreadable ({e})"
+    stamp = _combine_stamp()
+    if rec.get("code") != stamp:
+        return f"it was written by code {rec.get('code')}, and this is {stamp}"
+    if not os.path.exists(rec.get("map") or ""):
+        return f"its read map is gone ({rec.get('map')})"
+    with open(cat, "rb") as fh:
+        n = sum(blk.count(b"\n") for blk in iter(lambda: fh.read(1 << 24), b"")) // 4
+    if n != rec.get("reads"):
+        return f"it holds {n:,} reads against the {rec.get('reads'):,} recorded; it is truncated"
+    log(f"  resuming: all.fq is complete and current ({os.path.getsize(cat) / 1e9:.1f} GB, "
+        f"{n:,} reads, code {stamp}); skipping simulation and combine")
+    return None
 
 
 def main():
@@ -215,14 +272,21 @@ def main():
 
     # Resume. The combined FASTQ is the expensive artefact: the ds-02 bulk RNA run spent 58,506 s in
     # badread and another hour combining, then hit the 24 h wall limit during the final gzip and the whole
-    # thing would otherwise be redone. If a complete, frame-aligned all.fq is already sitting in the work
-    # directory, the simulation and the combine are both already paid for.
+    # thing would otherwise be redone. But resuming is only safe when the file on disk was produced by
+    # THIS code and is provably whole -- see _resume_block for the two deliverables that proved otherwise.
+    n_reads = None
     if os.path.exists(cat) and os.path.getsize(cat) > 1_000_000 and _framed(cat):
-        with open(cat, "rb") as fh:
-            n_reads = sum(blk.count(b"\n") for blk in iter(lambda: fh.read(1 << 24), b"")) // 4
-        log(f"  resuming: {os.path.basename(cat)} is complete ({os.path.getsize(cat) / 1e9:.1f} GB, "
-            f"{n_reads:,} reads); skipping simulation and combine")
-    else:
+        why = _resume_block(cat, map_path, log)
+        if why is None:
+            with open(cat, "rb") as fh:
+                n_reads = sum(blk.count(b"\n") for blk in iter(lambda: fh.read(1 << 24), b"")) // 4
+        else:
+            # Loud, because this is a silent-wrong-data path whenever it is quiet: the file looks finished.
+            log(f"  NOT resuming from all.fq: {why}; re-simulating from scratch")
+            os.remove(cat)
+            if os.path.exists(cat + ".done"):
+                os.remove(cat + ".done")
+    if n_reads is None:
         parts = run_chunks(jobs, n_par, timeout_s, log=log)
         # Real ONT run metadata, in the layout MEASURED from 511,401 real PromethION R10.4.1 reads --
         # see ONT_HEADER_FIELDS in longread.py for the measurement and for what the first version of
@@ -249,6 +313,11 @@ def main():
             "start_epoch": 1760000000 + (stream_seed(a.seed, a.dataset, "ont_t0", a.assay) % 86400),
         }
         n_reads = combine_fastq(parts, cat, log=log, map_path=map_path, run_meta=run_meta)
+        # The completion record, written only after combine_fastq returns -- so its presence is the one
+        # trustworthy statement that all.fq is whole. It carries the code stamp and the map path so a
+        # later resume can check that neither the code nor the map moved underneath it.
+        with open(cat + ".done", "w") as fh:
+            json.dump({"reads": n_reads, "code": _combine_stamp(), "map": map_path}, fh)
 
     out_fq = os.path.join(a.out, f"{a.dataset}_{label}_ont_{a.assay}.fastq.gz")
     # pigz, not Python's gzip. Compressing 85 GB single-threaded is what ran out of wall clock.
@@ -261,6 +330,8 @@ def main():
                 dst.write(b)
     log(f"  compressed in {time.time() - t_gz:.0f}s")
     os.remove(cat)
+    if os.path.exists(cat + ".done"):
+        os.remove(cat + ".done")   # a record must never outlive the file it describes
     log(f"  {n_reads:,} reads -> {os.path.basename(out_fq)} "
         f"({os.path.getsize(out_fq)/1e9:.1f} GB)")
 
