@@ -2844,3 +2844,84 @@ The release had to be noticed by a human asking. Two hours is recoverable; the s
 44 h Kinnex arm overnight would not have been. The check is cheap, the failure mode is silent, and the
 only reason it was absent is that it was never imagined -- which is the argument for matching on
 *everything that is not progress* rather than on a list of ways to fail.
+
+## 32. A resume carried the pre-fix code across the fix
+
+Two of the 96 ONT WGS tasks delivered the invented header of §30 -- the one the rebuild existed to
+remove -- wearing an mtime from the middle of the rebuild. `IGI-SYN-SEQ-01` chr1 and chr8 tumour:
+
+```
+@8228d999-...  runid=25e3c5d225e3c5d2 flow_cell_id=PAW74653 ... read=1 ch=1        <- shipped
+@c4036ca4-...  runid=6282e8ca-0be0-e3dd-6282-0be0e3dd6282 ch=609
+               start_time=2025-10-10T00:11:33.369691-04:00 ... basecall_gpu=...     <- chr2, correct
+```
+
+The timeline is the whole explanation:
+
+| time | event |
+|---|---|
+| 13:41 | `11589122` (ont_wgs) starts, pre-fix code |
+| 14:19 | cancelled, to pick the fix up. Tasks 1, 7, 8, 9, 10 die mid-flight |
+| 14:25 | `ad9d4aa`, the measured header, commits |
+| 14:25 | `11589266` submitted; task 1 starts the same minute |
+| 14:31 | task 1 finishes in **6 minutes** against a 20-120 min norm, `resuming: all.fq is complete` |
+
+**Cancelling a job does not unwrite what its tasks already wrote.** Tasks 1 and 8 had got far enough to
+finish `combine_fastq` and leave a whole `all.fq` in the work directory, and the work directory is keyed
+to `$IGI_RELEASE` -- correctly, after §28 -- but not to the code. The resubmitted task found its
+predecessor's output, skipped simulation *and combine*, compressed it, and reported success. The six
+minutes were the compression.
+
+Only two tasks of 96 were hit, and the narrowness is instructive rather than reassuring: `all.fq` is
+deleted on success, so the window is exactly *cancelled after combine, before the delete*. Tasks 2-6 of
+the same job had completed, cleaned up, and rebuilt correctly. A defect that needs a cancellation inside
+a particular minute to appear is one that testing will not find and that a rebuild will reproduce only by
+luck.
+
+### 32.1 Three defects, one symptom
+
+**The resume could not see which code wrote the file.** This is the one that corrupted data. The gate is
+now a completion record written only after `combine_fastq` returns, carrying a SHA-256 over `run_ont.py`
+and `longread.py` -- between them every byte of `all.fq` -- and a resume across a stamp mismatch is
+refused and logged with both stamps.
+
+**The resume could not see truncation, while claiming it could.** The old gate was
+`_framed(cat) and os.path.getsize(cat) > 1_000_000`, and it then logged `all.fq is complete`. `_framed`
+tests that a file **ends on a record boundary**, which is exactly where a killed combine leaves it,
+because it writes whole records. The check could not detect truncation at any size, and the log line
+asserted something nothing had tested. The record now carries the read count and the resume counts the
+file.
+
+**The resume skipped the read map, so a resumed task shipped a library with no truth.** `combine_fastq`
+writes the FASTQ and `*_read_map.tsv.gz` in one pass; skipping it skipped both. This was true of every
+resume ever taken, independent of the code-version problem, and it is what finally surfaced the other
+two -- not as a header complaint but as `91_merge_chr1to6` failing two stages downstream with
+`MISSING shard: ..._chr1_tumor_ont_wgs_read_map.tsv.gz`.
+
+### 32.2 What caught it, and what would have
+
+The read map's absence caught it, by making a downstream stage fail. That is the cheap end.
+
+`qa_release.check_ont_format` would also have caught it: it walks every ONT deliverable, not a sample of
+them, and compares the field order against the measured `ONT_HEADER_FIELDS`. But QA runs at the end of
+the build, after the merges, so it would have condemned an 86 GB merged library and a 38 GB chr1to6
+subset that had already been built from the bad shards -- both of which had to be deleted anyway. The
+earlier signal was worth more than the better one.
+
+What nothing would have caught is the version where the cancelled task had also written its read map
+before dying. The headers would have been wrong, the map present and self-consistent, every downstream
+stage happy, and only the end-of-build format check standing between that and a staged release. The
+stamp is the only check in this section that does not depend on a second artefact happening to be
+missing.
+
+### 32.3 The general rule
+
+A resume cache is only valid for the code that produced it. Any cached intermediate -- `all.fq` here, but
+equally a merged library, an index, a conda environment -- needs an identity for the code that wrote it,
+or a fix applied mid-build silently does not apply to anything already cached. "Is this file finished?"
+and "is this file finished *and still what this code would produce*?" are different questions, and only
+the second one is safe to resume from.
+
+A related habit, cheaply learned here: **an unexpectedly fast task is evidence.** Six minutes against a
+20-120 minute norm was in the log the whole time, in a line that also said `skipping simulation and
+combine`. The arithmetic of a build is a check nobody has to write.
