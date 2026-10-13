@@ -2922,6 +2922,13 @@ or a fix applied mid-build silently does not apply to anything already cached. "
 and "is this file finished *and still what this code would produce*?" are different questions, and only
 the second one is safe to resume from.
 
+The stamp hashes whole files, so a comment or docstring change invalidates a resume that would in fact
+have been safe -- and one did, within the hour, when `combine_fastq`'s docstring was corrected. That is
+the right direction to be wrong in: the cost is re-simulating work, and the alternative, parsing out the
+semantically significant parts, is a second thing that can be wrong about what affects the output. A
+resume refused when it needn't have been is a slow build; a resume taken when it shouldn't have been is
+two deliverables that look rebuilt and are not.
+
 A related habit, cheaply learned here: **an unexpectedly fast task is evidence.** Six minutes against a
 20-120 minute norm was in the log the whole time, in a line that also said `skipping simulation and
 combine`. The arithmetic of a build is a check nobody has to write.
