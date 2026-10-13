@@ -2726,6 +2726,36 @@ Bulk RNA keeps fold coverage, deliberately. It is a shotgun of full-length cDNA,
 with length times abundance, and a 0.01 TPM transcript drawing none is correct sampling rather than a
 bug. Its bound is 15 % for that reason; a single global tolerance would either fail it or stop seeing GEX.
 
+### 29.6 The fix, verified on a length ladder rather than on the library
+
+Measured by running the real ART container on seven references of known length at `-l 90`, which is the
+form of check §24 keeps arguing for -- something whose answer is known in advance:
+
+| reference length | 150 | 200 | 300 | 400 | 450 | 500 | 1000 |
+|---|---|---|---|---|---|---|---|
+| `-c 1` (now) | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| `-f 0.204` (before) | **0** | **0** | **0** | **0** | 1 | 1 | 2 |
+
+`0.204` is the old setting, `R2_LEN / 450 * 1.02`. ART draws `floor(f * (L - l + 1) / l)`, which crosses
+1 at L = 441 -- so the cutoff sat a few nucleotides below the 450 nt window the constant was derived
+from, and that is why the delivered table showed 0 % coverage in every bin under 450 and only 62.6 % at
+450-500: the formula is marginal there, not comfortable. No reference, however short, can now be floored
+to zero.
+
+**The measurement that did not work is worth recording too.** The first attempt counted distinct records
+with at least one read in the rebuilt library's molecule map: 820,924 for ds-01 against 774,985 before,
+and 1,226,495 records designed. It looks like a coverage figure and is not one. The molecule map holds
+one row per *delivered read*, so it can only enumerate records that got reads -- the denominator it was
+compared against, the designed record count, is wrong because a low-expression record legitimately
+receives no molecule and so can never receive a read. **Reads that do not exist appear in no ratio**, and
+this was that same mistake committed while verifying the fix for it. The length-binned form needs the
+manifest `74_truth_bundle` writes, and runs once that stage has.
+
+One number the ladder does settle: with `-c 1` the read count equals the FASTA record count exactly, so
+the rebuilt GEX library's 151,174,489 pairs against a designed 160,000,000 is not ART dropping anything.
+It is the pool: 27,139,521 molecules at a designed 5.9 reads each is 160.1 M, and 151.17 M is 5.57 each.
+That is inside the 10 % gate and is a rounding question in pool construction, not a length-class hole.
+
 ## 30. The ONT header was invented while a real one sat on disk
 
 §27 stripped badread's description -- which carries the read's true coordinates, clone and identity --
