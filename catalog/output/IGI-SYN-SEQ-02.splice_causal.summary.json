@@ -3,14 +3,14 @@
   "n": 15,
   "skipped": [],
   "reference_dinucleotides": {
-    "AC": 7,
-    "GT": 8
+    "AC": 8,
+    "GT": 7
   },
   "non_canonical": 0,
   "by_clone": {
-    "A": 1,
-    "T": 11,
     "A1": 2,
+    "T": 10,
+    "A": 2,
     "B": 1
   },
   "by_mechanism": {
