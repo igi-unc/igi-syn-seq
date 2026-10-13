@@ -148,7 +148,7 @@ Every single-cell assay (`31`, `32`, and the TCR and ONT single-cell arms when w
 different roster and a barcode stops meaning one cell across assays -- the one property the single-cell
 design exists to provide.
 
-## Three things that will bite
+## Four things that will bite
 
 **Read-name uniqueness is proved, not assumed.** `11_merge.sbatch` sorts the merged read names and fails
 the job if the count of distinct names differs from the count of reads. An earlier build had 667,090 of
@@ -178,3 +178,20 @@ unwritable log directory would be released straight back into failing. Note also
 `--array=1-96%6` does not bound the damage: the scheduler tries the next task the moment one fails, so a
 single transient fault cascades through every remaining task in seconds. §31 of `docs/build-reference.md`
 has the measurements.
+
+**`afterok` on an array is all-or-nothing across every task, so cancelling one task kills every dependent
+job.** After one task of `50_merge_longread` was cancelled to rebuild it, three stages still sat on
+`afterok:<arrayjob>_*` -- `72_pacbio_pbi`, `23_align_wgs_normal`, `22_accept_wgs`. All three would have
+gone to `DependencyNeverSatisfied` the moment the last running task finished, hours later, with the
+cancellation looking like the cause of three unrelated failures. Name the tasks a stage actually needs:
+
+```bash
+# merge_lr layout: asy=ASSAYS[i/4], j=i%4, l=LB[j%2], d=DATASETS[j/2]
+#   tasks 1-4 wgs   5-8 pacbio   9-12 ont_wgs      (odd=tumour, even=normal; 1,2=ds-01, 3,4=ds-02)
+--dependency=afterok:<merge_lr>_1:<merge_lr>_3     # the tumour WGS merges only
+```
+
+Two of the three needed nothing at all -- their inputs had completed hours earlier -- so they were
+resubmitted bare and `72_pacbio_pbi` finished in minutes. Work out what a stage actually consumes before
+giving it a dependency on a whole array; `scontrol update Dependency=` is refused once the dependency
+names a cancelled or failed job, so the only remedy afterwards is cancel and resubmit.
