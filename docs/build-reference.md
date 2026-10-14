@@ -3159,3 +3159,86 @@ Event *selection* is unaffected, which is what keeps this cheap. Per section 6.4
 filled on the tier over all six alleles, and that set is the same whichever haplotype each allele sits on.
 Only the retained-allele tier and the "best allele was lost" flag change, so the designer re-run is a
 re-scoring over cached netMHCpan results rather than fresh prediction, followed by `74_truth_bundle`.
+
+Measured after the fact, on the re-run (`11591433_1`): every non-HLA column of all four ds-01 tables is
+byte-identical to the previous catalog, so "event selection is unaffected" is now a measurement rather
+than an expectation. `best_allele_is_lost` falls 449 -> 273 and `tier_changed_by_hla_loss` 217 -> 125;
+the old figures were inflated because the truth was scoring against the wrong retained pair.
+
+## 35. `IGI_RELEASE` pointed at a candidate root, and the build still overwrote the live release
+
+### 35.1 What happened
+
+The ds-02 rebuild was pointed at `$IGI_WORK/release-20261012` rather than `$IGI_WORK/release`, so that a
+rebuild could be reviewed before anything delivered was touched. Every one of the twelve submissions set
+`IGI_RELEASE` explicitly and never relied on `env.sh`'s default. All twelve completed cleanly — 48 of 48
+tasks on each of the four per-chromosome arms.
+
+They also overwrote **361 files inside the live release**: 143 `wgs`, 141 `wes`, 72 `pacbio` and 5 `rna`,
+every one of them IGI-SYN-SEQ-02, every one of them the tumour library except the five whole-library RNA
+files. **Two were being served to a consumer** through `~/raft/inputs` — `IGI-SYN-SEQ-02_full_rna_R1`
+and `_R2` — against an explicit instruction that nothing there be replaced without permission.
+
+### 35.2 Why a candidate root is not an independent tree
+
+`73_populate_release_root.sh` builds a candidate root by **symlinking the arms that are not being
+rebuilt** back into `$IGI_WORK/release`, so the candidate reads as a complete release and a consumer
+preflight run against it sees every arm. The candidate held 1,038 such links, concentrated in the read
+arms: 406 in `wes`, 406 in `wgs`, 216 in `pacbio`, 10 in `rna`.
+
+A symlink does not record which direction you reasoned about it from. A builder that opens
+`$IGI_RELEASE/wes/IGI-SYN-SEQ-02/..._tumor_R1.fastq.gz` for writing follows the link and lands in the
+live release. Where the tumour went through a link and the normal did not, the asymmetry is just which
+files a previous partial rebuild had already materialised — which is why the damage is tumour-only and
+looks arbitrary.
+
+`--except` exists for exactly this: it leaves the arms being rebuilt unlinked. It depends on the operator
+naming the same arms they are about to rebuild, and nothing compared the two sets.
+
+### 35.3 The check that was run, and why it did not catch it
+
+Before submitting, `~/raft/inputs` was checked for links pointing **into** the candidate root: zero of
+26,614. That was read as "the candidate is unstaged, so it is safe to rebuild in place."
+
+The question was backwards. `inputs -> candidate` was empty; the hazard was `candidate -> live`, and
+`inputs -> live` is how the release is served. It is the easy direction to ask because it is a question
+about the thing being protected rather than about the thing being run, and it returns a reassuring
+number. Section 29's rule was "parameterise the output root and prove no link is in the write path" —
+the first half was done and the second half was proved of a link that was not in the write path.
+
+### 35.4 The guard
+
+`assert_write_path` in `jobs/lib.sh` asks the only question that catches this, of the path actually about
+to be written:
+
+```bash
+root=$(readlink -f "${IGI_RELEASE:?}")
+find "$d" -type l   # any link whose readlink -f falls outside $root -> refuse, naming it
+```
+
+It needs no agreement between operator and script, because it is evaluated against `$O/$d` itself rather
+than against a list of arms someone remembered to pass. Sixteen stages call it — all eleven read
+builders, the three merges and the two alignments — at one `find` per task.
+
+It was verified against the directory that caused the incident rather than a synthetic one:
+
+| path | result |
+|---|---|
+| `release-20261012/wes/IGI-SYN-SEQ-02` (the arm that bit) | refuses, exit 1, naming the links |
+| `release-20261012/ont_wgs/IGI-SYN-SEQ-02` (genuinely real) | passes |
+| `release/wes/IGI-SYN-SEQ-02` with the live root as `IGI_RELEASE` | passes — the same links resolve inside it |
+
+### 35.5 Blast radius, and what was not at risk
+
+Every arm the driver writes into — `merged`, `bams`, `wgs_bams`, `wgs_merged`, `pacbio_merged`,
+`ont_wgs_merged`, the four `*_chr1to6`, `subset`, `acceptance`, `wgs_acceptance` — holds **zero**
+symlinks, so the merges, alignments, subsets and acceptance cannot extend this. The links are confined to
+the read arms, which are finished. ds-01 was not rebuilt and none of its 677 links were written through.
+
+`11590936_2` (ds-02 WGS acceptance) was cancelled 16 h in. Its input was overwritten underneath it while
+it ran, so its verdict would have described a library that no longer existed: an invalid result, not a
+late one. Task 1 (ds-01) was left running, because that data did not move.
+
+The pre-rebuild bytes remain reproducible — the Sep 29 ds-02 germline VCF is intact in `~/raft/inputs`,
+the previous catalog is at `f8cc5a7`, and selection is seeded — so restoring the two staged files is a
+rebuild rather than a recovery. The owner chose to leave them and stage the new ds-02 as a whole.
