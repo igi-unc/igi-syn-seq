@@ -23,6 +23,8 @@ source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 M=$IGI_RELEASE/wgs_merged; A=$IGI_RELEASE/wgs_bams
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 mkdir -p "$A/$d"
+source "$(dirname "${IGI_ENV}")/lib.sh"
+assert_write_path "$A/$d"
 for e in amb ann bwt pac sa; do
   [ -f "$IGI_FASTA_NOALT.$e" ] || { echo "missing bwa index $IGI_FASTA_NOALT.$e"; exit 1; }
 done

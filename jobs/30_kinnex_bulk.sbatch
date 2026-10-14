@@ -22,6 +22,11 @@ O=$IGI_RELEASE/kinnex_bulk; W=$IGI_RELEASE/kinnex_bulk_work
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$O/$d"
+# A candidate release root is populated with symlinks into the live release for the arms that are
+# not being rebuilt, and a write follows a link whichever direction you reasoned about it from.
+# See assert_write_path in lib.sh for what this cost on 2026-10-14.
+source "$(dirname "${IGI_ENV}")/lib.sh"
+assert_write_path "$O/$d"
 cd "$IGI_REPO/catalog"
 python3 run_kinnex_bulk.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" --chroms "$CH" \
   --segments 15000000 --min-tpm 0.01 --jobs 48 --label full \

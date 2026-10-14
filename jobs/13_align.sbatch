@@ -13,6 +13,8 @@ M=$IGI_RELEASE/merged; A=$IGI_RELEASE/bams
 LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1)); d=${DATASETS[$((i/2))]}; l=${LB[$((i%2))]}
 mkdir -p "$A/$d"
+source "$(dirname "${IGI_ENV}")/lib.sh"
+assert_write_path "$A/$d"
 for e in amb ann bwt pac sa; do
   [ -f "$IGI_FASTA_NOALT.$e" ] || { echo "missing bwa index $IGI_FASTA_NOALT.$e"; exit 1; }
 done

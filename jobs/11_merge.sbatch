@@ -23,6 +23,7 @@ O=$IGI_RELEASE/wes; M=$IGI_RELEASE/merged
 LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1)); d=${DATASETS[$((i/2))]}; l=${LB[$((i%2))]}
 mkdir -p "$M/$d"
+assert_write_path "$M/$d"
 # INTERLEAVED, not concatenated. `cat` of the per-chromosome pieces made every delivered library
 # chromosome-block ordered -- ds-01 tumour WES began with chr10 and its first 3.4 M pairs were chr10 and
 # chr11 only. Reads within a chromosome are already shuffled so no aligner and no acceptance result

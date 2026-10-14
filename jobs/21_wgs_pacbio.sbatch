@@ -22,6 +22,11 @@ LB=(tumor normal)
 i=$((SLURM_ARRAY_TASK_ID-1))
 c=${CHROMS_ALL[$((i % 24))]}; j=$((i / 24)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j / 2))]}
 mkdir -p "$O/$d"
+# A candidate release root is populated with symlinks into the live release for the arms that are
+# not being rebuilt, and a write follows a link whichever direction you reasoned about it from.
+# See assert_write_path in lib.sh for what this cost on 2026-10-14.
+source "$(dirname "${IGI_ENV}")/lib.sh"
+assert_write_path "$O/$d"
 cd "$IGI_REPO/catalog"
 python3 run_pacbio_wgs.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" --chrom "$c" \
   --library "$l" --depth 30 --jobs 48 \

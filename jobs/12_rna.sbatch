@@ -18,6 +18,11 @@ O=$IGI_RELEASE/rna; W=$IGI_RELEASE/rna_work
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
 CH=$(IFS=,; echo "${CHROMS_ALL[*]}")
 mkdir -p "$O/$d"
+# A candidate release root is populated with symlinks into the live release for the arms that are
+# not being rebuilt, and a write follows a link whichever direction you reasoned about it from.
+# See assert_write_path in lib.sh for what this cost on 2026-10-14.
+source "$(dirname "${IGI_ENV}")/lib.sh"
+assert_write_path "$O/$d"
 cd "$IGI_REPO/catalog"
 python3 run_rna.py --design design.yaml --paths "$IGI_PATHS" --dataset "$d" --chroms "$CH" \
   --label full --pairs 80000000 --min-tpm 0.01 \

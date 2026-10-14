@@ -43,6 +43,7 @@ asy=${ASSAYS[$((i / 4))]}; j=$((i % 4)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j 
 O=$IGI_RELEASE/$asy
 M=$IGI_RELEASE/${asy}_chr1to6/$d
 mkdir -p "$M"
+assert_write_path "$M"
 echo "=== $asy $d $l chr1to6 ==="
 
 # Six shards, explicitly. A glob of chr[1-6] would also take chr1 through chr6 only, but writing the list

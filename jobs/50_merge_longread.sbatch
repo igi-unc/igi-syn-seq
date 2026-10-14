@@ -42,6 +42,7 @@ asy=${ASSAYS[$((i / 4))]}; j=$((i % 4)); l=${LB[$((j % 2))]}; d=${DATASETS[$((j 
 O=$IGI_RELEASE/$asy
 M=$IGI_RELEASE/${asy}_merged/$d
 mkdir -p "$M"
+assert_write_path "$M"
 echo "=== $asy $d $l ==="
 
 case "$asy" in
