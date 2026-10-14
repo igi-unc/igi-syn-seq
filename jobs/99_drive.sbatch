@@ -155,7 +155,16 @@ done
 # The exome merge is driven here too, rather than left on afterok behind the exome rebuild: if one of
 # the 96 exome tasks fails, an afterok merge never runs at all and nothing retries it.
 run_stage 11_merge.sbatch          ""      --mem=32G || exit 1
+# The two alignments belong IN the chain. They were not in it: 13_align and 23_align_wgs_normal had to
+# be remembered and submitted by hand between the merges and the QA block, and 93_align_qc,
+# 94_consumer_preflight and the three acceptance stages all read the BAMs they write. A driver that
+# skips them grades the previous release's alignments and says the stage passed -- which is how
+# IGI-SYN-SEQ-02's normal WGS shipped at 69 % of its designed depth (section 24) and how a 2026-10-05
+# alignment was scored against a 2026-10-06 library. Both stages compare mtimes and keep a BAM that is
+# newer than its library, so a dataset whose reads did not move costs seconds here.
+run_stage 13_align.sbatch          ""      --mem=64G || exit 1
 run_stage 50_merge_longread.sbatch ""      --mem=32G || exit 1
+run_stage 23_align_wgs_normal.sbatch ""    --mem=64G || exit 1
 run_stage 72_pacbio_pbi.sbatch     ""      --mem=16G || exit 1
 run_stage 90_subset_map.sbatch     ""      --mem=32G || exit 1
 run_stage 90_subset_chr1to6.sbatch ""      --mem=32G || exit 1
