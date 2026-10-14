@@ -42,8 +42,12 @@ both datasets, built 2026-10-09/10.
 | 14 | tumor ONT WGS | `run_ont.py --assay wgs` | **yes** | no acceptance stage |
 | 15 | normal ONT WGS | `run_ont.py --assay wgs` | **yes** | no acceptance stage |
 
-The "Accepted" column is the honest picture of coverage, and it is thin. Eleven of fifteen sample types
-have no acceptance stage at all; two more are built but never opened. That is the gap §24 came out of --
+The "Accepted" column is the honest picture of coverage, and it is thin. **Three** of fifteen sample
+types have passed a release-scale acceptance stage (1, 3, 4); two more are built but never opened
+(2, 5); the remaining **ten** have no acceptance stage, and four of those (8-11) have only a weaker
+consumer-side check. The counts here previously read "eleven" and "two", which leaves two accepted
+rather than the three the table shows -- found on 2026-10-14 while building the dataset infographic
+from this table, which is the kind of error a second reader of the same numbers catches. That is the gap §24 came out of --
 a defect in four ds-02 normal libraries survived because nothing in the suite ever looked at a normal
 library.
 
