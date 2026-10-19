@@ -69,3 +69,22 @@ assert_write_path() {
     exit 1
   fi
 }
+
+# A stage that ran correctly and found the release wanting has not malfunctioned, and re-running it
+# cannot change its answer. The driver could not tell the two apart: every non-zero exit was a candidate
+# for retry, so on 2026-10-16 it re-ran 22_accept_wgs three times over two hours to be told the same
+# thing three times -- ds-02 chr5, one failed check of fifty. Attempts 2 and 3 took 40 minutes each
+# because the BAM was already there; had the mtime guard not held, each retry would have re-aligned a
+# 100x tumour library to re-derive a verdict that was already final.
+#
+# So a verdict gets its own exit code. Anything else non-zero still means "this stage broke", which is
+# the only kind of failure a retry can help.
+IGI_EXIT_VERDICT=20
+
+# Report a failed acceptance verdict and exit with the reserved code.
+verdict_fail() {
+  echo "$*"
+  echo "this stage did everything it owns and the release did not pass it; that is not a COMPLETED job"
+  echo "exiting $IGI_EXIT_VERDICT (verdict, not a malfunction) -- a retry would re-derive the same answer"
+  exit "$IGI_EXIT_VERDICT"
+}

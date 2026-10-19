@@ -2,8 +2,9 @@
 #SBATCH -J igi_drive
 #SBATCH -c 1 --mem=2G -t 7-00:00:00
 # A DRIVER MUST OUTLIVE ITS OWN CHAIN. This was 24:00:00, and 11579857 hit it at 2026-10-11
-# 09:45:36 -- exactly 24 h -- four minutes after submitting 22_accept_wgs, which has a 40 h
-# limit of its own and was 14 h into a ~21 h run. The driver died with the job it had just
+# 09:45:36 -- exactly 24 h -- four minutes after submitting 22_accept_wgs, which had a 40 h
+# limit of its own then and was 14 h into a ~21 h run (its alignment has since moved to
+# 22_align_wgs_tumor and it is down to 8 h, but the chain as a whole still exceeds 24 h). The driver died with the job it had just
 # launched still going, so 14_accept and 15_accept_rna were never submitted at all and the
 # chain simply stopped with nothing reporting that it had. Both stages had to be submitted by
 # hand. The driver costs 1 CPU and 2 G to sit and wait, the partition's MaxTime is infinite,
@@ -27,6 +28,7 @@
 set -uo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
 J=$(dirname "$IGI_ENV")
+source "$J/lib.sh"
 LOG=$IGI_WORK/logs/drive.$SLURM_JOB_ID.log
 RETRIES=${RETRIES:-2}
 
@@ -71,6 +73,14 @@ failed_tasks() {
 
 oom_tasks() {
   sacct -j "$1" -X -n --format=State -P 2>/dev/null | grep -c 'OUT_OF_MEMORY'
+}
+
+# How many FAILED tasks exited with the reserved verdict code, and how many failed in total. A verdict is
+# deterministic: the stage ran, measured the release and found it wanting, so a retry buys nothing but
+# wall clock. See IGI_EXIT_VERDICT in lib.sh for what this cost on 2026-10-16.
+verdict_tasks() {
+  sacct -j "$1" -X -n --format=State,ExitCode -P 2>/dev/null \
+    | awk -F'[|:]' -v c="$IGI_EXIT_VERDICT" '$1=="FAILED" && $2==c' | wc -l
 }
 
 # run_stage <script> <array-or-empty> [extra sbatch args...]
@@ -122,8 +132,13 @@ run_stage() {
       say "FATAL $script ($id): $nf task(s) failed but no task id parsed; not guessing"
       return 1
     fi
-    local n_oom; n_oom=$(oom_tasks "$id")
-    say "$script: failed tasks [$bad], $n_oom OOM"
+    local n_oom n_verdict; n_oom=$(oom_tasks "$id"); n_verdict=$(verdict_tasks "$id")
+    say "$script: failed tasks [$bad], $n_oom OOM, $n_verdict verdict"
+    if [ "${n_verdict:-0}" -gt 0 ] && [ "${n_verdict:-0}" -eq "${nf:-0}" ]; then
+      say "FATAL $script ($id): $n_verdict task(s) returned a FAILED VERDICT (exit $IGI_EXIT_VERDICT)."
+      say "  The stage worked; the release did not pass it. Not retrying -- the answer is already final."
+      return 1
+    fi
     if [ "$attempt" -gt "$RETRIES" ]; then
       say "FATAL $script: giving up after $attempt attempts; failed [$bad]"
       return 1
@@ -164,6 +179,10 @@ run_stage 11_merge.sbatch          ""      --mem=32G || exit 1
 # newer than its library, so a dataset whose reads did not move costs seconds here.
 run_stage 13_align.sbatch          ""      --mem=64G || exit 1
 run_stage 50_merge_longread.sbatch ""      --mem=32G || exit 1
+# Both WGS alignments are their own stages and run back to back here. The tumour's used to live inside
+# 22_accept_wgs, which made a verification stage the producer of its own input and pinned ~15 h of
+# alignment behind the merges and subsets instead of beside the normal's.
+run_stage 22_align_wgs_tumor.sbatch  ""    --mem=64G || exit 1
 run_stage 23_align_wgs_normal.sbatch ""    --mem=64G || exit 1
 run_stage 72_pacbio_pbi.sbatch     ""      --mem=16G || exit 1
 run_stage 90_subset_map.sbatch     ""      --mem=32G || exit 1

@@ -7,6 +7,7 @@
 # CNAs and LOH events plus neutral controls.
 set -euo pipefail
 source "${IGI_ENV:?export IGI_ENV=/path/to/jobs/env.sh before submitting}"
+source "$(dirname "$IGI_ENV")/lib.sh"
 M=$IGI_RELEASE/merged; A=$IGI_RELEASE/bams; O=$IGI_RELEASE/acceptance
 W_WES=$IGI_RELEASE/wes
 d=${DATASETS[$((SLURM_ARRAY_TASK_ID-1))]}
@@ -94,8 +95,6 @@ for r in "${expect[@]}"; do
 done
 [ "$bad" -eq 0 ] || { echo "$bad of ${#expect[@]} report(s) missing or ran no checks; that is a failure, not a pass"; exit 1; }
 if [ "$nfail" -gt 0 ]; then
-  echo "FAILED CHECKS: $nfail check(s) failed across ${#flagged[@]} report(s): ${flagged[*]}"
-  echo "this stage did everything it owns and the release did not pass it; that is not a COMPLETED job"
-  exit 1
+  verdict_fail "FAILED CHECKS: $nfail check(s) failed across ${#flagged[@]} report(s): ${flagged[*]}"
 fi
 echo "DONE $d: ${#expect[@]} reports, every one with checks, 0 failed $(date)"

@@ -4,7 +4,8 @@
 #SBATCH --array=1-2
 # Align the merged NORMAL short-read WGS library, which nothing in the pipeline did.
 #
-# 22_accept_wgs aligns the tumour itself and 13_align covers the exomes, so wgs_bams held one BAM per
+# 22_align_wgs_tumor aligns the tumour (it was inside 22_accept_wgs when this was written) and 13_align
+# covers the exomes, so wgs_bams held one BAM per
 # dataset and acceptance only ever opened that one. That is how every IGI-SYN-SEQ-02 normal library
 # shipped at 69 % of its designed depth (build-reference section 24): the arm the defect was in had never
 # been aligned, so no check could have measured it even in principle. check_normal_depth now needs this

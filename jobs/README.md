@@ -29,8 +29,9 @@ two places a path belongs.
 ./jobs/submit.sh 15_accept_rna.sbatch              # acceptance, RNA + class presence
 ./jobs/submit.sh 20_wgs_illumina.sbatch            # short-read WGS, 96 tasks
 ./jobs/submit.sh 21_wgs_pacbio.sbatch              # HiFi WGS, 96 tasks
+./jobs/submit.sh 22_align_wgs_tumor.sbatch         # bwa mem on the merged tumour WGS (needs 50_merge)
 ./jobs/submit.sh 23_align_wgs_normal.sbatch        # bwa mem on the merged normal WGS (needs 50_merge)
-./jobs/submit.sh 22_accept_wgs.sbatch              # acceptance, short-read WGS; needs 23's BAM
+./jobs/submit.sh 22_accept_wgs.sbatch              # acceptance, short-read WGS; needs 22's and 23's BAMs
 ./jobs/submit.sh 30_kinnex_bulk.sbatch             # Kinnex bulk RNA, pre- and post-skera BAMs
 ./jobs/submit.sh 31_kinnex_sc.sbatch               # Kinnex single cell + cell roster + clonotypes
 ./jobs/submit.sh 32_tenx_gex.sbatch                # 10x 5' v2 gene expression (Cell Ranger naming)
