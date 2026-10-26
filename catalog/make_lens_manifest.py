@@ -83,7 +83,30 @@ COLS = ["Patient_Name", "Dataset", "Run_Name", "File_Prefix",
         "Platform", "Read_Type", "Sample_Type"]
 
 
-def rows(dataset, cfg, include_long_read=True, release="full"):
+def versioned(tmpl, version):
+    """Insert a build version into a File_Prefix template, keeping that family's separator.
+
+    Every template starts with `{d}` and the character after it is the separator its family uses:
+    `_` for the general names, `-` for the 10x ones, whose `<sample>_S1_L001_R1_001` shape Cell Ranger
+    parses and must not be disturbed.
+
+    The version goes immediately after the dataset and NOT at the end, because versioned and unversioned
+    builds share one namespace -- `preflight_resolve_inputs` walks recursively and matches on basename,
+    so a version directory separates nothing. Appending would leave the OLD prefix `<d>_tumor_wes` still
+    matching the new `<d>_tumor_wes_<ver>_R1`, and one row would claim four FASTQs, which is the same
+    shadowing the TCR note above describes. Inserting at the dataset breaks the relation at the version.
+    """
+    if not version:
+        return tmpl
+    if not tmpl.startswith("{d}") or len(tmpl) < 4:
+        raise ValueError(f"template does not start with a dataset token: {tmpl!r}")
+    sep = tmpl[3]
+    if sep not in "_-.":
+        raise ValueError(f"unexpected separator {sep!r} after the dataset in {tmpl!r}")
+    return "{d}" + sep + version + tmpl[3:]
+
+
+def rows(dataset, cfg, include_long_read=True, release="full", version=""):
     """One row per sample type. Patient_Name stays the dataset; Dataset carries the release,
     per design section 2: Dataset = IGI-SYN-SEQ-01 or IGI-SYN-SEQ-01-chr1to6, Patient_Name =
     IGI-SYN-SEQ-01, one synthetic patient per dataset."""
@@ -101,7 +124,7 @@ def rows(dataset, cfg, include_long_read=True, release="full"):
             "Patient_Name": dataset,
             "Dataset": dataset if release == "full" else f"{dataset}-{release}",
             "Run_Name": f"{pre}-{label.replace('_', '-')}",
-            "File_Prefix": tmpl.format(d=dataset),
+            "File_Prefix": versioned(tmpl, version).format(d=dataset),
             "Sequencing_Method": method,
             "Normal": "TRUE" if is_normal else "FALSE",
             "Group": "T0",
@@ -132,6 +155,9 @@ def main():
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--no-long-read", action="store_true")
     ap.add_argument("--release", default="both", choices=("full", "chr1to6", "both"))
+    ap.add_argument("--version", default="",
+                    help="build version to embed in File_Prefix and the manifest filename, "
+                         "e.g. 20261026. Omit for the unversioned names.")
     a = ap.parse_args()
     design = yaml.safe_load(open(a.design))
     releases = RELEASES if a.release == "both" else (a.release,)
@@ -139,16 +165,21 @@ def main():
         d = os.path.join(a.out_dir, ds)
         os.makedirs(d, exist_ok=True)
         for release in releases:
-            recs = rows(ds, cfg, include_long_read=not a.no_long_read, release=release)
+            recs = rows(ds, cfg, include_long_read=not a.no_long_read, release=release,
+                        version=a.version)
             stem = ds if release == "full" else f"{ds}.{release}"
+            if a.version:
+                stem = f"{stem}.{a.version}"
             p1 = write(os.path.join(d, f"lens.{stem}.with-alleles.manifest"), recs, True)
             p2 = write(os.path.join(d, f"lens.{stem}.no-alleles.manifest"), recs, False)
             print(f"  {ds} [{release}]: {len(recs)} rows")
             print(f"    {os.path.basename(p1)}  (Alleles: {','.join(cfg['hla'])})")
             print(f"    {os.path.basename(p2)}  (LENS types HLA from the normal)")
         # No prefix may be a prefix of another, within or across releases: one namespace, see above.
-        allp = [r["File_Prefix"] for rel in RELEASES
-                for r in rows(ds, cfg, include_long_read=not a.no_long_read, release=rel)]
+        # Checked against the UNVERSIONED prefixes too: both builds live in one basename namespace,
+        # so a new prefix that shadows an old file is just as broken as one that shadows a new file.
+        allp = [r["File_Prefix"] for rel in RELEASES for v in {a.version, ""}
+                for r in rows(ds, cfg, include_long_read=not a.no_long_read, release=rel, version=v)]
         allp = sorted(set(allp))
         bad = [(x, y) for x in allp for y in allp if x != y and y.startswith(x)]
         if bad:
