@@ -106,7 +106,14 @@ def versioned(tmpl, version):
     return "{d}" + sep + version + tmpl[3:]
 
 
-def rows(dataset, cfg, include_long_read=True, release="full", version=""):
+# The off-the-shelf demo manifests in inputs/metadata/ots use a shorter, differently ordered column
+# set than the per-dataset ones, and they carry several patients in one file. Matching them matters: a
+# manifest dropped into that directory is read alongside its neighbours.
+OTS_COLS = ["Patient_Name", "Run_Name", "Dataset", "File_Prefix",
+            "Sequencing_Method", "Normal", "Group"]
+
+
+def rows(dataset, cfg, include_long_read=True, release="full", version="", only=None, group="T0"):
     """One row per sample type. Patient_Name stays the dataset; Dataset carries the release,
     per design section 2: Dataset = IGI-SYN-SEQ-01 or IGI-SYN-SEQ-01-chr1to6, Patient_Name =
     IGI-SYN-SEQ-01, one synthetic patient per dataset."""
@@ -117,6 +124,12 @@ def rows(dataset, cfg, include_long_read=True, release="full", version=""):
     entries = [t + ("Illumina",) for t in SHORT_READ]
     if include_long_read:
         entries += LONG_READ
+    if only:
+        missing = set(only) - {e[0] for e in entries}
+        if missing:
+            raise SystemExit(f"--only names no such sample: {sorted(missing)}. "
+                             f"Available: {sorted(e[0] for e in entries)}")
+        entries = [e for e in entries if e[0] in only]
     for label, method, is_normal, is_rna, tmpl_full, tmpl_sub, platform in entries:
         tmpl = tmpl_full if release == "full" else tmpl_sub
         pre = f"{'n' if is_normal else 'a'}{'r' if is_rna else 'd'}"
@@ -127,7 +140,7 @@ def rows(dataset, cfg, include_long_read=True, release="full", version=""):
             "File_Prefix": versioned(tmpl, version).format(d=dataset),
             "Sequencing_Method": method,
             "Normal": "TRUE" if is_normal else "FALSE",
-            "Group": "T0",
+            "Group": group,
             "Alleles": alleles,
             "Platform": platform,
             "Read_Type": "short-read" if platform == "Illumina" else "long-read",
@@ -136,8 +149,8 @@ def rows(dataset, cfg, include_long_read=True, release="full", version=""):
     return out
 
 
-def write(path, recs, with_alleles):
-    cols = [c for c in COLS if keep_col(c, with_alleles)]
+def write(path, recs, with_alleles, cols=None):
+    cols = cols or [c for c in COLS if keep_col(c, with_alleles)]
     with open(path, "w") as fh:
         fh.write("\t".join(cols) + "\n")
         for r in recs:
@@ -152,34 +165,73 @@ def keep_col(c, with_alleles):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--design", default="design.yaml")
-    ap.add_argument("--out-dir", required=True)
+    ap.add_argument("--out-dir", default="")
     ap.add_argument("--no-long-read", action="store_true")
     ap.add_argument("--release", default="both", choices=("full", "chr1to6", "both"))
+    ap.add_argument("--combined", default="",
+                    help="write ONE manifest at this path containing every dataset, instead of one "
+                         "file per dataset. Each dataset gets its own Group, because Group is the "
+                         "pairing key and a shared value would let one patient's tumour pair with "
+                         "another's normal.")
+    ap.add_argument("--ots-columns", action="store_true",
+                    help="use the shorter column set and order of inputs/metadata/ots")
+    ap.add_argument("--only", default="",
+                    help="comma-separated sample labels to include, e.g. "
+                         "wes_tumor,wes_normal,rna_tumor. Default: every sample.")
+    ap.add_argument("--subset-name", default="",
+                    help="infix for the manifest filename when --only is used, e.g. wes-rna")
+    ap.add_argument("--alleles", default="both", choices=("both", "with", "no"),
+                    help="which allele variants to write")
     ap.add_argument("--version", default="",
                     help="build version to embed in File_Prefix and the manifest filename, "
                          "e.g. 20261026. Omit for the unversioned names.")
     a = ap.parse_args()
+    if not a.out_dir and not a.combined:
+        raise SystemExit("one of --out-dir or --combined is required")
     design = yaml.safe_load(open(a.design))
     releases = RELEASES if a.release == "both" else (a.release,)
+    only = [x.strip() for x in a.only.split(",") if x.strip()] or None
+    if only and not a.subset_name:
+        raise SystemExit("--only needs --subset-name, or the file would overwrite the full manifest")
+    if a.combined:
+        cols = OTS_COLS if a.ots_columns else [c for c in COLS if keep_col(c, a.alleles == "with")]
+        allrecs = []
+        for i, (ds, cfg) in enumerate(sorted(design["datasets"].items()), start=1):
+            for release in releases:
+                allrecs += rows(ds, cfg, include_long_read=not a.no_long_read, release=release,
+                                version=a.version, only=only, group=str(i))
+        os.makedirs(os.path.dirname(os.path.abspath(a.combined)), exist_ok=True)
+        write(a.combined, allrecs, a.alleles == "with", cols=cols)
+        print(f"  combined: {len(allrecs)} rows -> {a.combined}")
+        for g, ds in enumerate(sorted(design["datasets"]), start=1):
+            print(f"    Group {g} = {ds}")
+        return
+
     for ds, cfg in design["datasets"].items():
         d = os.path.join(a.out_dir, ds)
         os.makedirs(d, exist_ok=True)
         for release in releases:
             recs = rows(ds, cfg, include_long_read=not a.no_long_read, release=release,
-                        version=a.version)
+                        version=a.version, only=only)
             stem = ds if release == "full" else f"{ds}.{release}"
             if a.version:
                 stem = f"{stem}.{a.version}"
-            p1 = write(os.path.join(d, f"lens.{stem}.with-alleles.manifest"), recs, True)
-            p2 = write(os.path.join(d, f"lens.{stem}.no-alleles.manifest"), recs, False)
-            print(f"  {ds} [{release}]: {len(recs)} rows")
-            print(f"    {os.path.basename(p1)}  (Alleles: {','.join(cfg['hla'])})")
-            print(f"    {os.path.basename(p2)}  (LENS types HLA from the normal)")
+            if a.subset_name:
+                stem = f"{stem}.{a.subset_name}"
+            print(f"  {ds} [{release}]: {len(recs)} rows"
+                  + (f"  ({', '.join(sorted(only))})" if only else ""))
+            if a.alleles in ("both", "with"):
+                p1 = write(os.path.join(d, f"lens.{stem}.with-alleles.manifest"), recs, True)
+                print(f"    {os.path.basename(p1)}  (Alleles: {','.join(cfg['hla'])})")
+            if a.alleles in ("both", "no"):
+                p2 = write(os.path.join(d, f"lens.{stem}.no-alleles.manifest"), recs, False)
+                print(f"    {os.path.basename(p2)}  (LENS types HLA from the normal)")
         # No prefix may be a prefix of another, within or across releases: one namespace, see above.
         # Checked against the UNVERSIONED prefixes too: both builds live in one basename namespace,
         # so a new prefix that shadows an old file is just as broken as one that shadows a new file.
         allp = [r["File_Prefix"] for rel in RELEASES for v in {a.version, ""}
-                for r in rows(ds, cfg, include_long_read=not a.no_long_read, release=rel, version=v)]
+                for r in rows(ds, cfg, include_long_read=not a.no_long_read, release=rel, version=v,
+                              only=only)]
         allp = sorted(set(allp))
         bad = [(x, y) for x in allp for y in allp if x != y and y.startswith(x)]
         if bad:
