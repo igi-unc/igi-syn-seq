@@ -27,7 +27,8 @@ import yaml
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
-from igi_catalog.junctions import fusion_junctions, sv_junctions, viral_junctions
+from igi_catalog.junctions import (VIRAL_PAYLOAD_CHROM, fusion_junctions, sv_junctions,
+                                   viral_junctions, viral_payloads)
 from igi_catalog.pipeline import GcBias, WesBuilder, quality_model, write_record_map
 from igi_catalog.readnames import NAME_SPACE_STRIDE, shuffle_and_rename
 
@@ -106,8 +107,8 @@ def main():
     # a flat GC model: the measured curve is capture efficiency and does not apply without baits
     wb = WesBuilder(env, events, purity, work, gc_bias=GcBias(None))
     wb.record_prefix = f"{ORDINAL.get(a.chrom, 0):02d}"
+    cat_dir = os.path.dirname(a.catalog)
     if a.library == "tumor":
-        cat_dir = os.path.dirname(a.catalog)
         jn = (sv_junctions(env.genome, rows(os.path.join(cat_dir, f"{a.dataset}.svs.tsv")))
               + fusion_junctions(env.genome, rows(os.path.join(cat_dir, f"{a.dataset}.fusions.tsv")))
               + viral_junctions(env.genome, paths.get("viral_fasta"),
@@ -118,6 +119,19 @@ def main():
 
     sources, n_iv = wb.write_source_fastas(windows, tumor=(a.library == "tumor"),
                                            max_intervals=a.max_intervals)
+    # The viral genomes themselves. Pinned to one chromosome task: a virus has no human coordinate, so
+    # nothing else would select it exactly once and all 24 tasks would each emit a full copy. This is the
+    # WGS path only -- an integration site is off-capture by design in the exome (class_presence.py, D8).
+    # It runs for the normal library too, which carries `normal_trace_copies` rather than nothing.
+    if a.chrom == VIRAL_PAYLOAD_CHROM:
+        vp = viral_payloads(paths.get("viral_fasta"),
+                            rows(os.path.join(cat_dir, f"{a.dataset}.viruses.tsv")),
+                            tumor=(a.library == "tumor"))
+        sources.update(wb.write_viral_sources(vp))
+        for pl in vp:
+            print(f"  viral payload: {pl['desc']}, {len(pl['sequence']):,} bp", flush=True)
+        if not vp:
+            print("  no viral payload for this library", flush=True)
     print(f"[{a.dataset} {a.chrom} {a.library} WGS] {n_iv} windows of {WINDOW // 10**6} Mb, "
           f"{len(sources)} sources, {time.time() - t0:.0f}s", flush=True)
 

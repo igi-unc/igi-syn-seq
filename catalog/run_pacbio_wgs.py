@@ -23,38 +23,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
 from igi_catalog.pipeline import depth_denominator, source_plan
-from igi_catalog.derived import build_derived
+from igi_catalog.derived import build_derived, viral_pieces
 from igi_catalog.pacbio_bam import pbindex, write_hifi_bam
 from igi_catalog import rearrange
-
-
-def sv_rows(catalog_dir, dataset, chrom):
-    """Designed structural variants on this chromosome, as rearrange.plan_chromosome expects them."""
-    import csv
-    path = os.path.join(catalog_dir, f"{dataset}.svs.tsv")
-    if not os.path.exists(path):
-        return []
-    out = []
-    with open(path) as fh:
-        for r in csv.DictReader(fh, delimiter="\t"):
-            if r.get("chrom") != chrom or r.get("svtype") == "TRA":
-                continue        # translocations need both partners; handled separately
-            try:
-                out.append({"event_id": r["event_id"], "svtype": r["svtype"],
-                            "start": int(r["start"]), "end": int(r["end"]),
-                            "clone": r.get("clone") or "T",
-                            "haplotype": int(r.get("haplotype") or 0),
-                            "inserted_sequence": r.get("inserted_sequence") or ""})
-            except (ValueError, KeyError):
-                continue
-    return out
-
-
-def mei_sequence_factory(rng):
-    """Sequence for a mobile-element insertion. The catalog records a family and a length, not bases."""
-    def make(event):
-        return "".join(rng.choice("ACGT") for _ in range(300))
-    return make
 
 
 def split_fasta(path, chunk_bp, work, tag, overlap=60_000):
@@ -126,7 +97,6 @@ def main():
     chrom_len = env.genome.lengths[a.chrom]
     tumor = a.library == "tumor"
     denom = depth_denominator(env.clones, purity, tumor=tumor)
-    svs = sv_rows(a.catalog_dir, a.dataset, a.chrom) if tumor else []
 
     t0 = time.time()
     # One shared implementation with run_ont.py. This used to be an inline copy of the same loop, and the
@@ -135,6 +105,8 @@ def main():
                                       events, a.depth, rng, work,
                                       log=lambda m: print(m, flush=True))
     print(f"  derived chromosomes built in {time.time() - t0:.0f}s", flush=True)
+    pieces += viral_pieces(paths.get("viral_fasta"), a.catalog_dir, a.dataset, a.chrom, a.library,
+                           env, purity, a.depth, work, log=lambda m: print(m, flush=True))
 
     # Badread rather than pbsim3 plus ccs. The ccs route is correct -- consensus over ten simulated
     # passes gave rq 0.99754 against the real 0.99823 -- but it took 3.61 h for 3x of chr21, which is

@@ -12,6 +12,8 @@ say where a simulated read really came from.
 """
 from dataclasses import dataclass
 
+from .mei import family_of
+
 
 @dataclass
 class Segment:
@@ -22,8 +24,14 @@ class Segment:
     strand: str = "+"   # '-' means the piece is reverse complemented
     kind: str = "ref"   # ref, dup, inv, insert
     event: str = ""     # the designed event that produced it
+    ins_len: int = 0    # realised length of an 'insert' piece, which has no reference span
 
     def length(self):
+        # An insertion occupies NO reference span -- start == end marks where it lands -- so its derived
+        # length has to be carried explicitly. Without this an insert measured 1 base while `realise`
+        # appended the whole element, and every segment after it was mapped that much out of true.
+        if self.kind == "insert":
+            return max(0, self.ins_len)
         return max(0, self.end - self.start + 1)
 
 
@@ -78,8 +86,12 @@ def plan_chromosome(chrom, chrom_len, svs):
         elif t == "INV":
             segs.append(Segment(chrom, start, end, "-", "inv", s.get("event_id", "")))
         elif t == "INS":
+            # The realised length comes from the catalogued token, NOT from the sequence builder, so the
+            # coordinate map and the derived sequence are sized by the same number and cannot disagree.
+            _fam, ins_len = family_of(s.get("inserted_sequence", ""))
             segs.append(Segment(chrom, start, end, "+", "ref", s.get("event_id", "")))
-            segs.append(Segment(chrom, start, start, "+", "insert", s.get("event_id", "")))
+            segs.append(Segment(chrom, start, start, "+", "insert", s.get("event_id", ""),
+                                ins_len=ins_len))
         applied.append(s.get("event_id", ""))
         cursor = end + 1
     if cursor <= chrom_len:
@@ -97,6 +109,53 @@ def plan_translocation(chrom_a, len_a, pos_a, chrom_b, len_b, pos_b, event=""):
     der_b = [Segment(chrom_b, 1, pos_b, "+", "ref", event),
              Segment(chrom_a, pos_a + 1, len_a, "+", "ref", event)]
     return der_a, der_b
+
+
+def clip_at(segs, chrom, pos):
+    """The part of a plan at or before reference position `pos` on `chrom`.
+
+    Returns (clipped, ok). `ok` is False when the breakpoint falls strictly inside a segment that is not
+    plain forward reference -- a duplicate, an inversion, an inserted element -- because clipping one of
+    those would silently contradict the event that produced it. The caller then leaves the translocation
+    unplaced and logs it, which is what `plan_chromosome` already does for overlapping spans.
+    """
+    out = []
+    for s in segs:
+        if s.chrom != chrom:
+            out.append(s)
+            continue
+        if s.start > pos:
+            continue
+        if s.end <= pos:
+            out.append(s)
+            continue
+        if s.kind != "ref" or s.strand != "+":
+            return [], False
+        out.append(Segment(s.chrom, s.start, pos, s.strand, s.kind, s.event))
+    return out, True
+
+
+def plan_with_translocation(segs, chrom, pos, partner, partner_start, partner_len, event=""):
+    """`segs` cut at the translocation breakpoint and continued into the partner chromosome.
+
+    This is der(A) of `plan_translocation`, but built on a plan that may already carry the
+    intra-chromosomal rearrangements of the same copy rather than on bare reference.
+
+    BOTH derivatives have to be built, each by the task that owns its own 5' end: der(A) from A's task,
+    der(B) from B's. Between them every base appears exactly once -- A's head and B's tail here, B's head
+    and A's tail there. Building only der(A), as the caller first did, loses B's tail and emits A's twice,
+    because B's task still produces an intact B. It also REPLACES the plan rather than adding to it, since
+    the copy carrying the translocation no longer has an intact chromosome to emit.
+
+    Returns (plan, ok); on failure the original plan is returned unchanged.
+    """
+    head, ok = clip_at(segs, chrom, pos)
+    if not ok or not head:
+        return segs, False
+    tail = Segment(partner, partner_start, partner_len, "+", "ref", event)
+    if tail.length() <= 0:
+        return segs, False
+    return head + [tail], True
 
 
 def coordinate_map(segs):

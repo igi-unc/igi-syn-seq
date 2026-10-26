@@ -39,7 +39,7 @@ import yaml
 from igi_catalog.cells import CellRoster, load_whitelist
 from igi_catalog.designer import build_env
 from igi_catalog.genome_build import read_events
-from igi_catalog.derived import build_derived
+from igi_catalog.derived import build_derived, viral_pieces
 from igi_catalog.kinnex import SizeSelection, ont_cdna
 from igi_catalog.readnames import stream_seed
 from igi_catalog import longread as _longread_mod
@@ -186,6 +186,8 @@ def main():
         drng = random.Random(f"{a.seed}:{a.dataset}:{a.chrom}:{a.library}")
         pieces, plan_rows = build_derived(env, ds_cfg, a.dataset, a.chrom, a.library, a.catalog_dir,
                                           events, a.depth, drng, work, log=log)
+        pieces += viral_pieces(paths.get("viral_fasta"), a.catalog_dir, a.dataset, a.chrom,
+                               a.library, env, ds_cfg["purity"], a.depth, work, log=log)
         n_src = len(pieces)
         log(f"  {n_src} derived chromosome copy/copies")
     else:

@@ -406,6 +406,41 @@ class WesBuilder:
                 f"contain changes the truth table describes: {uniq[:8]}")
         return out, n
 
+    def write_viral_sources(self, payloads, tag=""):
+        """One source FASTA per viral genome, at the dosage the catalog designs.
+
+        Deliberately separate from `write_source_fastas`. That function's invariant is that a copy
+        contributes the same number of bases over an interval whether or not it carries a rearrangement
+        -- `splice_junctions` excises a window exactly the size of the contig it returns -- and that is
+        what keeps host coverage and allele fractions right. Viral material is additional by definition,
+        so splicing it in place of host sequence would be wrong in both directions: the host would lose
+        depth it should keep, and a 171 kb episome would displace 171 kb of chromosome.
+
+        The key matches the 5-tuple `simulate` unpacks, so a viral source is sequenced by exactly the
+        same path, at `depth * weight / denom`, as any other copy.
+        """
+        out = {}
+        for pl in payloads:
+            w = (self.purity * pl["ccf"] * pl["copies"]) if pl.get("tumor_weighted") else pl["copies"]
+            if w <= 0:
+                continue
+            seq = pl["sequence"]
+            # '-' not ':' -- the source name reaches a shell command line through `simulate`
+            key = (f"VIRUS-{pl['slug']}", 0, "payload", 0, 0)
+            path = os.path.join(
+                self.workdir,
+                f"{'tumor' if self.tumor else 'normal'}{tag}_virus_{pl['slug']}.fa")
+            self._n_rec += 1
+            rid = f"e{self.record_prefix}{self._n_rec:09d}"
+            with open(path, "w") as fh:
+                fh.write(f">{rid}\n")
+                for i in range(0, len(seq), 60):
+                    fh.write(seq[i:i + 60] + "\n")
+            self.record_map.append((rid, pl["contig"], 1, len(seq), pl["clone"], 0,
+                                    "payload", tag.lstrip("_") or "viral"))
+            out[key] = (path, w)
+        return out
+
     def _profile_id(self, prof):
         if not hasattr(self, "_profiles"):
             self._profiles = {}
