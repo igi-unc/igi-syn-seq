@@ -19,6 +19,7 @@ erv_all_loci: /path/to/Hsap38.txt
 pan_normal_quant: /path/to/pan_normal_and_mtec_exp.95th_perc.quant.sf
 art_cmd: "singularity exec -B /data /path/art.sif art_illumina {args}"
 viral_fasta: /path/to/virus_unmasked.fa
+viral_cds_gff: /path/to/virdetect.cds.gff   # CDS features per viral accession; viral RNA is emitted per CDS, not as the whole genome
 
 # Kinnex (PacBio MAS-seq). The adapter FASTA and the array profile are fitted from a real segmented BAM by
 # jobs/measure/fit_mas_adapters.py; the size-selection curve by jobs/measure/fit_kinnex_size_selection.py.
