@@ -18,6 +18,9 @@ erv_loci: /path/to/curated_erv_loci.tsv
 erv_all_loci: /path/to/Hsap38.txt
 pan_normal_quant: /path/to/pan_normal_and_mtec_exp.95th_perc.quant.sf
 art_cmd: "singularity exec -B /data /path/art.sif art_illumina {args}"
+# Aligns the declared HLA allele contigs back to their class I windows for the germline graft
+# (hla_graft.py); only datasets with `hla_graft: true` in design.yaml need it.
+minimap2_cmd: "singularity exec -B /data /path/minimap2.sif minimap2 {args}"
 viral_fasta: /path/to/virus_unmasked.fa
 viral_cds_gff: /path/to/virdetect.cds.gff   # CDS features per viral accession; viral RNA is emitted per CDS, not as the whole genome
 

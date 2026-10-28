@@ -123,6 +123,15 @@ datasets:
     # OptiType on the recovered normal returned exactly these six alleles (D3), which confirms the
     # genotype but not the phase.
     hla_haplotypes: {0: [HLA-A*01:01, HLA-B*08:01, HLA-C*07:01], 1: [HLA-A*01:01, HLA-B*27:05, HLA-C*01:02]}
+    # Give the class I loci the sequence of those alleles instead of IPISRC044's short-read calls there.
+    # The recovery (D3) fixed the depth -- HLA-B 7-11x -> 48.9x, 93 PASS records -- but depth is not
+    # sequence: scored by 31-mer containment against GRCh38's own allele contigs the two haplotypes reach
+    # 0.84/0.77 at HLA-B and 0.73/0.68 at HLA-C, a mosaic that is no allele at all, and the three typers
+    # LENS runs each picked a different nearest neighbour (OptiType C*07:27/C*12:03 on the normal,
+    # C*07:05/C*12:03 on the tumour, seq2hla C*01:02/C*07:02 on the RNA). ds-01 needs none of this: HG002's
+    # baseline is assembly-derived and already reconstructs its alleles at 1.000. See hla_graft.py for what
+    # this costs -- ds-02's MHC stops being IPISRC044's genome over three 3.4 kb windows.
+    hla_graft: true
     purity: 0.45
     wgd: true
     clones:
